@@ -21,6 +21,7 @@ services:
       - buildvolume:/workarea/build # store artifacts in a docker volume
     environment:
       - CTEST_OUTPUT_ON_FAILURE=1 # show test output on failure
+    platform: linux/amd64
     depends_on:
       - rabbit
 

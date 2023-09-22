@@ -2,32 +2,32 @@ FROM debian:stable
 
 
 RUN apt-get update && apt-get -y install \
-                        ninja-build \
-                        gdb \
-                        cmake \
-                        git \
-                        netcat-traditional \
-                        net-tools \
-                        valgrind \
-                        libboost-dev \
-                        libssl-dev \
-                        clang-format \
-                        python3 \
-                        python3-venv \
-                        python3-pip  \
-                        curl \
-                        tar \
-                        zip \
-                        unzip \
-                        sudo \
-                        build-essential
+    build-essential \
+    clang-format \
+    cmake \
+    curl \
+    gcc \ 
+    gdb \
+    git \
+    libboost-dev \
+    libssl-dev \
+    net-tools \
+    netcat-traditional \
+    ninja-build \
+    pkg-config \
+    python3 \
+    python3-pip  \
+    python3-venv \
+    sudo \
+    tar \
+    unzip \
+    valgrind \
+    zip 
+
+ENV VCPKG_FORCE_SYSTEM_BINARIES=1 
 
 # clone and install vcpkg
-WORKDIR /build/
-RUN git clone https://github.com/Microsoft/vcpkg.git
-
-ENV VCPKG_FORCE_SYSTEM_BINARIES=1
-RUN ./vcpkg/bootstrap-vcpkg.sh
-
+RUN git clone https://github.com/Microsoft/vcpkg.git /build/vcpkg && \
+    /build/vcpkg/bootstrap-vcpkg.sh
 
 WORKDIR /workarea

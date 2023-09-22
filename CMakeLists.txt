@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.25) 
+
 project(rmq LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
