@@ -58,7 +58,7 @@ void configLog(const char* logLevel)
 
 TestParameters::TestParameters(const bsl::string& moduleName)
 : logLevel("INFO")
-, url("rabbit")
+, uri("rabbit")
 , port(5672)
 , tlsPort(5671)
 , vhost("rmq-lib")
