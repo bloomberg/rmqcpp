@@ -1,0 +1,57 @@
+usage: <program>
+ -?,--help                                   show usage
+ -ad,--auto-delete <arg>                     should the queue be
+                                             auto-deleted, default is true
+ -c,--confirm <arg>                          max unconfirmed publishes
+ -C,--pmessages <arg>                        producer message count
+ -ca,--consumer-args <arg>                   consumer arguments as
+                                             key/values pairs, separated
+                                             by commas, e.g. x-priority=10
+ -d,--id <arg>                               test ID
+ -D,--cmessages <arg>                        consumer message count
+ -e,--exchange <arg>                         exchange name
+ -env,--environment-variables                show usage with environment
+                                             variables
+ -f,--flag <arg>                             message flag(s), supported
+                                             values: persistent and
+                                             mandatory. Use the option
+                                             several times to specify
+                                             several values.
+ -h,--uri <arg>                              connection URI
+ -i,--interval <arg>                         sampling interval in seconds
+ -k,--routing-key <arg>                      routing key
+ -L,--consumer-latency <arg>                 consumer latency in
+                                             microseconds
+ -na,--nack                                  nack and requeue messages
+ -o,--output-file <arg>                      output file for timing
+                                             results
+ -p,--predeclared                            allow use of predeclared
+                                             objects
+ -P,--publishing-interval <arg>              publishing interval in
+                                             seconds (opposite of producer
+                                             rate limit)
+ -prsd,--producer-random-start-delay <arg>   max random delay in seconds
+                                             to start producers
+ -q,--qos <arg>                              consumer prefetch count
+ -qa,--queue-args <arg>                      queue arguments as key/value
+                                             pairs, separated by commas,
+                                             e.g. x-max-length=10
+ -qp,--queue-pattern <arg>                   queue name pattern for
+                                             creating queues in sequence
+ -qpf,--queue-pattern-from <arg>             queue name pattern range
+                                             start (inclusive)
+ -qpt,--queue-pattern-to <arg>               queue name pattern range end
+                                             (inclusive)
+ -r,--rate <arg>                             producer rate limit
+ -R,--consumer-rate <arg>                    consumer rate limit
+ -S,--slow-start                             start consumers slowly (1 sec
+                                             delay between each)
+ -s,--size <arg>                             message size in bytes
+ -t,--type <arg>                             exchange type
+ -T,--body-content-type <arg>                body content-type
+ -u,--queue <arg>                            queue name
+ -v,--version                                print version information
+ -x,--producers <arg>                        producer count
+ -y,--consumers <arg>                        consumer count
+ -z,--time <arg>                             run duration in seconds
+                                             (unlimited by default)
