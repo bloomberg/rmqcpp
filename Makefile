@@ -10,10 +10,10 @@ setup:
 	mkdir -p $(BUILD_FOLDER)
 
 cmake: setup
-	cmake -DCMAKE_INSTALL_LIBDIR=lib64 -DCMAKE_TOOLCHAIN_FILE=$(VCPKG)/scripts/buildsystems/vcpkg.cmake  -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_CXX_STANDARD=03 -DVCPKG_INSTALL_OPTIONS=--allow-unsupported  -B $(BUILD_FOLDER) -S $(SRC_FOLDER)
+	cmake -DCMAKE_INSTALL_LIBDIR=lib64 -DCMAKE_TOOLCHAIN_FILE=$(VCPKG)/scripts/buildsystems/vcpkg.cmake  -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_CXX_STANDARD=17 -DVCPKG_INSTALL_OPTIONS=--allow-unsupported  -B $(BUILD_FOLDER) -S $(SRC_FOLDER)
 
 build:  cmake
-	cd $(BUILD_FOLDER); ninja
+	cmake --build $(BUILD_FOLDER)
 
 local-integration-broker:
 	docker-compose -f src/tests/integration/docker-compose.yml up -d
