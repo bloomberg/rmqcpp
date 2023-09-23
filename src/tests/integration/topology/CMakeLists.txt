@@ -12,7 +12,7 @@ target_link_libraries(librmq_topology PUBLIC
 add_custom_target(test_integration_topology
          COMMAND
             RMQ_EXE=$<TARGET_FILE:librmq_topology>
-            python3.8 -m pytest ${PYTEST_ARGS} ${CMAKE_CURRENT_LIST_DIR}
+            ${PYTEST} ${PYTEST_ARGS} ${CMAKE_CURRENT_LIST_DIR}
          DEPENDS librmq_topology
          )
 

@@ -14,7 +14,7 @@ target_link_libraries(librmq_exitboth PUBLIC
 add_custom_target(test_integration_exit_both
          COMMAND
             RMQ_EXE=$<TARGET_FILE:librmq_exitboth>
-            python3.8 -m pytest ${PYTEST_ARGS} ${CMAKE_CURRENT_LIST_DIR}
+            ${PYTEST} ${PYTEST_ARGS} ${CMAKE_CURRENT_LIST_DIR}
          DEPENDS librmq_exitboth
          )
 

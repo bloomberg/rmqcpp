@@ -13,7 +13,7 @@ target_link_libraries(librmq_consumeparameters PUBLIC
 add_custom_target(test_integration_consumeparameters
          COMMAND
             RMQ_EXE=$<TARGET_FILE:librmq_consumeparameters>
-            python3.8 -m pytest ${PYTEST_ARGS} ${CMAKE_CURRENT_LIST_DIR}
+            ${PYTEST} ${PYTEST_ARGS} ${CMAKE_CURRENT_LIST_DIR}
          DEPENDS librmq_consumeparameters
          )
 

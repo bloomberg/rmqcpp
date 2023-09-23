@@ -3,6 +3,7 @@ SRC_FOLDER ?= .
 VCPKG ?=/build/vcpkg
 CC =gcc
 CXX ?=g++
+PYTHON ?=python3
 
 default: setup build
 
@@ -26,5 +27,5 @@ run-rmqapitests: setup-rmqapitests
 	. .venv/bin/activate && cd $(BUILD_FOLDER) && ninja test_integration
 
 setup-rmqapitests:
-	python3.8 -mvenv .venv
-	. .venv/bin/activate && python -mpip install pytest requests 
+	$(PYTHON) -mvenv .venv
+	. .venv/bin/activate && $(PYTHON) -mpip install pytest requests 
