@@ -1,0 +1,33 @@
+FROM debian:stable
+
+
+RUN apt-get update && apt-get -y install \
+    build-essential \
+    clang-format \
+    cmake \
+    curl \
+    gcc \ 
+    gdb \
+    git \
+    libboost-dev \
+    libssl-dev \
+    net-tools \
+    netcat-traditional \
+    ninja-build \
+    pkg-config \
+    python3 \
+    python3-pip  \
+    python3-venv \
+    sudo \
+    tar \
+    unzip \
+    valgrind \
+    zip 
+
+ENV VCPKG_FORCE_SYSTEM_BINARIES=1 
+
+# clone and install vcpkg
+RUN git clone https://github.com/Microsoft/vcpkg.git /build/vcpkg && \
+    /build/vcpkg/bootstrap-vcpkg.sh
+
+WORKDIR /workarea

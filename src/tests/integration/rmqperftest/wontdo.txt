@@ -1,0 +1,115 @@
+ -a,--autoack                                auto ack
+ -A,--multi-ack-every <arg>                  multi ack every
+ -b,--heartbeat <arg>                        heartbeat interval
+ -cri,--connection-recovery-interval <arg>   connection recovery interval
+                                             in seconds. Default is 5
+                                             seconds. Interval syntax,
+                                             e.g. 30-60, is supported to
+                                             specify an random interval
+                                             between 2 values between each
+                                             attempt.
+ -ct,--confirm-timeout <arg>                 waiting timeout for
+                                             unconfirmed publishes before
+                                             failing (in seconds)
+ -dcr,--disable-connection-recovery          disable automatic connection
+                                             recovery
+ -f,--flag mandatory
+ -hst,--heartbeat-sender-threads <arg>       number of threads for
+                                             producers and consumers
+                                             heartbeat senders
+ -M,--framemax <arg>                         frame max
+ -se,--sasl-external                         use SASL EXTERNAL
+                                             authentication, default is
+                                             false. Set to true if using
+                                             client certificate
+                                             authentication with the
+                                             rabbitmq_auth_mechanism_ssl
+                                             plugin.
+ -sst,--servers-startup-timeout <arg>        start timeout in seconds (in
+                                             case the servers(s) is (are)
+                                             not available when the run
+                                             starts). Default is to fail
+                                             immediately if the servers(s)
+                                             is (are) not available.
+ -sul,--servers-up-limit <arg>               number of available servers
+                                             needed before starting the
+                                             run. Used in conjunction with
+                                             --servers-start-timeout.
+                                             Default is deduced from --uri
+                                             or --uris.
+ -st,--shutdown-timeout <arg>                shutdown timeout, default is
+                                             5 seconds
+ -udsc,--use-default-ssl-context             use JVM default SSL context
+
+
+
+## Won't do ?
+ -mp,--message-properties <arg>              message properties as
+                                             key/value pairs, separated by
+                                             commas, e.g. priority=5
+
+ -B,--body <arg>                             comma-separated list of files
+                                             to use in message bodies
+ -bc,--body-count <arg>                      number of pre-generated
+                                             message bodies. Use with
+                                             --json-body. Default is 100.
+ -bfc,--body-field-count <arg>               number of pre-generated
+                                             fields and values for body.
+                                             Use with --json-body. Default
+                                             is 1000.
+ -ctp,--consumers-thread-pools <arg>         number of thread pools to use
+                                             for all consumers, default is
+                                             to use a thread pool for each
+                                             consumer
+
+ -E,--exclusive                              use server-named exclusive
+                                             queues. Such queues can only
+                                             be used by their declaring
+                                             connection!
+ -H,--uris <arg>                             connection URIs (separated by
+                                             commas)
+ -jb,--json-body                             generate a random JSON
+                                             document for message body.
+                                             Use with --size.
+ -K,--random-routing-key                     use random routing key per
+                                             message
+ -rkcs,--routing-key-cache-size <arg>        size of the random routing
+                                             keys cache. See
+                                             --random-routing-key.
+ -l,--legacy-metrics                         display legacy metrics
+                                             (min/avg/max latency)
+ -m,--ptxsize <arg>                          producer transaction size
+ -ms,--use-millis                            should latency be collected
+                                             in milliseconds, default is
+                                             false. Set to true if
+                                             producers are consumers run
+                                             on different machines.
+ -n,--ctxsize <arg>                          consumer transaction size
+ -mh,--metrics-help                          show metrics usage
+ -niot,--nio-threads <arg>                   number of NIO threads to use
+ -niotp,--nio-thread-pool <arg>              size of NIO thread pool,
+                                             should be slightly higher
+                                             than number of NIO threads
+ -pi,--polling-interval <arg>                time to wait before polling
+                                             with basic.get, in
+                                             millisecond, default is 0.
+ -po,--polling                               use basic.get to consume
+                                             messages. Do not use this in
+                                             real applications.
+ -pst,--producer-scheduler-threads <arg>     number of threads to use when
+                                             using --publishing-interval
+ -Q,--global-qos <arg>                       channel prefetch count
+ -vr,--variable-rate <arg>                   variable publishing rate with
+                                             [RATE]:[DURATION] syntax,
+                                             where [RATE] integer >= 0 and
+                                             [DURATION] integer > 0. Use
+                                             the option several times to
+                                             specify several values.
+ -vs,--variable-size <arg>                   variable message size with
+                                             [SIZE]:[DURATION] syntax,
+                                             where [SIZE] integer > 0 and
+                                             [DURATION] integer > 0. Use
+                                             the option several times to
+                                             specify several values.
+ -X,--producer-channel-count <arg>           channels per producer
+ -Y,--consumer-channel-count <arg>           channels per consumer

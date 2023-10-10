@@ -1,0 +1,57 @@
+add_executable(rmqamqpt_tests
+    rmqamqpt.m.cpp
+    rmqamqpt_basicack.t.cpp
+    rmqamqpt_basiccancel.t.cpp
+    rmqamqpt_basiccancelok.t.cpp
+    rmqamqpt_basicconsume.t.cpp
+    rmqamqpt_basicconsumeok.t.cpp
+    rmqamqpt_basicdeliver.t.cpp
+    rmqamqpt_basicnack.t.cpp
+    rmqamqpt_basicproperties.t.cpp
+    rmqamqpt_basicpublish.t.cpp
+    rmqamqpt_basicqos.t.cpp
+    rmqamqpt_basicqosok.t.cpp
+    rmqamqpt_basicreturn.t.cpp
+    rmqamqpt_buffer.t.cpp
+    rmqamqpt_channelclose.t.cpp
+    rmqamqpt_channelcloseok.t.cpp
+    rmqamqpt_channelflow.t.cpp
+    rmqamqpt_channelflowok.t.cpp
+    rmqamqpt_channelopen.t.cpp
+    rmqamqpt_channelopenok.t.cpp
+    rmqamqpt_confirmselect.t.cpp
+    rmqamqpt_confirmselectok.t.cpp
+    rmqamqpt_connectionclose.t.cpp
+    rmqamqpt_connectionopen.t.cpp
+    rmqamqpt_connectionopenok.t.cpp
+    rmqamqpt_connectionstart.t.cpp
+    rmqamqpt_connectionstartok.t.cpp
+    rmqamqpt_connectiontune.t.cpp
+    rmqamqpt_connectiontuneok.t.cpp
+    rmqamqpt_exchangebind.t.cpp
+    rmqamqpt_exchangebindok.t.cpp
+    rmqamqpt_exchangedeclare.t.cpp
+    rmqamqpt_exchangedeclareok.t.cpp
+    rmqamqpt_fieldvalue.t.cpp
+    rmqamqpt_frame.t.cpp
+    rmqamqpt_queuebind.t.cpp
+    rmqamqpt_queuebindok.t.cpp
+    rmqamqpt_queuedeclare.t.cpp
+    rmqamqpt_queuedeclareok.t.cpp
+    rmqamqpt_queuedelete.t.cpp
+    rmqamqpt_queuedeleteok.t.cpp
+    rmqamqpt_types.t.cpp
+    rmqamqpt_queueunbind.t.cpp
+    rmqamqpt_queueunbindok.t.cpp
+)
+
+target_link_libraries(rmqamqpt_tests PUBLIC
+    rmqamqpt
+    rmqamqp
+    $<TARGET_PROPERTY:rmqamqp,LINK_LIBRARIES>
+    $<TARGET_PROPERTY:rmqamqpt,LINK_LIBRARIES>
+    GTest::gtest
+    GTest::gmock
+)
+
+add_test(NAME rmqamqpt_tests COMMAND rmqamqpt_tests)
