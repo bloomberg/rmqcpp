@@ -4,17 +4,17 @@
 
 ## RabbitContext
 
-`rmqa::RabbitContext` provides API for connecting to RabbitMQ virtual hosts (vhosts). The `RabbitContext` object stores:
+`rmqa::RabbitContext` provides an API for connecting to RabbitMQ virtual hosts (vhosts). The `RabbitContext` object stores:
 
-- threadpool for callbacks;
-- metric publisher;
-- error callback.
+- Threadpool for callbacks;
+- Metric publisher; and
+- Error callback.
 
 `RabbitContext` contains default implementations of them as detailed below. Users can replace these components with a `rmqa::RabbitContextOptions` object.
 
-Threadpool is used for asynchronous callbacks back to the user code (received messages, publisher confirms, error callbacks). A `bdlmt::ThreadPool` is created by default.
+Threadpool is used for asynchronous callbacks to the user code (e.g., received messages, publisher confirms, error callbacks). A `bdlmt::ThreadPool` is created by default.
 
-Metric publisher is used for publishing internal library metrics. Users can provide their own implementation for publishing these metrics by implementing the `rmqp::MetricPublisher` interface. Alternatively, publishing can be effectively disabled by passing an instance of `rmqa::NoOpMetricPublisher`.
+Metric publisher is used to publish internal library metrics. Users can provide their own implementation for publishing these metrics by implementing the `rmqp::MetricPublisher` interface. Alternatively, publishing can be disabled by passing an instance of `rmqa::NoOpMetricPublisher`.
 
 Error callback is called when a connection or channel is closed by the RabbitMQ broker.
 
@@ -38,7 +38,7 @@ rmqa::RabbitContext contextWithOptions(options);
 
 ## VHost
 
-`rmqa::VHost` provides API for creating producer and consumer objects on the selected RabbitMQ vhost. A `VHost` object can be created from `rmqa::RabbitContext`. 
+`rmqa::VHost` provides an API for creating producer and consumer objects on the selected RabbitMQ vhost. A `VHost` object can be created from `rmqa::RabbitContext`. 
 
 ```cpp
 rmqt::VHostInfo vhostInfo(
@@ -49,16 +49,16 @@ bsl::shared_ptr<rmqa::VHost> vhost = context.createVHostConnection(
     "my-producer-connection", vhostInfo); // returns immediately
 ```
 
-Creating an `rmqa::VHost` instance **does not** immediately create a connection with the RabbitMQ broker. The connections are created lazily when calling `rmqa::VHost::createProducer` and `rmqa::VHost::createConsumer`.
+Creating a `rmqa::VHost` instance **does not** immediately create a connection with the RabbitMQ broker. These connections are created lazily when calling `rmqa::VHost::createProducer` and `rmqa::VHost::createConsumer`.
 
 
 ## Topology
 
-For a more elaborate documentation of topology see [AMQP 0-9-1 Model Explained](https://www.rabbitmq.com/tutorials/amqp-concepts.html).
+For a more elaborate documentation of the topology, see [AMQP 0-9-1 Model Explained](https://www.rabbitmq.com/tutorials/amqp-concepts.html).
 
-AMQP topology consists of
+AMQP topology consists of:
 - exchanges;
-- queues;
+- queues; and
 - bindings.
 
 Each publisher sends messages to a particular exchange. Each consumer consumes messages from a particular queue. Exchanges and queues are connected using bindings.
@@ -81,11 +81,10 @@ topology.bind(e1, q2, "key2");
 
 ## Producing messages
 
-Messages can be sent to a RabbitMQ broker using an `rmqa::Producer` object. To create one, it is necessary to provide:
-
+Messages can be sent to a RabbitMQ broker using a `rmqa::Producer` object. To create one, it is necessary to provide:
 - a topology object;
-- the exchange to which the publisher will publish;
-- maximum number of unconfirmed messages before `send` blocks.
+- the exchange to which the publisher will publish; and
+- the maximum number of unconfirmed messages before `send` blocks.
 
 ```cpp
 // How many messages can be awaiting confirmation before `send` blocks
@@ -104,7 +103,7 @@ if (!producerResult) {
 bsl::shared_ptr<rmqa::Producer> producer = producerResult.value();
 ```
 
-When sending a message, provide a callback function which will be invoked when the publisher confirm is received from the broker.
+When sending a message, provide a callback function to be invoked when the publisher confirm is received from the broker.
 
 ```cpp
 void receiveConfirmation(const rmqt::Message& message,
@@ -123,7 +122,7 @@ void receiveConfirmation(const rmqt::Message& message,
 }
 ```
 
-To send a message, construct an `rmqt::Message` object. Each message needs its own object even when intentionally sending the same message multiple times -- this is because the message ID must be unique.
+To send a message, construct a `rmqt::Message` object. Each message needs its own object even when intentionally sending the same message multiple times -- this is because the message ID must be unique.
 
 ```cpp
 // Work in progress -- the interface for constructing message payloads is still subject to change
@@ -150,7 +149,7 @@ if (!producer->waitForConfirms(/* timeout */)) {
 }
 ```
 
-When shutting down the producer, it is necessary to wait until it receives all outstanding publisher confirms to avoid losing the unconfirmed messages:
+When shutting down the producer, it is necessary to wait until it receives all outstanding publisher confirms to avoid losing the unconfirmed messages.
 
 ```cpp
 // Blocks until `timeout` expires or all confirmations have been received
@@ -163,18 +162,16 @@ if (!producer->waitForConfirms(/* timeout */)) {
 
 ## Consumer
 
-Messages can be consumed from a RabbitMQ broker using an `rmqa::Consumer`.
+Messages can be consumed from a RabbitMQ broker using a `rmqa::Consumer`.
 
+Messages are consumed asynchronously. The user-provided consumer callback method will be invoked on the `RabbitContext` threadpool for every message received.
 
-Messages are consumed asynchronously. The user-provided consumer callback method will be invoked on the `RabbitContext` threadpool for every received message.
-
-An `Consumer` object is created with the following arguments:
-
+A `Consumer` object is created with the following arguments:
 - the topology that will be declared to the broker;
 - the queue that the consumer will consume from (must be part of `topology`);
-- consumer callback: invoked on every received message (an example is provided below);
-- consumer label: useful for identifying the consumer in the RabbitMQ Management UI;
-- prefetch count: maximum number of unacknowledged messages before the broker will wait for acks.
+- consumer callback: invoked on every message received (an example is provided below);
+- consumer label: useful for identifying the consumer in the RabbitMQ Management UI; and
+- prefetch count: the maximum number of unacknowledged messages before the broker will wait for acks.
 
 ```cpp
 
@@ -189,7 +186,7 @@ rmqt::Result<rmqa::Consumer> consumerResult =
 
 ```
 
-An example of a consumer callback implementation:
+Here is an example of a consumer callback implementation:
 
 ```cpp
 
