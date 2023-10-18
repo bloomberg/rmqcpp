@@ -22,9 +22,9 @@ for tracing in with without; do
 		for ((i=1;i<=3;i+=1))
 		do
 			result=""
-			if [ $1 = "producer" ]; then
+			if [ "$1" = "producer" ]; then
 				result=$(RABBITMQ_MESSAGE_SIZE=$msg_size TRACING=$tracing ./tests/performance/test_performance_producer.sh | grep "seconds, message rate" | sed 's/.*\, message rate: \([0-9]*\).*/\1/')
-			elif [ $1 = "consumer" ]; then
+			elif [ "$1" = "consumer" ]; then
 				result=$(RABBITMQ_MESSAGE_SIZE=$msg_size TRACING=$tracing ./tests/performance/test_performance_consumer.sh | grep "seconds, rate" | sed 's/.*\, rate: \([0-9]*\).*/\1/')
 			fi
 			echo "Result $i: $result"
