@@ -1,0 +1,12 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "rmqcpp",
+    "version": "1.0.0",
+    "dependencies": [
+      "boost-asio",
+      "boost-iostreams",
+      "openssl",
+      "gtest",
+      "bde"
+    ]
+}

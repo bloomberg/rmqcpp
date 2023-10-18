@@ -1,0 +1,47 @@
+version: '3.5'
+services:
+  rabbit:
+    hostname: rabbit
+    image: rabbitmq:3.11-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_VHOST=rmqcpp
+    ports:
+      - 15672:15672
+
+  amqpprox:
+    hostname: amqpprox
+    build:
+      context: .
+      dockerfile: amqpprox.Dockerfile
+    environment:
+      - VHOST=rmqcpp
+    ports:
+      - 5700:5700
+      - 5672:5672
+    depends_on:
+      - rabbit
+
+  dev:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile # name of your Dockerfile
+    platform: linux/x86_64
+    cap_add:
+      - SYS_PTRACE # enable 'ptrace' inside the image for gdb
+    security_opt:
+      - seccomp:unconfined # disable some sys calls for root to enable gdb run
+    volumes:
+      - ..:/workarea
+      - buildvolume:/workarea/build # store artifacts in a docker volume
+    environment:
+      - CMAKE_PRESET=linux-x64-vcpkg
+      - RMQ_HOSTNAME=amqpprox
+      - RMQ_MGMT=http://rabbit:15672
+    
+    depends_on:
+      - amqpprox
+      - rabbit
+
+volumes:
+  buildvolume:
+

@@ -1,0 +1,168 @@
+Message size: 100
+Result 1: 5556
+Result 2: 5810
+Result 3: 5604
+Average:  5656
+
+Message size: 200
+Result 1: 5861
+Result 2: 5692
+Result 3: 5731
+Average:  5761
+
+Message size: 300
+Result 1: 5523
+Result 2: 5452
+Result 3: 5547
+Average:  5507
+
+Message size: 400
+Result 1: 5637
+Result 2: 5421
+Result 3: 5550
+Average:  5536
+
+Message size: 500
+Result 1: 5343
+Result 2: 5341
+Result 3: 5380
+Average:  5354
+
+Message size: 600
+Result 1: 5300
+Result 2: 5357
+Result 3: 5173
+Average:  5276
+
+Message size: 700
+Result 1: 5302
+Result 2: 5254
+Result 3: 5246
+Average:  5267
+
+Message size: 800
+Result 1: 5250
+Result 2: 5206
+Result 3: 5270
+Average:  5242
+
+Message size: 900
+Result 1: 5175
+Result 2: 5178
+Result 3: 5198
+Average:  5183
+
+Message size: 1000
+Result 1: 4986
+Result 2: 4952
+Result 3: 5076
+Average:  5004
+
+Message size: 2000
+Result 1: 4626
+Result 2: 4626
+Result 3: 4625
+Average:  4625
+
+Message size: 3000
+Result 1: 4059
+Result 2: 4138
+Result 3: 4119
+Average:  4105
+
+Message size: 4000
+Result 1: 3680
+Result 2: 3694
+Result 3: 3690
+Average:  3688
+
+Message size: 5000
+Result 1: 3229
+Result 2: 3191
+Result 3: 3219
+Average:  3213
+
+Message size: 6000
+Result 1: 3751
+Result 2: 3684
+Result 3: 3469
+Average:  3634
+
+Message size: 7000
+Result 1: 3666
+Result 2: 3675
+Result 3: 3728
+Average:  3689
+
+Message size: 8000
+Result 1: 3694
+Result 2: 3658
+Result 3: 3664
+Average:  3672
+
+Message size: 9000
+Result 1: 3454
+Result 2: 3461
+Result 3: 3423
+Average:  3446
+
+Message size: 10000
+Result 1: 3309
+Result 2: 3271
+Result 3: 3297
+Average:  3292
+
+Message size: 20000
+Result 1: 2165
+Result 2: 2177
+Result 3: 2162
+Average:  2168
+
+Message size: 30000
+Result 1: 1611
+Result 2: 1606
+Result 3: 1596
+Average:  1604
+
+Message size: 40000
+Result 1: 1313
+Result 2: 1306
+Result 3: 1301
+Average:  1306
+
+Message size: 50000
+Result 1: 1110
+Result 2: 1099
+Result 3: 1109
+Average:  1106
+
+Message size: 60000
+Result 1: 956
+Result 2: 935
+Result 3: 938
+Average:  943
+
+Message size: 70000
+Result 1: 863
+Result 2: 1142
+Result 3: 917
+Average:  974
+
+Message size: 80000
+Result 1: 2029
+Result 2: 940
+Result 3: 2617
+Average:  1862
+
+Message size: 90000
+Result 1: 4916
+Result 2: 5159
+Result 3: 5114
+Average:  5063
+
+Message size: 100000
+Result 1: 5195
+Result 2: 5147
+Result 3: 5058
+Average:  5133
+

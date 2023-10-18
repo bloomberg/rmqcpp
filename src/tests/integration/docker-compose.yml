@@ -1,0 +1,10 @@
+version: '3'
+services:
+  rabbit:
+    image: rabbitmq:latest #TODO
+    environment:
+      - VHOST=rmq-lib
+    ports:
+      - 5671:5671
+    volumes:
+      - .:/workarea
