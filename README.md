@@ -5,6 +5,7 @@
 - [Rationale](#rationale)
 - [Quick Start](#quick-start)
 - [Basic Usage](#usage)
+- [Documentation](#documentation)
 - [Building](#building)
 - [Installation](#installation)
 - [Contributions](#contributions)
@@ -191,6 +192,9 @@ if (!producer->waitForConfirms(/* timeout */)) {
 
 consumer->cancelAndDrain();
 ```
+
+## Documentation
+Doxygen generated API documentation can be found [here](https://bloomberg.github.io/rmqcpp/index.html)
  
 ## Building
 
