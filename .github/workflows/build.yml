@@ -1,0 +1,66 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  Docker:
+    name: "Check whether docker setup, build, test work correctly."
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Docker Setup
+        run: make docker-setup
+      - name: Docker Tests
+        run: make docker-test
+
+  Documentation:
+    name: Doxygenize
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Doxygenize
+        uses: langroodi/doxygenize@v1.7.0
+        with:
+          # Doxygen configuration file path
+          doxygenconf: ./docs/Doxyfile
+          # Generated HTML documents output folder
+          htmloutput: ./docs/html
+          # GitHub Pages branch name
+          ghpagesbranch: gh-pages
+          # GitHub Pages directory path
+          ghpagesdir: ./docs
+  
+  Formatting:
+    name: Clang Format
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path:
+          - 'src'
+          - 'examples'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run clang-format style check for C/C++/Protobuf programs.
+        uses: jidicula/clang-format-action@v4.11.0
+        with:
+          clang-format-version: '14'
+          check-path: ${{ matrix.path }}
+
+  Linting:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+

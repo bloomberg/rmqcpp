@@ -1,0 +1,68 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Build env
+build/
+*.cmake
+CMakeFiles
+*CMakeCache*
+vcpkgbuild/
+/vcpkg_installed/
+compile_commands.json
+/out/
+/.cache/
+CMakeUserPresets.json
+/cmake.bld/
+
+# Ignore Mac DS_Store files
+**/.DS_Store
+.lcldev/
+.vscode/*
+settings.json
+
+
+# Python files
+
+*.pyc
+__pycache__/
+.pytest_cache/
+.cache/
+.venv/
+
+# Test output
+.cache/*
+sample_log.txt
+tests/integration/logs
+
+# Doxygen generated files
+generateddocs/
