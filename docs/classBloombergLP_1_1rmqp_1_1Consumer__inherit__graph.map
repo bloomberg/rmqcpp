@@ -1,0 +1,5 @@
+<map id="BloombergLP::rmqp::Consumer" name="BloombergLP::rmqp::Consumer">
+<area shape="rect" id="node1" title="Provide a RabbitMQ Async Consumer API." alt="" coords="100,5,243,47"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqa_1_1ConsumerImpl.html" title=" " alt="" coords="5,95,148,136"/>
+<area shape="rect" id="node3" href="$classBloombergLP_1_1rmqtestmocks_1_1MockConsumer.html" title="Mocks rmqp::Consumer and/or rmqa::Consumer." alt="" coords="172,95,363,136"/>
+</map>

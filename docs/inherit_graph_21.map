@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classBloombergLP_1_1rmqp_1_1RabbitContext.html" title="Interface for spawning RabbitMQ connections." alt="" coords="5,39,148,80"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqa_1_1RabbitContextImpl.html" title=" " alt="" coords="220,5,363,47"/>
+<area shape="rect" id="node3" href="$classBloombergLP_1_1rmqtestmocks_1_1MockRabbitContext.html" title="Mocks rmqp::RabbitContext and/or rmqa::RabbitContext." alt="" coords="196,71,387,112"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="BloombergLP::rmqtestmocks::MockVHost" name="BloombergLP::rmqtestmocks::MockVHost">
+<area shape="rect" id="node1" title="Mocks an rmqa::VHost object." alt="" coords="5,95,196,136"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqp_1_1Connection.html" title="Provide a RabbitMQ Connection API." alt="" coords="29,5,172,47"/>
+</map>

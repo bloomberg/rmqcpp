@@ -1,0 +1,12 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classBloombergLP_1_1rmqp_1_1Connection.html" title="Provide a RabbitMQ Connection API." alt="" coords="5,104,148,145"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqa_1_1ConnectionImpl.html" title=" " alt="" coords="220,201,363,243"/>
+<area shape="rect" id="node3" href="$classBloombergLP_1_1rmqa_1_1VHostImpl.html" title="A RabbitMQ VHost Implementation of the rmqp::Connection interface." alt="" coords="220,5,363,47"/>
+<area shape="rect" id="node4" href="$classBloombergLP_1_1rmqtestmocks_1_1MockConnection.html" title="Mocks rmqp::Connection and/or rmqa::Connection." alt="" coords="196,71,387,112"/>
+<area shape="rect" id="node5" href="$classBloombergLP_1_1rmqtestmocks_1_1MockVHost.html" title="Mocks an rmqa::VHost object." alt="" coords="196,136,387,177"/>
+<area shape="rect" id="node6" href="$classBloombergLP_1_1rmqp_1_1Consumer.html" title="Provide a RabbitMQ Async Consumer API." alt="" coords="5,364,148,405"/>
+<area shape="rect" id="node7" href="$classBloombergLP_1_1rmqa_1_1ConsumerImpl.html" title=" " alt="" coords="220,332,363,373"/>
+<area shape="rect" id="node8" href="$classBloombergLP_1_1rmqtestmocks_1_1MockConsumer.html" title="Mocks rmqp::Consumer and/or rmqa::Consumer." alt="" coords="196,397,387,439"/>
+<area shape="rect" id="node9" title=" " alt="" coords="12,267,141,308"/>
+<area shape="rect" id="node10" href="$classBloombergLP_1_1rmqt_1_1Future_1_1Impl.html" title=" " alt="" coords="222,267,361,308"/>
+</map>

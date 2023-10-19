@@ -1,0 +1,7 @@
+<map id="BloombergLP::rmqp::Connection" name="BloombergLP::rmqp::Connection">
+<area shape="rect" id="node1" title="Provide a RabbitMQ Connection API." alt="" coords="5,104,148,145"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqa_1_1ConnectionImpl.html" title=" " alt="" coords="220,5,363,47"/>
+<area shape="rect" id="node3" href="$classBloombergLP_1_1rmqa_1_1VHostImpl.html" title="A RabbitMQ VHost Implementation of the rmqp::Connection interface." alt="" coords="220,71,363,112"/>
+<area shape="rect" id="node4" href="$classBloombergLP_1_1rmqtestmocks_1_1MockConnection.html" title="Mocks rmqp::Connection and/or rmqa::Connection." alt="" coords="196,136,387,177"/>
+<area shape="rect" id="node5" href="$classBloombergLP_1_1rmqtestmocks_1_1MockVHost.html" title="Mocks an rmqa::VHost object." alt="" coords="196,201,387,243"/>
+</map>

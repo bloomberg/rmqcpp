@@ -1,0 +1,4 @@
+<map id="BloombergLP::rmqt::QueueUnbinding" name="BloombergLP::rmqt::QueueUnbinding">
+<area shape="rect" id="node1" title="An AMQP queue unbinding." alt="" coords="5,95,144,136"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqt_1_1Binding.html" title="An AMQP binding." alt="" coords="5,5,144,47"/>
+</map>

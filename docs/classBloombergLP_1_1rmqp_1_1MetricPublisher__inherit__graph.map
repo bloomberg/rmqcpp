@@ -1,0 +1,4 @@
+<map id="BloombergLP::rmqp::MetricPublisher" name="BloombergLP::rmqp::MetricPublisher">
+<area shape="rect" id="node1" title="An interface for publishing rmqcpp metrics." alt="" coords="7,5,150,47"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqa_1_1NoOpMetricPublisher.html" title="Default metric publisher." alt="" coords="5,95,152,136"/>
+</map>

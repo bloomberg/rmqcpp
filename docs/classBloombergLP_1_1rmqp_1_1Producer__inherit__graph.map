@@ -1,0 +1,6 @@
+<map id="BloombergLP::rmqp::Producer" name="BloombergLP::rmqp::Producer">
+<area shape="rect" id="node1" title="RabbitMQ Producer API for publishing to a specific Exchange." alt="" coords="100,5,243,47"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqa_1_1ProducerImpl.html" title=" " alt="" coords="5,95,148,136"/>
+<area shape="rect" id="node4" href="$classBloombergLP_1_1rmqtestmocks_1_1MockProducer.html" title="Mocks rmqp::Producer and/or rmqa::Producer." alt="" coords="172,95,363,136"/>
+<area shape="rect" id="node3" href="$classBloombergLP_1_1rmqa_1_1TracingProducerImpl.html" title=" " alt="" coords="5,184,148,225"/>
+</map>

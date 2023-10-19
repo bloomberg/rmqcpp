@@ -1,0 +1,6 @@
+<map id="BloombergLP::rmqt::Binding" name="BloombergLP::rmqt::Binding">
+<area shape="rect" id="node1" title="An AMQP binding." alt="" coords="5,71,144,112"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqt_1_1ExchangeBinding.html" title="An AMQP exchange binding." alt="" coords="192,5,331,47"/>
+<area shape="rect" id="node3" href="$classBloombergLP_1_1rmqt_1_1QueueBinding.html" title="An AMQP queue binding." alt="" coords="192,71,331,112"/>
+<area shape="rect" id="node4" href="$classBloombergLP_1_1rmqt_1_1QueueUnbinding.html" title="An AMQP queue unbinding." alt="" coords="192,136,331,177"/>
+</map>

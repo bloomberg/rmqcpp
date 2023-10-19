@@ -1,0 +1,5 @@
+<map id="BloombergLP::rmqp::RabbitContext" name="BloombergLP::rmqp::RabbitContext">
+<area shape="rect" id="node1" title="Interface for spawning RabbitMQ connections." alt="" coords="100,5,243,47"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqa_1_1RabbitContextImpl.html" title=" " alt="" coords="5,95,148,136"/>
+<area shape="rect" id="node3" href="$classBloombergLP_1_1rmqtestmocks_1_1MockRabbitContext.html" title="Mocks rmqp::RabbitContext and/or rmqa::RabbitContext." alt="" coords="172,95,363,136"/>
+</map>

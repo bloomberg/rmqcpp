@@ -1,0 +1,4 @@
+<map id="BloombergLP::rmqa::VHostImpl" name="BloombergLP::rmqa::VHostImpl">
+<area shape="rect" id="node1" title="A RabbitMQ VHost Implementation of the rmqp::Connection interface." alt="" coords="5,95,148,136"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqp_1_1Connection.html" title="Provide a RabbitMQ Connection API." alt="" coords="5,5,148,47"/>
+</map>

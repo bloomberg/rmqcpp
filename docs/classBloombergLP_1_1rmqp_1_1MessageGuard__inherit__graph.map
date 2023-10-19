@@ -1,0 +1,6 @@
+<map id="BloombergLP::rmqp::MessageGuard" name="BloombergLP::rmqp::MessageGuard">
+<area shape="rect" id="node1" title="An interface for MessageGuard class." alt="" coords="105,5,248,47"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqa_1_1MessageGuard.html" title="Controls acknowledgements passed to broker for consumed messages." alt="" coords="11,95,153,136"/>
+<area shape="rect" id="node4" href="$classBloombergLP_1_1rmqtestmocks_1_1MockMessageGuard.html" title=" " alt="" coords="177,95,368,136"/>
+<area shape="rect" id="node3" href="$classBloombergLP_1_1rmqa_1_1TracingMessageGuard.html" title="Controls acknowledgements passed to broker for consumed messages." alt="" coords="5,184,159,225"/>
+</map>

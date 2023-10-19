@@ -1,0 +1,4 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classBloombergLP_1_1rmqt_1_1Credentials.html" title="Base class for AMQP credentials." alt="" coords="5,5,144,47"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqt_1_1PlainCredentials.html" title="Plain credentials for RabbitMQ broker authorization." alt="" coords="192,5,331,47"/>
+</map>

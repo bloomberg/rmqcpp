@@ -1,0 +1,5 @@
+<map id="BloombergLP::rmqt::SecureEndpoint" name="BloombergLP::rmqt::SecureEndpoint">
+<area shape="rect" id="node1" title="Base class for AMQP endpoint." alt="" coords="5,184,144,225"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqt_1_1SimpleEndpoint.html" title="AMQP simple endpoint." alt="" coords="5,95,144,136"/>
+<area shape="rect" id="node3" href="$classBloombergLP_1_1rmqt_1_1Endpoint.html" title="Base class for AMQP endpoint." alt="" coords="5,5,144,47"/>
+</map>
