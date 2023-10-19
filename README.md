@@ -204,7 +204,7 @@ Doxygen generated API documentation can be found [here](https://bloomberg.github
 
 `vcpkg` is the primary prerequisite for building `rmqcpp`. [Follow the instructions here](https://vcpkg.io/en/getting-started.html) and set the environment variable `VCPKG_ROOT` to the install location, i.e. `export VCPKG_ROOT=/build/vcpkg`.
 
-There are build configuration options which can be specified using the environment variable `CMAKE_PRESET` (choose from configurations in `CMakePresets.json`). eg. `export CMAKE_PRESET=macos-arm64-vcpkg`.
+There are build configuration options which can be specified using the environment variable `CMAKE_PRESET` (choose from configurations in `CMakePresets.json`) - eg. `export CMAKE_PRESET=macos-arm64-vcpkg`.
 
 ### Build Steps
 Once the prerequisites are configured:
@@ -221,7 +221,7 @@ We also provide Dockerfiles for building and running this in an isolated
 environment. If you don't wish to get vcpkg set up on your build machine, this can be an alternative
 quick way to get started.
 
-1. `make docker-setup` - Build required base images and setup vcpkg, pre-requisite for running commands below 
+1. `make docker-setup` - Build required base images and setup vcpkg, prerequisite for running commands below 
 2. `make docker-build` - Build rmqcpp in the container using vcpkg 
 3. `make docker-unit`  - Build rmqcpp and run unit tests in the container
 4. `make docker-shell` - Get an interactive shell within the build environment container
