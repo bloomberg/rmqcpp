@@ -202,7 +202,7 @@ Doxygen generated API documentation can be found [here](https://bloomberg.github
 
  > These prerequisites can be skipped when using the docker build environment. Otherwise it is important to set these up.
 
-`vcpkg` is the primary prerequisite for building `rmqcpp`. [Follow the instructions here](https://vcpkg.io/en/getting-started.html) and set the environment varaible `VCPKG_ROOT` to the install location, i.e. `export VCPKG_ROOT=/build/vcpkg`.
+`vcpkg` is the primary prerequisite for building `rmqcpp`. [Follow the instructions here](https://vcpkg.io/en/getting-started.html) and set the environment variable `VCPKG_ROOT` to the install location, i.e. `export VCPKG_ROOT=/build/vcpkg`.
 
 There are build configuration options which can be specified using the environment variable `CMAKE_PRESET` (choose from configurations in `CMakePresets.json`). eg. `export CMAKE_PRESET=macos-arm64-vcpkg`.
 
