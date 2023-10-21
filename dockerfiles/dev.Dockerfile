@@ -1,6 +1,6 @@
 FROM debian:stable
 
-RUN apt-get update && apt-get -y install \
+RUN apt-get update && apt-get install -y \
     build-essential \
     clang-format \
     cmake \
