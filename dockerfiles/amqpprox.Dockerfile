@@ -1,6 +1,7 @@
 FROM conanio/clang9 AS amqpprox_build_environment
 WORKDIR /source
 
+# Need superuser 'sudo' permissions to perform installation
 RUN sudo apt-get update && sudo apt-get install -y \
     git \
     llvm \
