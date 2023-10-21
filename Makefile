@@ -15,7 +15,7 @@ init:
 	cmake --fresh --preset ${CMAKE_PRESET} -B ${BUILD_FOLDER} -S ${SRC_FOLDER} -G Ninja
 
 build: 
-	cmake --parallel 4 --build ${BUILD_FOLDER}
+	cmake --build ${BUILD_FOLDER} -- -j 4
 
 unit: 
 	ctest --test-dir $(BUILD_FOLDER) --output-on-failure
@@ -26,7 +26,7 @@ full-test: full unit integration
 
 integration: 
 	RMQ_USER=guest RMQ_PWD=guest RMQ_USER_MGMT="guest" RMQ_PWD_MGMT="guest" RMQ_PORT="5672" RMQ_TLS_PORT="5671" \
-	cmake --parallel 4 --build $(BUILD_FOLDER) -t test_integration 
+	cmake --build $(BUILD_FOLDER) -t test_integration -- -j 4
 
 clean:
 	rm -rf $(BUILD_FOLDER)
