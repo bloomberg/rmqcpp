@@ -53,7 +53,7 @@ createRetryHandler(const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
                    const rmqt::Tunables& tunables)
 {
     if (tunables.find("IIR") != tunables.end()) {
-        bsl::cout << "WARNING: Infinite Immediate Retry Set" << bsl::endl;
+        BALL_LOG_WARN << "Infinite Immediate Retry Set";
         return bsl::make_shared<rmqio::RetryHandler>(
             timerFactory,
             errorCb,
