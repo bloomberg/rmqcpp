@@ -1,12 +1,12 @@
 FROM conanio/clang9 AS amqpprox_build_environment
 WORKDIR /source
 
-RUN apt-get update && apt-get install -y \
+RUN sudo apt-get update && sudo apt-get install -y \
     git \
     llvm \
     make \
     socat \
-    && rm -rf /var/lib/apt/lists/*
+    && sudo rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/bloomberg/amqpprox.git /source
 
