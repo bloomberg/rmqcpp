@@ -50,9 +50,15 @@ void printPartialReturns(
             MessageWithRoute partialReturn;
             store.lookup(it->first, &partialReturn);
 
+            if (it != returnNoAck.begin()) {
+                // Comma at the beginning to separate from the previous
+                // return. The very first return doesn't have previous,
+                // so comma is skipped in this case.
+                st << ",";
+            }
             st << "[" << it->first << ":'"
                << partialReturn.message().messageId() << "':" << it->second
-               << "],";
+               << "]";
         }
 
         BALL_LOG_WARN << "Messages with the following "
