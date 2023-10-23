@@ -134,11 +134,9 @@ bool operator==(const BasicConsume& lhs, const BasicConsume& rhs)
     return (&lhs == &rhs) ||
            (lhs.queue() == rhs.queue() &&
             lhs.consumerTag() == rhs.consumerTag() &&
-            lhs.noLocal() == rhs.noLocal() &&
-            lhs.noAck() == rhs.noAck() &&
+            lhs.noLocal() == rhs.noLocal() && lhs.noAck() == rhs.noAck() &&
             lhs.exclusive() == rhs.exclusive() &&
-            lhs.noWait() == rhs.noWait() &&
-            lhs.arguments() == rhs.arguments());
+            lhs.noWait() == rhs.noWait() && lhs.arguments() == rhs.arguments());
 }
 
 } // namespace rmqamqpt
