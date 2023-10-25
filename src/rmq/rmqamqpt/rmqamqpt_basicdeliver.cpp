@@ -65,6 +65,7 @@ bool BasicDeliver::decode(BasicDeliver* deliver,
         BALL_LOG_ERROR
             << "Not enough data to decode BasicDeliver frame: available "
             << buffer.available();
+        return false;
     }
     deliver->d_deliveryTag = buffer.copy<bdlb::BigEndianUint64>();
     deliver->d_redelivered = buffer.copy<bool>();
