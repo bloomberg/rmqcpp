@@ -23,13 +23,17 @@ endif()
 
 target_compile_definitions(rmq PRIVATE USES_LIBRMQ_EXPERIMENTAL_FEATURES)
 
-target_include_directories(rmq PUBLIC rmqt rmqp rmqa)
+target_include_directories(rmq PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rmqt>)
+target_include_directories(rmq PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rmqp>)
+target_include_directories(rmq PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/rmqa>)
+
 
 file(GLOB RMQ_PUBLIC_HEADERS rmqa/*h rmqp/*h rmqt/*h)
 set_target_properties(rmq PROPERTIES PUBLIC_HEADER "${RMQ_PUBLIC_HEADERS}")
 
 install(
     TARGETS rmq
+    EXPORT rmqcppTargets
     ARCHIVE
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
         COMPONENT librmq-dev
@@ -37,6 +41,17 @@ install(
         DESTINATION include
         COMPONENT librmq-dev
 )
+
+install(EXPORT rmqcppTargets 
+        FILE rmqcppTargets.cmake 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/rmqcpp 
+        NAMESPACE rmqcpp::)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in 
+                              "${CMAKE_CURRENT_BINARY_DIR}/rmqcppConfig.cmake"
+                              INSTALL_DESTINATION ${CMAKE_INSTALL_PREFIX}/share/rmqcpp) 
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rmqcppConfig.cmake" DESTINATION ${CMAKE_INSTALL_PREFIX}/share/rmqcpp)
 
 # Emit some metadata required internally
 set(RMQ_PC_DEP_NAMES bsl bdl bal openssl)
