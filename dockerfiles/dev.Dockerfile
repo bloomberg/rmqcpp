@@ -1,7 +1,6 @@
 FROM debian:stable
 
-
-RUN apt-get update && apt-get -y install \
+RUN apt-get update && apt-get install -y \
     build-essential \
     clang-format \
     cmake \
@@ -22,7 +21,8 @@ RUN apt-get update && apt-get -y install \
     tar \
     unzip \
     valgrind \
-    zip 
+    zip \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV VCPKG_FORCE_SYSTEM_BINARIES=1 
 

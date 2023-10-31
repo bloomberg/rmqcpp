@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+if(NOT TARGET rmqcpp)
+    foreach(dep bal;OpenSSL;ZLIB)
+        find_package(${dep})
+    endforeach()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/rmqcppTargets.cmake")
+
+check_required_components(rmqcpp)

@@ -121,8 +121,9 @@ void BasicConsume::encode(Writer& output, const BasicConsume& consume)
 bsl::ostream& operator<<(bsl::ostream& os, const BasicConsume& consume)
 {
     return os << "BasicConsume: [ queue: " << consume.queue()
-              << ", consumer-tag: " << consume.consumerTag() << ", no-local"
-              << consume.noLocal() << ", no-ack: " << consume.noAck()
+              << ", consumer-tag: " << consume.consumerTag()
+              << ", no-local: " << consume.noLocal()
+              << ", no-ack: " << consume.noAck()
               << ", exclusive: " << consume.exclusive()
               << ", no-wait: " << consume.noWait()
               << ", arguments: " << consume.arguments() << "]";
@@ -135,7 +136,7 @@ bool operator==(const BasicConsume& lhs, const BasicConsume& rhs)
             lhs.consumerTag() == rhs.consumerTag() &&
             lhs.noLocal() == rhs.noLocal() && lhs.noAck() == rhs.noAck() &&
             lhs.exclusive() == rhs.exclusive() &&
-            lhs.arguments() == rhs.arguments());
+            lhs.noWait() == rhs.noWait() && lhs.arguments() == rhs.arguments());
 }
 
 } // namespace rmqamqpt

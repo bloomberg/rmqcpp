@@ -1,7 +1,14 @@
 FROM conanio/clang9 AS amqpprox_build_environment
 WORKDIR /source
 
-RUN sudo apt-get update && sudo apt-get install -y llvm git make socat 
+# Need superuser 'sudo' permissions to perform installation
+RUN sudo apt-get update && sudo apt-get install -y \
+    git \
+    llvm \
+    make \
+    socat \
+    && sudo rm -rf /var/lib/apt/lists/*
+
 RUN git clone https://github.com/bloomberg/amqpprox.git /source
 
 ENV BUILDDIR=/source/build
