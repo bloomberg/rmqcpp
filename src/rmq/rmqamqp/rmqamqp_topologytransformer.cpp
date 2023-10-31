@@ -112,6 +112,7 @@ Message TopologyTransformer::getNextMessage()
 bool TopologyTransformer::processReplyMessage(const Message& message)
 {
     if (!message.is<rmqamqpt::Method>()) {
+        d_error = true;
         return false;
     }
 
