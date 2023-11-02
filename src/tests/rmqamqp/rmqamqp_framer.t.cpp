@@ -61,8 +61,6 @@ class ContentDecodeTests : public ::testing::Test {
         using namespace boost::iostreams;
 
         const size_t encodedPayloadSize = contentHeader.encodedSize();
-        const size_t encodedFrameSize =
-            rmqamqpt::Frame::calculateFrameSize(encodedPayloadSize);
 
         bsl::shared_ptr<bsl::vector<uint8_t> > data =
             bsl::make_shared<bsl::vector<uint8_t> >();
@@ -76,7 +74,8 @@ class ContentDecodeTests : public ::testing::Test {
         rmqamqpt::ContentHeader::encode(writer, contentHeader);
         rmqamqpt::Types::write(writer, rmqamqpt::Constants::FRAME_END);
 
-        assert(data->size() == encodedFrameSize);
+        assert(data->size() ==
+               rmqamqpt::Frame::calculateFrameSize(encodedPayloadSize));
 
         return rmqamqpt::Frame(frameType, channel, data);
     }
