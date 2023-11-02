@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.25) 
-
 project(rmq LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -7,6 +6,8 @@ enable_testing()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+add_subdirectory(src)
+add_subdirectory(examples)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     add_compile_options(-Wall -Wextra -Wpedantic)
@@ -33,7 +34,3 @@ else()
     # In general the sunpro/xl warnings are not worth the bother
     set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 endif()
-
-
-add_subdirectory(src)
-add_subdirectory(examples)
