@@ -368,15 +368,17 @@ class FieldValueEncoder {
     }
     void operator()(float val) const
     {
-        const bsl::uint32_t temp =
-            *reinterpret_cast<const bsl::uint32_t*>(&val);
+        bsl::uint32_t temp;
+        bsl::memcpy(&temp, &val, sizeof(val));
+
         Types::write(output, FieldValue::FLOAT);
         Types::write(output, bdlb::BigEndianUint32::make(temp));
     }
     void operator()(double val) const
     {
-        const bsl::uint64_t temp =
-            *reinterpret_cast<const bsl::uint64_t*>(&val);
+        bsl::uint64_t temp;
+        bsl::memcpy(&temp, &val, sizeof(val));
+
         Types::write(output, FieldValue::DOUBLE);
         Types::write(output, bdlb::BigEndianUint64::make(temp));
     }
