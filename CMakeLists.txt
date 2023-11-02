@@ -9,7 +9,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-variable)
+    add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "SunPro")
