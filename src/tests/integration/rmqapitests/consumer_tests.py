@@ -69,7 +69,7 @@ class TestConsumeNMessage(RmqTest):
             assert response["routed"] is True
 
         if not self.wait_for_message_consumption(
-            qname, 10, success_on_queue_delete=True
+            qname, count=10, timeout=120, success_on_queue_delete=True
         ):
             pytest.fail("Consumer is not able to consume the message.")
 
