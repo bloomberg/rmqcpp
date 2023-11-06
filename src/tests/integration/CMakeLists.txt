@@ -20,7 +20,7 @@ if (NOT DEFINED ENV{PYTEST})
         ${CMAKE_CURRENT_BINARY_DIR}/.venv/bin/python -m pytest
     )
 else()
-    set(PYTEST ENV{PYTEST})
+    set(PYTEST $ENV{PYTEST})
 endif()
 set( PYTEST_ARGS "-q" "-rap" "--maxfail=2" "--tb=short" "--durations=1" "--log-level=error" "-s")
 
