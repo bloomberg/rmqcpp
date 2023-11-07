@@ -248,7 +248,9 @@ preferred package management system, please open an [issue](../../issues/new/cho
 }
 ```
 
-2. In your `CMakeLists.txt` add `find_package(rmqcpp REQUIRED)` - which will install `rmqcpp` with all its dependencies.  
+2. In your `CMakeLists.txt` add `find_package(rmqcpp REQUIRED)` - which will install `rmqcpp` with all its dependencies.
+
+3. Use the namespace `rmqcpp::` to link to the library, for example - `target_link_libraries(testproj PUBLIC rmqcpp::rmq)`
 
 ### With git submodule
 
