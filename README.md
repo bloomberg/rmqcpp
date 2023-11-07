@@ -234,7 +234,25 @@ preferred package management system, please open an [issue](../../issues/new/cho
 
 ## Using `rmqcpp` in your Application
 
-The best way to depend on `rmqcpp` is to setup your project with a git submodule to this repository:
+### With vcpkg
+
+1. Add `rmqcpp` in your `vcpkg.json` file to specify dependency:
+```
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "testproj",
+    "version": "1.0.0",
+    "dependencies": [
+      "rmqcpp"
+    ]
+}
+```
+
+2. In your `CMakeLists.txt` add `find_package(rmqcpp REQUIRED)` - which will install `rmqcpp` with all its dependencies.  
+
+### With git submodule
+
+Setup your project with a git submodule to this repository:
 
 ```
 $ tree
@@ -265,24 +283,6 @@ add_executable(myapplication main.cpp)
 
 target_link_libraries(myapplication rmq bal)
 ```
-
-Sample `vcpkg.json`:
-```
-{
-    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-    "name": "testproj",
-    "version": "1.0.0",
-    "dependencies": [
-      "boost-asio",
-      "boost-iostreams",
-      "openssl",
-      "gtest",
-      "bde"
-    ]
-}
-```
-
-> We plan to push `rmqcpp` into vcpkg, after which the git submodule won't be necessary and your vcpkg.json file can be shorter.
 
 Example cmake command to configure this application build:
 
