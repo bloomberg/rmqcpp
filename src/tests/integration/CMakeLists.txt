@@ -11,17 +11,17 @@ target_link_libraries(rmqintegration PUBLIC
 
 target_include_directories(rmqintegration PUBLIC .)
 
-if (NOT DEFINED ENV{PYTEST})
+if (NOT DEFINED ENV{PYTHON_BINARY})
     find_package (Python3 COMPONENTS Interpreter REQUIRED)
     execute_process (COMMAND "${Python3_EXECUTABLE}" -m venv ${CMAKE_CURRENT_BINARY_DIR}/.venv)
     set (ENV{VIRTUAL_ENV} ${CMAKE_CURRENT_BINARY_DIR}/.venv)
     execute_process(COMMAND ${CMAKE_CURRENT_BINARY_DIR}/.venv/bin/pip install  -r ${CMAKE_CURRENT_LIST_DIR}/requirements.txt)
-    set(PYTEST
-        ${CMAKE_CURRENT_BINARY_DIR}/.venv/bin/python -m pytest
-    )
+    set(PYTHON_BINARY ${CMAKE_CURRENT_BINARY_DIR}/.venv/bin/python)
 else()
-    set(PYTEST python3.8 -m pytest)
+    set(PYTHON_BINARY $ENV{PYTHON_BINARY})
 endif()
+
+set(PYTEST ${PYTHON_BINARY} -mpytest)
 set( PYTEST_ARGS "-q" "-rap" "--maxfail=2" "--tb=short" "--durations=1" "--log-level=error" "-s")
 
 
