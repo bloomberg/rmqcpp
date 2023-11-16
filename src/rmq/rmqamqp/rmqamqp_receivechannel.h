@@ -31,6 +31,7 @@
 
 // Includes
 #include <rmqamqp_channel.h>
+#include <rmqamqp_consumer.h>
 #include <rmqamqp_message.h>
 #include <rmqamqp_messagestore.h>
 #include <rmqamqp_multipleackhandler.h>
@@ -121,7 +122,6 @@ class ReceiveChannel : public Channel {
     void onOpen() BSLS_KEYWORD_OVERRIDE;
 
   private:
-    class Consumer;
     void processBasicMethod(const rmqamqpt::BasicMethod& basic)
         BSLS_KEYWORD_OVERRIDE;
     void processMessage(const rmqt::Message& message) BSLS_KEYWORD_OVERRIDE;
