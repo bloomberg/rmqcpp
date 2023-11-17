@@ -73,6 +73,7 @@ ReceiveChannel::ReceiveChannel(
       bdlf::BindUtil::bind(&ReceiveChannel::sendNack, this, _1, _2, _3))
 , d_cancelFuturePair()
 , d_drainFuture()
+, d_resumeFuturePair()
 {
 }
 
@@ -167,6 +168,11 @@ ReceiveChannel::~ReceiveChannel()
             "messages that should have been acked weren't"));
         d_drainFuture.reset();
     }
+    if (d_resumeFuturePair) {
+        d_resumeFuturePair->first(
+            rmqt::Result<>("ReceiveChannel Shut Down Before Fully Resumed"));
+        d_resumeFuturePair.reset();
+    }
 }
 
 void ReceiveChannel::consumeAckBatchFromQueue()
@@ -259,6 +265,25 @@ rmqt::Future<> ReceiveChannel::drain()
     return future.second;
 }
 
+rmqt::Future<> ReceiveChannel::resume()
+{
+    if (d_resumeFuturePair) {
+        BALL_LOG_WARN << "Resume called with a resume already in "
+                         "flight";
+        return d_resumeFuturePair->second;
+    }
+    if (d_consumer) {
+        d_resumeFuturePair =
+            bslma::ManagedPtrUtil::makeManaged<rmqt::Future<>::Pair>(
+                rmqt::Future<>::make());
+        d_consumer->resume();
+        restartConsumers();
+        return d_resumeFuturePair->second;
+    }
+    return rmqt::Future<>(
+        rmqt::Result<>("Resume called, with no active consumer"));
+}
+
 MessageStore<rmqt::Message>::MessageList
 ReceiveChannel::getMessagesOlderThan(const bdlt::Datetime& cutoffTime) const
 {
@@ -303,6 +328,10 @@ void ReceiveChannel::processBasicMethod(const rmqamqpt::BasicMethod& basic)
                     writeMessage(Message(rmqamqpt::Method(method.value())),
                                  AWAITING_REPLY);
                 }
+                if (d_resumeFuturePair) {
+                    d_resumeFuturePair->first(rmqt::Result<>());
+                    d_resumeFuturePair.reset();
+                }
             }
             else {
                 invalidConsumerError(
@@ -311,6 +340,10 @@ void ReceiveChannel::processBasicMethod(const rmqamqpt::BasicMethod& basic)
             if (state() != READY) {
                 if (consumerIsActive()) {
                     ready();
+                    if (d_resumeFuturePair) {
+                        d_resumeFuturePair->first(rmqt::Result<>());
+                        d_resumeFuturePair.reset();
+                    }
                 }
             }
         } break;

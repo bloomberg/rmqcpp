@@ -146,6 +146,12 @@ rmqt::Future<> ConsumerImpl::drain()
         bdlf::BindUtil::bind(&rmqamqp::ReceiveChannel::drain, d_channel)));
 }
 
+rmqt::Future<> ConsumerImpl::resume()
+{
+    return rmqt::FutureUtil::flatten<void>(d_eventLoop.postF<rmqt::Future<> >(
+        bdlf::BindUtil::bind(&rmqamqp::ReceiveChannel::resume, d_channel)));
+}
+
 rmqt::Result<> ConsumerImpl::cancelAndDrain(const bsls::TimeInterval& timeout)
 {
     bsl::function<rmqt::Future<>()> fn =

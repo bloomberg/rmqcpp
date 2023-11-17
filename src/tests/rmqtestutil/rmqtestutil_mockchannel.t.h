@@ -127,6 +127,7 @@ class MockReceiveChannel : public rmqamqp::ReceiveChannel {
                                 const bsl::string&));
     MOCK_METHOD0(consumeAckBatchFromQueue, void());
     MOCK_METHOD0(cancel, rmqt::Future<>());
+    MOCK_METHOD0(resume, rmqt::Future<>());
     MOCK_METHOD0(drain, rmqt::Future<>());
     MOCK_CONST_METHOD1(getMessagesOlderThan,
                        rmqamqp::MessageStore<rmqt::Message>::MessageList(

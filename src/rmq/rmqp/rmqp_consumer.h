@@ -56,6 +56,8 @@ class Consumer {
     /// send any more messages.
     virtual rmqt::Future<> cancel() = 0;
 
+    virtual rmqt::Future<> resume() = 0;
+
     /// \brief Can only be called (successfully) once the Consumer has been
     /// cancelled, returns a future which resolves when all outstanding acks
     /// have been sent to the server, \note: this relies on the consumer code

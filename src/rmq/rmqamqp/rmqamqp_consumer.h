@@ -47,7 +47,14 @@ class Consumer {
     typedef bsl::function<void(const rmqt::Message&, const rmqt::Envelope&)>
         MessageCallback;
 
-    enum State { NOT_CONSUMING, STARTING, CONSUMING, CANCELLING, CANCELLED };
+    enum State {
+        NOT_CONSUMING,
+        STARTING,
+        CONSUMING,
+        CANCELLING_BUT_RESUMING,
+        CANCELLING,
+        CANCELLED
+    };
     bsl::optional<rmqamqpt::BasicMethod>
     consume(const rmqt::ConsumerConfig& consumerConfig);
     bsl::optional<rmqamqpt::BasicMethod> consumeOk();
@@ -72,6 +79,7 @@ class Consumer {
     bool isCancelling() const;
 
     void reset();
+    void resume();
 
     const bsl::string& consumerTag() const;
     const bsl::string& queueName() const;
