@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef INCLUDED_RMQA_CONNECTIONMONITOR
-#define INCLUDED_RMQA_CONNECTIONMONITOR
+#ifndef INCLUDED_RMQA_CONNECTIONSTRING
+#define INCLUDED_RMQA_CONNECTIONSTRING
 
 #include <rmqt_vhostinfo.h>
 
