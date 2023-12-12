@@ -40,6 +40,10 @@
 namespace BloombergLP {
 namespace rmqperftest {
 namespace {
+
+typedef bsl::pair<bsl::shared_ptr<rmqa::Producer>, bsl::string>
+    ProducerRoutingKeyPair;
+
 class ConsumerCallback {
   public:
     ConsumerCallback(const ConsumerArgs& args,
@@ -94,6 +98,18 @@ bsl::string_view queueNameOrRoutingKey(bsl::string_view routingKey,
     else {
         return routingKey;
     }
+}
+
+void finalizeProducers(bsl::vector<ProducerRoutingKeyPair>& producers)
+{
+    bsl::cout << producers.size() << " producers finished, exiting producers"
+              << bsl::endl;
+    for (bsl::vector<ProducerRoutingKeyPair>::iterator it = producers.begin();
+         it != producers.end();
+         ++it) {
+        it->first->waitForConfirms();
+    }
+    producers.clear();
 }
 
 } // namespace
@@ -179,8 +195,6 @@ int Runner::run(const PerfTestArgs& args)
     }
 
     // Create producer
-    typedef bsl::pair<bsl::shared_ptr<rmqa::Producer>, bsl::string>
-        ProducerRoutingKeyPair;
     bsl::vector<ProducerRoutingKeyPair> producers;
     {
         bsl::vector<rmqt::QueueHandle>::const_iterator queues;
@@ -311,12 +325,10 @@ int Runner::run(const PerfTestArgs& args)
 
             producerMessagesSent += 1;
 
-            if ((int)producerMessagesSent ==
+            if ((int)producerMessagesSent >=
                 args.producer.producerMessageCount) {
-                bsl::cout << producers.size()
-                          << " producers finished, exiting producers"
-                          << bsl::endl;
-                producers.clear();
+
+                finalizeProducers(producers);
             }
         }
     }
