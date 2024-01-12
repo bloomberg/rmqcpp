@@ -1,0 +1,1 @@
+New state CANCELLING_BUT_RESUMING was added to support resume after cancellation
