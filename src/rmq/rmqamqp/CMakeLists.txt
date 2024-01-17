@@ -5,7 +5,6 @@ add_library(rmqamqp OBJECT
     rmqamqp_channelmap.cpp
     rmqamqp_connection.cpp
     rmqamqp_connectionmonitor.cpp
-    rmqamqp_consumer.cpp
     rmqamqp_contentmaker.cpp
     rmqamqp_framer.cpp
     rmqamqp_heartbeatmanager.cpp
