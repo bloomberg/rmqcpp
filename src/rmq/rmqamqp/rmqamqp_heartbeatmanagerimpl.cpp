@@ -94,8 +94,8 @@ void HeartbeatManagerImpl::handleTick(rmqio::Timer::InterruptReason reason)
         d_ticksUntilHeartBeat = d_totalTicksUntilHeartBeat;
     }
     if (d_ticksUntilDisconnect == 0) {
-        BALL_LOG_ERROR << "Received no heartbeats for " << d_timeoutSeconds
-                       << "seconds. Triggering connection termination";
+        BALL_LOG_WARN << "Received no heartbeats for " << d_timeoutSeconds
+                      << "seconds. Triggering connection termination";
         d_killConnection();
         d_ticksUntilDisconnect = d_totalTicksUntilDisconnect;
     }
