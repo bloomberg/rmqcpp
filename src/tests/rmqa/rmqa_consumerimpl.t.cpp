@@ -300,6 +300,30 @@ TEST_P(ConsumerImplTests, Drain)
     EXPECT_THAT(result, Eq(true));
 }
 
+TEST_P(ConsumerImplTests, Resume)
+{
+    rmqt::Future<>::Pair fakeyResumeFuture = rmqt::Future<>::make();
+
+    bsl::shared_ptr<rmqa::ConsumerImpl> consumer =
+        d_factory->create(d_channel,
+                          bsl::ref(d_queue),
+                          d_callback,
+                          d_consumerTag,
+                          bsl::ref(d_threadPool),
+                          bsl::ref(d_eventLoop),
+                          d_ackQueue);
+
+    EXPECT_CALL(*d_channel, resume())
+        .WillOnce(Return(fakeyResumeFuture.second));
+    rmqt::Future<> future = consumer->resume();
+    bool result           = future.tryResult();
+    EXPECT_THAT(result, Eq(false));
+    fakeyResumeFuture.first(rmqt::Result<>());
+    result = future.tryResult();
+
+    EXPECT_THAT(result, Eq(true));
+}
+
 TEST_P(ConsumerImplTests, UpdateCallback)
 {
     bsl::shared_ptr<rmqtestutil::MockUpdateReceiveChannel>

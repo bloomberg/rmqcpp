@@ -52,7 +52,14 @@ class Consumer {
     /// \brief Tells the broker to stop delivering messages to this consumer.
     /// it's still possible to nack/ack messages from callbacks after cancel is
     /// called
-    void cancel();
+    rmqt::Result<>
+    cancel(const bsls::TimeInterval& timeout = bsls::TimeInterval(0));
+
+    /// \brief Tells the broker to restart consuming after cancelling the
+    /// consumer. Cancelled consumer will not be destroyed, but restarted with
+    /// the same consumer tag.
+    rmqt::Result<>
+    resume(const bsls::TimeInterval& timeout = bsls::TimeInterval(0));
 
     /// \brief Tells the broker to stop delivering messages to this consumer.
     /// \param timeout   How long to wait for all delivered (unacked) messages

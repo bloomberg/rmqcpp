@@ -25,18 +25,42 @@
 
 namespace BloombergLP {
 namespace rmqa {
+namespace {
+BALL_LOG_SET_NAMESPACE_CATEGORY("RMQA.CONSUMER")
+
+} // namespace
 
 Consumer::Consumer(bslma::ManagedPtr<rmqp::Consumer>& impl)
 : d_impl(impl)
 {
 }
 
-void Consumer::cancel()
+rmqt::Result<> Consumer::cancel(const bsls::TimeInterval& timeout)
 {
-    rmqt::Result<> cancelResult =
-        d_impl->cancel().waitResult(bsls::TimeInterval(0, 1000));
-    BALL_LOG_SET_CATEGORY("Consumer::cancel");
-    BALL_LOG_INFO << "Cancel Called, result after 1ms: " << cancelResult;
+    rmqt::Future<> cancelFuture = d_impl->cancel();
+    rmqt::Result<> cancelResult = timeout == bsls::TimeInterval(0)
+                                      ? cancelFuture.blockResult()
+                                      : cancelFuture.waitResult(timeout);
+
+    if (timeout > bsls::TimeInterval(0)) {
+        BALL_LOG_INFO << "Cancel Called, result after " << timeout << ": "
+                      << cancelResult;
+    }
+    return cancelResult;
+}
+
+rmqt::Result<> Consumer::resume(const bsls::TimeInterval& timeout)
+{
+    rmqt::Future<> resumeFuture = d_impl->resume();
+    rmqt::Result<> resumeResult = timeout == bsls::TimeInterval(0)
+                                      ? resumeFuture.blockResult()
+                                      : resumeFuture.waitResult(timeout);
+
+    if (timeout > bsls::TimeInterval(0)) {
+        BALL_LOG_INFO << "Resume Called, result after " << timeout << ": "
+                      << resumeResult;
+    }
+    return resumeResult;
 }
 
 rmqt::Result<> Consumer::cancelAndDrain(

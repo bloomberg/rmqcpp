@@ -418,6 +418,195 @@ TEST_F(ConsumerTests, CancelFail)
     EXPECT_THAT(result.returnCode(), Ne(rmqt::TIMEOUT));
 }
 
+TEST_F(ConsumerTests, ResumeCancelled)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    (*receiveChannel).open();
+    queueDeclareReply(*receiveChannel);
+    qosOkReply(*receiveChannel);
+
+    (*receiveChannel).consume(d_queue, d_onNewMessage, "consumer1");
+    consumerReply(*receiveChannel, "consumer1");
+    EXPECT_CALL(d_callback,
+                onAsyncWrite(EXPECT_CONSUME_IS(rmqamqpt::BasicConsume(
+                                 "test-queue", "consumer1")),
+                             _))
+        .WillRepeatedly(InvokeArgument<1>());
+
+    const uint64_t deliveryTag = 88;
+    receiveMessage(*receiveChannel, deliveryTag, "consumer1");
+
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
+    size_t lifetimeId = receiveChannel->lifetimeId();
+
+    cancelExpectations();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+
+    EXPECT_THAT(lifetimeId, Eq(receiveChannel->lifetimeId()));
+    EXPECT_THAT(!!wereCancelled.tryResult(), Eq(false));
+
+    cancelOkReply(*receiveChannel, "consumer1");
+
+    EXPECT_THAT(!!wereCancelled.tryResult(), Eq(true));
+    EXPECT_THAT(lifetimeId, Eq(receiveChannel->lifetimeId()));
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
+
+    rmqt::Envelope env(
+        deliveryTag, lifetimeId, "consumer1", "exchange", "routing-key", false);
+    ackExpectations(deliveryTag);
+    ackMessage(*receiveChannel, env);
+
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
+
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+
+    EXPECT_THAT(!!wereResumed.tryResult(), Eq(false));
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+
+    receiveChannel->processReceived(rmqamqp::Message(rmqamqpt::Method(
+        rmqamqpt::BasicMethod(rmqamqpt::BasicConsumeOk("consumer1")))));
+
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+    EXPECT_THAT(!!wereResumed.tryResult(), Eq(true));
+}
+
+TEST_F(ConsumerTests, ResumeCancelling)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    (*receiveChannel).open();
+    queueDeclareReply(*receiveChannel);
+    qosOkReply(*receiveChannel);
+
+    (*receiveChannel).consume(d_queue, d_onNewMessage, "consumer1");
+    consumerReply(*receiveChannel, "consumer1");
+    EXPECT_CALL(d_callback,
+                onAsyncWrite(EXPECT_CONSUME_IS(rmqamqpt::BasicConsume(
+                                 "test-queue", "consumer1")),
+                             _))
+        .WillRepeatedly(InvokeArgument<1>());
+
+    const uint64_t deliveryTag = 88;
+    receiveMessage(*receiveChannel, deliveryTag, "consumer1");
+
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
+    size_t lifetimeId = receiveChannel->lifetimeId();
+
+    cancelExpectations();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+
+    EXPECT_THAT(lifetimeId, Eq(receiveChannel->lifetimeId()));
+    EXPECT_THAT(!!wereCancelled.tryResult(), Eq(false));
+
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+
+    EXPECT_THAT(!!wereResumed.tryResult(), Eq(false));
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+
+    receiveChannel->processReceived(rmqamqp::Message(rmqamqpt::Method(
+        rmqamqpt::BasicMethod(rmqamqpt::BasicConsumeOk("consumer1")))));
+
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+    EXPECT_THAT(!!wereResumed.tryResult(), Eq(true));
+}
+
+TEST_F(ConsumerTests, ResumeActive)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    (*receiveChannel).open();
+    queueDeclareReply(*receiveChannel);
+    qosOkReply(*receiveChannel);
+
+    (*receiveChannel).consume(d_queue, d_onNewMessage, "consumer1");
+    consumerReply(*receiveChannel, "consumer1");
+    EXPECT_CALL(d_callback,
+                onAsyncWrite(EXPECT_CONSUME_IS(rmqamqpt::BasicConsume(
+                                 "test-queue", "consumer1")),
+                             _))
+        .WillRepeatedly(InvokeArgument<1>());
+
+    const uint64_t deliveryTag = 88;
+    receiveMessage(*receiveChannel, deliveryTag, "consumer1");
+
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
+
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+
+    EXPECT_THAT(!!wereResumed.tryResult(), Eq(false));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+}
+
+TEST_F(ConsumerTests, ResumeCalled2x)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    (*receiveChannel).open();
+    queueDeclareReply(*receiveChannel);
+    qosOkReply(*receiveChannel);
+
+    (*receiveChannel).consume(d_queue, d_onNewMessage, "consumer1");
+    consumerReply(*receiveChannel, "consumer1");
+    EXPECT_CALL(d_callback,
+                onAsyncWrite(EXPECT_CONSUME_IS(rmqamqpt::BasicConsume(
+                                 "test-queue", "consumer1")),
+                             _))
+        .WillRepeatedly(InvokeArgument<1>());
+
+    const uint64_t deliveryTag = 88;
+    receiveMessage(*receiveChannel, deliveryTag, "consumer1");
+
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
+    size_t lifetimeId = receiveChannel->lifetimeId();
+
+    cancelExpectations();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+
+    EXPECT_THAT(lifetimeId, Eq(receiveChannel->lifetimeId()));
+    EXPECT_THAT(!!wereCancelled.tryResult(), Eq(false));
+
+    cancelOkReply(*receiveChannel, "consumer1");
+
+    EXPECT_THAT(!!wereCancelled.tryResult(), Eq(true));
+    EXPECT_THAT(lifetimeId, Eq(receiveChannel->lifetimeId()));
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
+
+    rmqt::Envelope env(
+        deliveryTag, lifetimeId, "consumer1", "exchange", "routing-key", false);
+    ackExpectations(deliveryTag);
+    ackMessage(*receiveChannel, env);
+
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
+
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    EXPECT_THAT(!!wereResumed.tryResult(), Eq(false));
+
+    rmqt::Future<> wereResumed2x = receiveChannel->resume();
+    EXPECT_THAT(!!wereResumed2x.tryResult(), Eq(false));
+
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+
+    receiveChannel->processReceived(rmqamqp::Message(rmqamqpt::Method(
+        rmqamqpt::BasicMethod(rmqamqpt::BasicConsumeOk("consumer1")))));
+
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+    EXPECT_THAT(!!wereResumed.tryResult(), Eq(true));
+    EXPECT_THAT(!!wereResumed2x.tryResult(), Eq(true));
+}
+
+TEST_F(ConsumerTests, ResumeFail)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+
+    rmqt::Future<> wereCancelled = receiveChannel->resume();
+    rmqt::Result<> result        = wereCancelled.tryResult();
+    EXPECT_FALSE(result);
+    EXPECT_THAT(result.returnCode(), Ne(rmqt::TIMEOUT));
+}
+
 TEST_F(ConsumerTests, DrainRegular)
 {
     bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);

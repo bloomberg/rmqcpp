@@ -103,6 +103,8 @@ class ReceiveChannel : public Channel {
     /// immediately with an error result
     virtual rmqt::Future<> drain();
 
+    virtual rmqt::Future<> resume();
+
     size_t inFlight() const BSLS_KEYWORD_OVERRIDE
     {
         return d_messageStore.count();
@@ -154,6 +156,7 @@ class ReceiveChannel : public Channel {
     MultipleAckHandler d_multipleAckHandler;
     bslma::ManagedPtr<rmqt::Future<>::Pair> d_cancelFuturePair;
     bslma::ManagedPtr<rmqt::Future<>::Maker> d_drainFuture;
+    bslma::ManagedPtr<rmqt::Future<>::Pair> d_resumeFuturePair;
 };
 
 } // namespace rmqamqp

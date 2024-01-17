@@ -88,6 +88,8 @@ class ConsumerImpl : public rmqp::Consumer,
     /// messages
     rmqt::Future<> drain() BSLS_KEYWORD_OVERRIDE;
 
+    rmqt::Future<> resume() BSLS_KEYWORD_OVERRIDE;
+
     rmqt::Result<>
     cancelAndDrain(const bsls::TimeInterval& timeout) BSLS_KEYWORD_OVERRIDE;
 

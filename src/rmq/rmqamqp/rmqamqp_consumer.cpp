@@ -73,6 +73,31 @@ void Consumer::reset()
     }
 }
 
+void Consumer::resume()
+{
+    switch (d_state) {
+        case CANCELLED:
+            // If resume is called after receiving cancelOK, on a CANCELLED
+            // state, the state is changed to NOT_CONSUMING so that we can
+            // consume later
+            d_state = NOT_CONSUMING;
+            break;
+        case CANCELLING:
+            // If resume is called before receiving cancelOK, on a CANCELLING
+            // state, the state is changed to CANCELLING_BUT_RESUMING so that we
+            // can consume later
+            d_state = CANCELLING_BUT_RESUMING;
+            break;
+        case STARTING:
+        case CONSUMING:
+        case NOT_CONSUMING:
+        case CANCELLING_BUT_RESUMING:
+            BALL_LOG_INFO << "Resume called in a state: " << d_state
+                          << ", ignoring";
+            break;
+    }
+}
+
 bsl::optional<rmqamqpt::BasicMethod> Consumer::consumeOk()
 {
     bsl::optional<rmqamqpt::BasicMethod> method;
@@ -123,7 +148,8 @@ Consumer::consume(const rmqt::ConsumerConfig& consumerConfig)
 {
     bsl::optional<rmqamqpt::BasicMethod> method;
 
-    if (d_state == NOT_CONSUMING || d_state == CANCELLED) {
+    if (d_state == NOT_CONSUMING || d_state == CANCELLED ||
+        d_state == CANCELLING_BUT_RESUMING) {
         BALL_LOG_INFO << "Starting consumer: " << d_tag
                       << " for queue: " << d_queue->name();
         d_state = STARTING;
@@ -154,7 +180,11 @@ bsl::optional<rmqamqpt::BasicMethod> Consumer::cancel()
 {
     bsl::optional<rmqamqpt::BasicMethod> method;
 
-    if (d_state == CONSUMING) {
+    if (d_state == NOT_CONSUMING) {
+        d_state = CANCELLED;
+        return method;
+    }
+    else if (d_state == CONSUMING) {
         BALL_LOG_INFO << "Cancelling consumer: " << d_tag
                       << " for queue: " << d_queue->name();
         method = rmqamqpt::BasicCancel(d_tag);
@@ -171,11 +201,17 @@ bsl::optional<rmqamqpt::BasicMethod> Consumer::cancel()
 
 void Consumer::cancelOk()
 {
-    if (d_state != CANCELLING) {
+    if (d_state != CANCELLING && d_state != CANCELLING_BUT_RESUMING) {
         BALL_LOG_ERROR << "Received CancelOk without sending Cancel consumer: ["
                        << d_tag << "]";
     }
-    d_state = CANCELLED;
+
+    if (d_state == CANCELLING_BUT_RESUMING) {
+        d_state = NOT_CONSUMING;
+    }
+    else {
+        d_state = CANCELLED;
+    }
 }
 
 Consumer::~Consumer() {}

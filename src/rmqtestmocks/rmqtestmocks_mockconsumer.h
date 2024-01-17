@@ -49,6 +49,7 @@ class MockConsumer : public rmqp::Consumer {
     static rmqt::Future<rmqp::Consumer> errorAsync();
 
     MOCK_METHOD0(cancel, rmqt::Future<>());
+    MOCK_METHOD0(resume, rmqt::Future<>());
     MOCK_METHOD0(drain, rmqt::Future<>());
     MOCK_METHOD1(cancelAndDrain, rmqt::Result<>(const bsls::TimeInterval&));
     MOCK_METHOD2(updateTopology,
