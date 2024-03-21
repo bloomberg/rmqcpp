@@ -16,13 +16,14 @@
 // rmqamqp_receivechannel.cpp   -*-C++-*-
 #include <rmqamqp_receivechannel.h>
 
-#include <rmqamqp_consumer.h>
-
 #include <rmqamqpt_basicconsume.h>
 #include <rmqamqpt_basicdeliver.h>
 #include <rmqamqpt_basicqos.h>
 #include <rmqt_consumerack.h>
 #include <rmqt_consumerackbatch.h>
+#include <rmqt_envelope.h>
+#include <rmqt_fieldvalue.h>
+#include <rmqt_properties.h>
 
 #include <ball_log.h>
 #include <bdlf_bind.h>
@@ -44,6 +45,194 @@ using bdlf::PlaceHolders::_1;
 using bdlf::PlaceHolders::_2;
 using bdlf::PlaceHolders::_3;
 } // namespace
+
+class ReceiveChannel::Consumer {
+  public:
+    enum State { NOT_CONSUMING, STARTING, CONSUMING, CANCELLING, CANCELLED };
+    bsl::optional<rmqamqpt::BasicMethod>
+    consume(const rmqt::ConsumerConfig& consumerConfig);
+    bsl::optional<rmqamqpt::BasicMethod> consumeOk();
+    void process(const rmqt::Message& message,
+                 const rmqamqpt::BasicDeliver& deliver,
+                 size_t lifetimeId);
+
+    /// Signal the server to stop delivering
+    bsl::optional<rmqamqpt::BasicMethod> cancel();
+
+    /// Server acknowledged cancel
+    void cancelOk();
+
+    ~Consumer();
+
+    Consumer(const bsl::shared_ptr<rmqt::Queue>& queue,
+             const MessageCallback& onNewMessage,
+             const bsl::string& tag);
+
+    bool isStarted() const;
+    bool isActive() const;
+    bool shouldRestart() const;
+
+    void reset();
+
+    const bsl::string& consumerTag() const;
+    const bsl::string& queueName() const;
+
+  private:
+    State d_state;
+    bsl::string d_tag;
+    bsl::shared_ptr<rmqt::Queue> d_queue;
+    MessageCallback d_onNewMessage;
+};
+
+ReceiveChannel::Consumer::Consumer(const bsl::shared_ptr<rmqt::Queue>& queue,
+                                   const MessageCallback& onNewMessage,
+                                   const bsl::string& consumerTag)
+: d_state(NOT_CONSUMING)
+, d_tag(consumerTag)
+, d_queue(queue)
+, d_onNewMessage(onNewMessage)
+{
+}
+
+void ReceiveChannel::Consumer::reset()
+{
+    if (shouldRestart()) {
+        d_state = NOT_CONSUMING;
+    }
+}
+
+bsl::optional<rmqamqpt::BasicMethod> ReceiveChannel::Consumer::consumeOk()
+{
+    bsl::optional<rmqamqpt::BasicMethod> method;
+
+    if (d_state == STARTING) {
+        d_state = CONSUMING;
+    }
+    else if (d_state == CANCELLING) {
+        // Consumer has been cancelled since sending Basic.Consume
+        BALL_LOG_INFO
+            << "Received ConsumeOk for a cancelled consumer, cancelling";
+        method = rmqamqpt::BasicCancel(d_tag);
+    }
+    else {
+        BALL_LOG_ERROR << "Unexpected ConsumeOK, consumer-tag:  " << d_tag
+                       << ", state: " << d_state << ", ignoring";
+    }
+
+    return method;
+}
+
+const bsl::string& ReceiveChannel::Consumer::consumerTag() const
+{
+    return d_tag;
+}
+
+const bsl::string& ReceiveChannel::Consumer::queueName() const
+{
+    return d_queue->name();
+}
+
+bool ReceiveChannel::Consumer::isStarted() const
+{
+    return d_state != NOT_CONSUMING;
+}
+bool ReceiveChannel::Consumer::isActive() const { return d_state == CONSUMING; }
+bool ReceiveChannel::Consumer::shouldRestart() const
+{
+    return d_state < CANCELLING;
+}
+
+void ReceiveChannel::Consumer::process(const rmqt::Message& msg,
+                                       const rmqamqpt::BasicDeliver& deliver,
+                                       size_t lifetimeId)
+{
+    d_onNewMessage(msg,
+                   rmqt::Envelope(deliver.deliveryTag(),
+                                  lifetimeId,
+                                  deliver.consumerTag(),
+                                  deliver.exchange(),
+                                  deliver.routingKey(),
+                                  deliver.redelivered()));
+}
+
+namespace {
+
+rmqt::FieldTable
+getBasicConsumeArguments(const rmqt::ConsumerConfig& consumerConfig)
+{
+    rmqt::FieldTable arguments;
+
+    bsl::optional<int64_t> consumerPriority = consumerConfig.consumerPriority();
+    if (consumerPriority) {
+        arguments["x-priority"] = rmqt::FieldValue(consumerPriority.value());
+    }
+
+    return arguments;
+}
+
+} // namespace
+
+bsl::optional<rmqamqpt::BasicMethod>
+ReceiveChannel::Consumer::consume(const rmqt::ConsumerConfig& consumerConfig)
+{
+    bsl::optional<rmqamqpt::BasicMethod> method;
+
+    if (d_state == NOT_CONSUMING) {
+        BALL_LOG_INFO << "Starting consumer: " << d_tag
+                      << " for queue: " << d_queue->name();
+        d_state = STARTING;
+
+        const bool noLocal = false;
+        const bool noAck   = false;
+        const bool exclusive =
+            consumerConfig.exclusiveFlag() == rmqt::Exclusive::ON;
+        const bool noWait = false;
+
+        method =
+            rmqamqpt::BasicConsume(d_queue->name(),
+                                   d_tag,
+                                   getBasicConsumeArguments(consumerConfig),
+                                   noLocal,
+                                   noAck,
+                                   exclusive,
+                                   noWait);
+    }
+    else {
+        BALL_LOG_ERROR << "Start called in state " << d_state << ", ignoring";
+    }
+
+    return method;
+}
+
+bsl::optional<rmqamqpt::BasicMethod> ReceiveChannel::Consumer::cancel()
+{
+    bsl::optional<rmqamqpt::BasicMethod> method;
+
+    if (d_state == CONSUMING) {
+        BALL_LOG_INFO << "Cancelling consumer: " << d_tag
+                      << " for queue: " << d_queue->name();
+        method = rmqamqpt::BasicCancel(d_tag);
+    }
+    else {
+        BALL_LOG_WARN
+            << "Cancel called in a state other than CONSUMING. State: "
+            << d_state << ", queue: " << queueName();
+    }
+
+    d_state = CANCELLING;
+    return method;
+}
+
+void ReceiveChannel::Consumer::cancelOk()
+{
+    if (d_state != CANCELLING) {
+        BALL_LOG_ERROR << "Received CancelOk without sending Cancel consumer: ["
+                       << d_tag << "]";
+    }
+    d_state = CANCELLED;
+}
+
+ReceiveChannel::Consumer::~Consumer() {}
 
 // Constructor
 ReceiveChannel::ReceiveChannel(
@@ -108,10 +297,15 @@ void ReceiveChannel::onReset()
     // processFailures() clears d_messageStore;
 
     if (d_consumer) {
-        BALL_LOG_TRACE << "Resetting consumer";
-        d_consumer->reset();
+        if (d_consumer->shouldRestart()) {
+            BALL_LOG_TRACE << "Resetting consumer";
+            d_consumer->reset();
+        }
+        else {
+            BALL_LOG_WARN << "Clearing Consumer in Cancelling/Cancelled State";
+            d_consumer.reset();
+        }
     }
-
     if (d_cancelFuturePair) {
         d_cancelFuturePair->first(
             rmqt::Result<>("Cancel could not be processed by the server, "
@@ -230,6 +424,8 @@ rmqt::Future<> ReceiveChannel::cancel()
             }
             return d_cancelFuturePair->second;
         }
+        // Not consuming so we're already done
+        d_consumer.reset();
         return rmqt::Future<>(rmqt::Result<>());
     }
     return rmqt::Future<>(
@@ -239,7 +435,7 @@ rmqt::Future<> ReceiveChannel::cancel()
 rmqt::Future<> ReceiveChannel::drain()
 {
     rmqt::Future<>::Pair future = rmqt::Future<>::make();
-    if (d_consumer->isCancelling()) {
+    if (!d_consumer) {
         if (d_messageStore.count() > 0) {
             d_drainFuture =
                 bslma::ManagedPtrUtil::makeManaged<rmqt::Future<>::Maker>(
@@ -315,7 +511,7 @@ void ReceiveChannel::processBasicMethod(const rmqamqpt::BasicMethod& basic)
             }
         } break;
         case rmqamqpt::BasicQoSOk::METHOD_ID: {
-            if (d_consumer && !d_consumer->isCancelling()) {
+            if (d_consumer) {
                 // we've restarted, we already have a callback so can declare
                 // consumer
                 restartConsumers();
@@ -347,6 +543,7 @@ void ReceiveChannel::processBasicMethod(const rmqamqpt::BasicMethod& basic)
                 d_consumer->cancelOk();
                 BALL_LOG_INFO << "Stopping Consumer: "
                               << d_consumer->consumerTag();
+                d_consumer.reset();
                 if (d_cancelFuturePair) {
                     d_cancelFuturePair->first(rmqt::Result<>());
                     d_cancelFuturePair.reset();

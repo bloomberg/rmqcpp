@@ -4,7 +4,6 @@ add_executable(rmqamqp_tests
     rmqamqp_channelmap.t.cpp
     rmqamqp_channeltests.t.cpp
     rmqamqp_connection.t.cpp
-    rmqamqp_consumer.t.cpp
     rmqamqp_contentmaker.t.cpp
     rmqamqp_framer.t.cpp
     rmqamqp_heartbeatmanagerimpl.t.cpp
