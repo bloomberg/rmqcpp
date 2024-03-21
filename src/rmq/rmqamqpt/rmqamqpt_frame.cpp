@@ -66,18 +66,20 @@ Frame::ReturnCode Frame::decode(Frame* frame,
         return Frame::PARTIAL;
     }
 
+    // Decode payload length first to return early if Frame is not full.
+    bdlb::BigEndianUint32 payloadLength;
+    bsl::memcpy(&payloadLength, &buffer[3], sizeof(payloadLength));
+
+    if (bufferLen < (frameOverhead() + payloadLength)) {
+        return Frame::PARTIAL;
+    }
+
+    // Finally decode the skipped parts of the header.
     bsl::memcpy(&frame->d_type, &buffer[0], sizeof(frame->d_type));
 
     bdlb::BigEndianUint16 channel;
     bsl::memcpy(&channel, &buffer[1], sizeof(channel));
     frame->d_channel = channel;
-
-    bdlb::BigEndianUint32 payloadLength;
-    bsl::memcpy(&payloadLength, &buffer[3], sizeof(payloadLength));
-
-    if ((frameOverhead() + payloadLength) > bufferLen) {
-        return Frame::PARTIAL;
-    }
 
     bsl::size_t buffer_len = frameHeaderSize() + payloadLength;
     if (buffer[buffer_len] != Constants::FRAME_END) {
