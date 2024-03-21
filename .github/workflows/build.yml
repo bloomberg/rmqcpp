@@ -1,4 +1,4 @@
-name: Tests
+name: Checks
 
 on:
   push:
@@ -25,6 +25,8 @@ jobs:
 
   Documentation:
     name: Doxygenize
+    #Only run for push to main
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
