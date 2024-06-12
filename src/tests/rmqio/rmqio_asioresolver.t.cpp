@@ -89,8 +89,8 @@ TEST_F(ResolverTests, badresolve)
 
 TEST_F(ResolverTests, ShufflesResolverResults)
 {
-    bsl::string host = "host";
-    bsl::string port = "port";
+    std::string host = "host";
+    std::string port = "port";
     typedef boost::asio::ip::basic_resolver_entry<boost::asio::ip::tcp>
         entry_type;
 
@@ -131,8 +131,8 @@ TEST_F(ResolverTests, ShufflesResolverResults)
 
 TEST_F(ResolverTests, NoShuffleDoesNotReorderResolverResults)
 {
-    bsl::string host = "host";
-    bsl::string port = "port";
+    std::string host = "host";
+    std::string port = "port";
     typedef boost::asio::ip::basic_resolver_entry<boost::asio::ip::tcp>
         entry_type;
 
