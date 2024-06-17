@@ -60,6 +60,7 @@ class ConnectionImpl : public rmqp::Connection,
          rmqio::EventLoop& eventLoop,
          bdlmt::ThreadPool& threadpool,
          const rmqt::ErrorCallback& errorCb,
+         const rmqt::SuccessCallback& successCb,
          const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
          const rmqt::Tunables& tunables,
          const bsl::shared_ptr<rmqa::ConsumerImpl::Factory>& consumerFactory,
@@ -97,6 +98,7 @@ class ConnectionImpl : public rmqp::Connection,
         rmqio::EventLoop& loop,
         bdlmt::ThreadPool& threadPool,
         const rmqt::ErrorCallback& errorCb,
+        const rmqt::SuccessCallback& successCb,
         const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
         const rmqt::Tunables& tunables,
         const bsl::shared_ptr<rmqa::ConsumerImpl::Factory>& consumerFactory,
@@ -112,6 +114,7 @@ class ConnectionImpl : public rmqp::Connection,
     bdlmt::ThreadPool& d_threadPool;
     rmqio::EventLoop& d_eventLoop;
     rmqt::ErrorCallback d_onError;
+    rmqt::SuccessCallback d_onSuccess;
     bsl::shared_ptr<rmqt::Endpoint> d_endpoint;
     ///< Held for logging
     bsl::shared_ptr<rmqa::ConsumerImpl::Factory> d_consumerFactory;
