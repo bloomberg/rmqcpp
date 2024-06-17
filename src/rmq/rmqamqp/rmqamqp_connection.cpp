@@ -983,11 +983,13 @@ Connection::Factory::Factory(
     const bsl::shared_ptr<rmqio::Resolver>& resolver,
     const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
     const rmqt::ErrorCallback& errorCb,
+    const rmqt::SuccessCallback& successCb,
     const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
     const bsl::shared_ptr<ConnectionMonitor>& connectionMonitor,
     const rmqt::FieldTable& clientProperties,
     const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold)
 : d_errorCb(errorCb)
+, d_successCb(successCb)
 , d_clientProperties(clientProperties)
 , d_metricPublisher(metricPublisher)
 , d_resolver(resolver)
@@ -1026,11 +1028,13 @@ bsl::shared_ptr<rmqio::RetryHandler> Connection::Factory::newRetryHandler()
                      bsl::make_shared<rmqio::ConnectionRetryHandler>(
                          d_timerFactory,
                          d_errorCb,
+                         d_successCb,
                          bsl::make_shared<rmqio::BackoffLevelRetryStrategy>(),
                          *d_connectionErrorThreshold))
                : bsl::make_shared<rmqio::RetryHandler>(
                      d_timerFactory,
                      d_errorCb,
+                     d_successCb,
                      bsl::make_shared<rmqio::BackoffLevelRetryStrategy>());
 }
 

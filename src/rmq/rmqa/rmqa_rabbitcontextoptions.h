@@ -78,6 +78,10 @@ class RabbitContextOptions {
     RabbitContextOptions&
     setErrorCallback(const rmqt::ErrorCallback& errorCallback);
 
+    /// \param successCallback function will be called when channel or
+    /// connection is restored
+    RabbitContextOptions& setSuccessCallback(const rmqt::SuccessCallback& successCallback);
+
     /// \param name name of client property to set
     /// \param value value of client property
     /// NOTE: The following properties are set by default and can be
@@ -144,6 +148,8 @@ class RabbitContextOptions {
 
     const rmqt::ErrorCallback& errorCallback() const { return d_onError; }
 
+    const rmqt::SuccessCallback& successCallback() const { return d_onSuccess; }
+
     const rmqt::FieldTable& clientProperties() const
     {
         return d_clientProperties;
@@ -184,6 +190,7 @@ class RabbitContextOptions {
     static const int DEFAULT_MESSAGE_PROCESSING_TIMEOUT = 60;
     bdlmt::ThreadPool* d_threadpool;
     rmqt::ErrorCallback d_onError;
+    rmqt::SuccessCallback d_onSuccess;
     bsl::shared_ptr<rmqp::MetricPublisher> d_metricPublisher;
     rmqt::FieldTable d_clientProperties;
     bsls::TimeInterval d_messageProcessingTimeout;

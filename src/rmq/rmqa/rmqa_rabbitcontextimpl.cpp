@@ -68,6 +68,15 @@ void handleErrorCbOnEventLoop(bdlmt::ThreadPool* threadPool,
     }
 }
 
+void handleSuccessCbOnEventLoop(bdlmt::ThreadPool* threadPool,
+                                const rmqt::SuccessCallback& successCb)
+{
+    if (successCb) {
+        threadPool->enqueueJob(
+            bdlf::BindUtil::bind(successCb));
+    }
+}
+
 void startFirstConnection(
     const bsl::weak_ptr<rmqamqp::Connection>& weakConn,
     const rmqamqp::Connection::ConnectedCallback& callback)
@@ -88,6 +97,7 @@ void initiateConnection(
     rmqio::EventLoop& eventLoop,
     bdlmt::ThreadPool& threadPool,
     const rmqt::ErrorCallback& errorCb,
+    const rmqt::SuccessCallback& successCb,
     const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
     const rmqt::Tunables& tunables,
     const bsl::shared_ptr<rmqa::ConsumerImpl::Factory>& consumerFactory,
@@ -110,6 +120,7 @@ void initiateConnection(
                                                             eventLoop,
                                                             threadPool,
                                                             errorCb,
+                                                            successCb,
                                                             endpoint,
                                                             tunables,
                                                             consumerFactory,
@@ -151,6 +162,9 @@ RabbitContextImpl::RabbitContextImpl(
                                  options.errorCallback(),
                                  bdlf::PlaceHolders::_1,
                                  bdlf::PlaceHolders::_2))
+, d_onSuccess(bdlf::BindUtil::bind(&handleSuccessCbOnEventLoop,
+                                 bsl::ref(d_threadPool),
+                                 options.successCallback()))
 , d_connectionMonitor(
       bsl::make_shared<ConnectionMonitor>(options.messageProcessingTimeout()))
 , d_connectionFactory()
@@ -169,6 +183,7 @@ RabbitContextImpl::RabbitContextImpl(
                 options.shuffleConnectionEndpoints().value_or(false)),
             d_eventLoop->timerFactory(),
             d_onError,
+            d_onSuccess,
             metricPublisher,
             d_connectionMonitor,
             options.clientProperties(),
@@ -362,6 +377,7 @@ rmqt::Future<rmqp::Connection> RabbitContextImpl::createNewConnection(
                              bsl::ref(*d_eventLoop),
                              bsl::ref(*d_threadPool),
                              d_onError,
+                             d_onSuccess,
                              endpoint,
                              d_tunables,
                              consumerFactory,
