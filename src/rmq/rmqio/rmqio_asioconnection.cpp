@@ -20,7 +20,6 @@
 
 #include <boost/asio.hpp>
 #include <fcntl.h>
-#include <openssl/err.h>
 
 #include <ball_log.h>
 #include <bdlf_bind.h>
