@@ -85,6 +85,13 @@ RabbitContextOptions::setErrorCallback(const rmqt::ErrorCallback& errorCallback)
     return *this;
 }
 
+RabbitContextOptions&
+RabbitContextOptions::setSuccessCallback(const rmqt::SuccessCallback& successCallback)
+{
+    d_onSuccess = successCallback;
+    return *this;
+}
+
 RabbitContextOptions& RabbitContextOptions::setMetricPublisher(
     const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher)
 {
