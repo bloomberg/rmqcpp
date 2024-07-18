@@ -29,6 +29,7 @@ target_link_libraries(rmqio PUBLIC
     bal
     rmqamqpt
     rmqt
+    Boost::boost
 )
 
 if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "SunPro" )
