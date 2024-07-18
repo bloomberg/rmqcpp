@@ -4,7 +4,6 @@
     "version": "1.0.0",
     "dependencies": [
       "boost-asio",
-      "boost-iostreams",
       "openssl",
       "gtest",
       "bde"

@@ -17,8 +17,6 @@
 
 #include <rmqamqpt_types.h>
 
-#include <boost/iostreams/stream.hpp>
-
 #include <ball_log.h>
 #include <bdlb_bigendian.h>
 #include <bsl_cstdint.h>

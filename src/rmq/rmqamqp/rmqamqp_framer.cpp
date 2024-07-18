@@ -21,9 +21,6 @@
 #include <rmqamqpt_method.h>
 #include <rmqamqpt_types.h>
 
-#include <boost/iostreams/device/back_inserter.hpp>
-#include <boost/iostreams/stream.hpp>
-
 #include <ball_log.h>
 #include <bdlb_bigendian.h>
 
@@ -209,7 +206,6 @@ void Framer::makeMethodFrame(rmqamqpt::Frame* frame,
                              uint16_t channel,
                              const rmqamqpt::Method& method)
 {
-    using namespace boost::iostreams;
 
     const size_t encodedPayloadSize = method.encodedSize();
     const size_t encodedFrameSize =
@@ -233,7 +229,6 @@ rmqamqpt::Frame Framer::makeContentBodyFrame(const uint8_t* message,
                                              const size_t encodedPayloadSize,
                                              uint16_t channel)
 {
-    using namespace boost::iostreams;
 
     bsl::shared_ptr<bsl::vector<uint8_t> > data =
         bsl::make_shared<bsl::vector<uint8_t> >();
@@ -251,7 +246,6 @@ rmqamqpt::Frame Framer::makeContentBodyFrame(const uint8_t* message,
 rmqamqpt::Frame Framer::makeContentHeaderFrame(const rmqt::Message& message,
                                                uint16_t channel)
 {
-    using namespace boost::iostreams;
 
     const rmqamqpt::ContentHeader header(rmqamqpt::Constants::BASIC, message);
 
@@ -274,7 +268,6 @@ rmqamqpt::Frame Framer::makeContentHeaderFrame(const rmqt::Message& message,
 
 rmqamqpt::Frame Framer::makeHeartbeatFrame()
 {
-    using namespace boost::iostreams;
 
     const bsl::shared_ptr<bsl::vector<uint8_t> > data =
         bsl::make_shared<bsl::vector<uint8_t> >();
