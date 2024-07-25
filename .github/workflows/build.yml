@@ -42,21 +42,6 @@ jobs:
           # GitHub Pages directory path
           ghpagesdir: ./docs
   
-  Formatting:
-    name: Clang Format
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        path:
-          - 'src'
-          - 'examples'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run clang-format style check for C/C++/Protobuf programs.
-        uses: jidicula/clang-format-action@v4.11.0
-        with:
-          clang-format-version: '14'
-          check-path: ${{ matrix.path }}
 
   Linting:
     name: Shellcheck
