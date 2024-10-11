@@ -42,6 +42,7 @@ class ConnectionRetryHandler : public RetryHandler {
     ///                         there has been no success within
     ConnectionRetryHandler(const bsl::shared_ptr<TimerFactory>& timerFactory,
                            const rmqt::ErrorCallback& errorCb,
+                           const rmqt::SuccessCallback& successCb,
                            const bsl::shared_ptr<RetryStrategy>& retryStrategy,
                            const bsls::TimeInterval& errorThreshold);
 
