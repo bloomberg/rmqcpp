@@ -32,15 +32,15 @@ clean:
 	rm -rf $(BUILD_FOLDER)
 
 docker-setup:
-	cd $(SRC_FOLDER)/dockerfiles && docker-compose build --pull 
+	cd $(SRC_FOLDER)/dockerfiles && docker compose build --pull 
 
 docker-build:
-	cd $(SRC_FOLDER)/dockerfiles && docker-compose run dev make full
+	cd $(SRC_FOLDER)/dockerfiles && docker compose run dev make full
 
 docker-test:
-	cd $(SRC_FOLDER)/dockerfiles && docker-compose run dev make full-test
+	cd $(SRC_FOLDER)/dockerfiles && docker compose run dev make full-test
 
 docker-shell:
-	cd $(SRC_FOLDER)/dockerfiles && docker-compose run dev
+	cd $(SRC_FOLDER)/dockerfiles && docker compose run dev
 
 .PHONY: build init unit integration clean full full-test
