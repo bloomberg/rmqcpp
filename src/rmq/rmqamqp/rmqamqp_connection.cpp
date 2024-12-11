@@ -630,9 +630,10 @@ class Connection::ConnectionMethodProcessor {
         conn.sendConnectionCloseOk();
 
         if (closeMethod.classId() || closeMethod.methodId()) {
-            conn.d_retryHandler->errorCallback()("Connection error " +
-                                                     closeMethod.replyText(),
-                                                 closeMethod.replyCode());
+            conn.d_retryHandler->errorCallback()(
+                "Connection=" + conn.d_connectionName + " Connection error " +
+                    closeMethod.replyText(),
+                closeMethod.replyCode());
         }
     }
 
