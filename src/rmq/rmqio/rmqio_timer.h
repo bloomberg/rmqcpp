@@ -72,7 +72,7 @@ class Timer {
 
 class TimerFactory {
   public:
-    virtual ~TimerFactory() {};
+    virtual ~TimerFactory(){};
 
     /// Creates a timer and initializes its timeout. The timer should be
     /// started by calling start().
