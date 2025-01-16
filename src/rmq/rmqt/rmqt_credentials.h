@@ -25,7 +25,7 @@ namespace rmqt {
 
 class Credentials {
   public:
-    virtual ~Credentials(){};
+    virtual ~Credentials() {};
     virtual bsl::string formatCredentials()       = 0;
     virtual bsl::string authenticationMechanism() = 0;
 };
