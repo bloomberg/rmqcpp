@@ -29,7 +29,7 @@ class SecurityParameters;
 
 class Endpoint {
   public:
-    virtual ~Endpoint() {};
+    virtual ~Endpoint(){};
     virtual bsl::string formatAddress() const = 0;
     virtual bsl::string hostname() const      = 0;
     virtual bsl::string vhost() const         = 0;
