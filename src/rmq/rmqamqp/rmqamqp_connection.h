@@ -310,7 +310,6 @@ class Connection::Factory {
 
     Factory(const bsl::shared_ptr<rmqio::Resolver>& resolver,
             const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
-            const rmqt::ErrorCallback& errorCb,
             const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
             const bsl::shared_ptr<ConnectionMonitor>& connectionMonitor,
             const rmqt::FieldTable& clientProperties,
@@ -321,10 +320,12 @@ class Connection::Factory {
     virtual bsl::shared_ptr<Connection>
     create(const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
            const bsl::shared_ptr<rmqt::Credentials>& credentials,
+           const rmqt::ErrorCallback& errorCallback,
            const bsl::string& name = "");
 
   protected:
-    virtual bsl::shared_ptr<rmqio::RetryHandler> newRetryHandler();
+    virtual bsl::shared_ptr<rmqio::RetryHandler>
+    newRetryHandler(const rmqt::ErrorCallback& errorCallback);
     virtual bsl::shared_ptr<rmqamqp::HeartbeatManager> newHeartBeatManager();
     virtual bsl::shared_ptr<rmqamqp::ChannelFactory> newChannelFactory();
 
@@ -332,7 +333,6 @@ class Connection::Factory {
     Factory(const Factory&) BSLS_KEYWORD_DELETED;
     Factory& operator=(const Factory&) BSLS_KEYWORD_DELETED;
 
-    const rmqt::ErrorCallback d_errorCb;
     const rmqt::FieldTable d_clientProperties;
     const bsl::shared_ptr<rmqp::MetricPublisher> d_metricPublisher;
     const bsl::shared_ptr<rmqio::Resolver> d_resolver;
