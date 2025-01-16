@@ -36,7 +36,7 @@ namespace rmqamqp {
 
 class ChannelFactory {
   public:
-    virtual ~ChannelFactory() {};
+    virtual ~ChannelFactory(){};
 
     virtual bsl::shared_ptr<ReceiveChannel> createReceiveChannel(
         const rmqt::Topology& topology,
