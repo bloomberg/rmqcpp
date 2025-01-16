@@ -60,6 +60,19 @@ bsl::shared_ptr<rmqa::VHost> RabbitContext::createVHostConnection(
             .managedPtr()));
 }
 
+bsl::shared_ptr<rmqa::VHost> RabbitContext::createVHostConnection(
+    const bsl::string& userDefinedName,
+    const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
+    const bsl::shared_ptr<rmqt::Credentials>& credentials,
+    const rmqt::ErrorCallback& errorCallback)
+{
+    return bsl::shared_ptr<VHost>(
+        new VHost(d_impl
+                      ->createVHostConnection(
+                          userDefinedName, endpoint, credentials, errorCallback)
+                      .managedPtr()));
+}
+
 bsl::shared_ptr<rmqa::VHost>
 RabbitContext::createVHostConnection(const bsl::string& userDefinedName,
                                      const rmqt::VHostInfo& vhostInfo)
