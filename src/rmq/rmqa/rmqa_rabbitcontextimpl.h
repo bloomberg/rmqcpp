@@ -56,6 +56,12 @@ class RabbitContextImpl : public rmqp::RabbitContext {
 
     bsl::shared_ptr<rmqp::Connection> createVHostConnection(
         const bsl::string& userDefinedName,
+        const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
+        const bsl::shared_ptr<rmqt::Credentials>& credentials,
+        const rmqt::ErrorCallback& errorCallback) BSLS_KEYWORD_OVERRIDE;
+
+    bsl::shared_ptr<rmqp::Connection> createVHostConnection(
+        const bsl::string& userDefinedName,
         const rmqt::VHostInfo& endpoint) BSLS_KEYWORD_OVERRIDE;
 
     rmqt::Future<rmqp::Connection>
