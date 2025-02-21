@@ -18,7 +18,7 @@ Metric publisher is used to publish internal library metrics. Users can provide 
 
 Error callback is called when a connection or channel is closed by the RabbitMQ broker.
 
-Important -- `RabbitContext` object must outlive other library objects (`VHost`, `Producer`, `Consumer`).
+**Important** -- `RabbitContext` object **must outlive** other library objects (`VHost`, `Producer`, `Consumer`).
 
 ```cpp
 
@@ -51,6 +51,7 @@ bsl::shared_ptr<rmqa::VHost> vhost = context.createVHostConnection(
 
 Creating a `rmqa::VHost` instance **does not** immediately create a connection with the RabbitMQ broker. These connections are created lazily when calling `rmqa::VHost::createProducer` and `rmqa::VHost::createConsumer`.
 
+**Important** -- `VHost` object **must outlive** other library objects (`Producer`, `Consumer`).
 
 ## Topology
 
