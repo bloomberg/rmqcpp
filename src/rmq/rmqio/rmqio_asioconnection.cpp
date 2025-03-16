@@ -444,21 +444,16 @@ bool AsioConnection<SocketType>::doRead(bsl::size_t bytes_transferred)
     bsl::size_t bytes_decoded                       = 0;
     boost::asio::streambuf::const_buffers_type bufs = d_inbound->data();
     bsl::vector<rmqamqpt::Frame> readFrames;
-    for (boost::asio::streambuf::const_buffers_type::const_iterator i =
-             bufs.begin();
-         i != bufs.end();
-         ++i) {
-        boost::asio::const_buffer buf(*i);
-        Decoder::ReturnCode rcode =
-            d_frameDecoder->appendBytes(&readFrames, buf.data(), buf.size());
-        if (rcode != Decoder::OK) {
-            BALL_LOG_WARN << "Bad rcode from decoder: " << rcode;
-            // Fail but we still want to process frames we were able to decode
-            success = false;
-            break;
-        };
-        bytes_decoded += buf.size();
-    }
+
+    boost::asio::const_buffer buf(bufs);
+    Decoder::ReturnCode rcode =
+        d_frameDecoder->appendBytes(&readFrames, buf.data(), buf.size());
+    if (rcode != Decoder::OK) {
+        BALL_LOG_WARN << "Bad rcode from decoder: " << rcode;
+        // Fail but we still want to process frames we were able to decode
+        success = false;
+    };
+    bytes_decoded += buf.size();
 
     if (bytes_decoded != bytes_transferred) {
         BALL_LOG_WARN << "bytes_decoded (" << bytes_decoded

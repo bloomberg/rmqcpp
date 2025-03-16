@@ -108,8 +108,8 @@ void AsioEventLoop::onThreadStarted()
     d_condition.broadcast();
 }
 
-void AsioEventLoop::postImpl(const Item& item) { d_context.post(item); }
-void AsioEventLoop::dispatchImpl(const Item& item) { d_context.dispatch(item); }
+void AsioEventLoop::postImpl(const Item& item) { boost::asio::post(d_context, item); }
+void AsioEventLoop::dispatchImpl(const Item& item) { boost::asio::dispatch(d_context, item); }
 
 bsl::shared_ptr<rmqio::Resolver>
 AsioEventLoop::resolver(bool shuffleConnectionEndpoints)
