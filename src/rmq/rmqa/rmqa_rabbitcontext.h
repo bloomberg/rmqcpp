@@ -80,6 +80,12 @@ class RabbitContext {
         const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
         const bsl::shared_ptr<rmqt::Credentials>& credentials);
 
+    bsl::shared_ptr<VHost>
+    createVHostConnection(const bsl::string& userDefinedName,
+                          const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
+                          const bsl::shared_ptr<rmqt::Credentials>& credentials,
+                          const rmqt::ErrorCallback& errorCallback);
+
     /// \brief Connect to a RabbitMQ broker
     ///
     /// \param vhostInfo identifies the broker to connect to & authentication

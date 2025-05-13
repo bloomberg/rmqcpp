@@ -168,7 +168,6 @@ RabbitContextImpl::RabbitContextImpl(
             d_eventLoop->resolver(
                 options.shuffleConnectionEndpoints().value_or(false)),
             d_eventLoop->timerFactory(),
-            d_onError,
             metricPublisher,
             d_connectionMonitor,
             options.clientProperties(),
@@ -281,6 +280,29 @@ bsl::shared_ptr<rmqp::Connection> RabbitContextImpl::createVHostConnection(
                              bdlf::PlaceHolders::_1));
 }
 
+bsl::shared_ptr<rmqp::Connection> RabbitContextImpl::createVHostConnection(
+    const bsl::string& userDefinedName,
+    const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
+    const bsl::shared_ptr<rmqt::Credentials>& credentials,
+    const rmqt::ErrorCallback& errorCallback)
+{
+    // Override the error callback provided in RabbitContext
+    // by a per vhost error callback
+    d_onError = bdlf::BindUtil::bind(&handleErrorCbOnEventLoop,
+                                     bsl::ref(d_threadPool),
+                                     errorCallback,
+                                     bdlf::PlaceHolders::_1,
+                                     bdlf::PlaceHolders::_2);
+
+    return bsl::make_shared<rmqa::VHostImpl>(
+        bdlf::BindUtil::bind(&RabbitContextImpl::createNewConnection,
+                             this,
+                             userDefinedName,
+                             endpoint,
+                             credentials,
+                             bdlf::PlaceHolders::_1));
+}
+
 bsl::shared_ptr<rmqp::Connection>
 RabbitContextImpl::createVHostConnection(const bsl::string& userDefinedName,
                                          const rmqt::VHostInfo& vhostInfo)
@@ -333,7 +355,7 @@ rmqt::Future<rmqp::Connection> RabbitContextImpl::createNewConnection(
     }
 
     bsl::shared_ptr<rmqamqp::Connection> amqpConn =
-        d_connectionFactory->create(endpoint, credentials, name);
+        d_connectionFactory->create(endpoint, credentials, d_onError, name);
 
     // The cancel function is given `amqpConn` which is what keeps it alive
     // until the shared_ptr<rmqamqp::Connection> is retrieved in
