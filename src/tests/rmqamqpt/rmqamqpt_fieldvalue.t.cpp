@@ -238,10 +238,6 @@ const FieldValueTestCase k_FV_SIZE_TEST_CASES[] = {
     {rmqt::FieldValue(bsl::make_shared<rmqt::FieldArray>()), 5}};
 } // namespace
 
-// We need to stick to INSTANTIATE_TEST_CASE_P for a while longer
-// But we do want to build with -Werror in our CI
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
-
-INSTANTIATE_TEST_CASE_P(FieldValueTests,
-                        FieldValuePTests,
-                        testing::ValuesIn(k_FV_SIZE_TEST_CASES));
+INSTANTIATE_TEST_SUITE_P(FieldValueTests,
+                         FieldValuePTests,
+                         testing::ValuesIn(k_FV_SIZE_TEST_CASES));

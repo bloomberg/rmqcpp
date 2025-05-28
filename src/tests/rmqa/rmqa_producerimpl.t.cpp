@@ -815,32 +815,28 @@ TEST_P(TracingProducerImplTests, SendConfirmCallsTracing)
     d_threadPool.drain();
 }
 
-// We need to stick to INSTANTIATE_TEST_CASE_P for a while longer
-// But we do want to build with -Werror in our CI
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
+INSTANTIATE_TEST_SUITE_P(AllMembers,
+                         ProducerImplTests,
+                         Values(PRODUCER, TRACING_PRODUCER),
+                         ProducerImplTests::PrintParamName());
+INSTANTIATE_TEST_SUITE_P(AllMembers,
+                         ProducerImplConfirmTypeTests,
+                         Values(PRODUCER, TRACING_PRODUCER),
+                         ProducerImplTests::PrintParamName());
+INSTANTIATE_TEST_SUITE_P(AllMembers,
+                         ProducerImplCallbackLifetimeTests,
+                         Values(PRODUCER, TRACING_PRODUCER),
+                         ProducerImplTests::PrintParamName());
+INSTANTIATE_TEST_SUITE_P(AllMembers,
+                         ProducerImplMaxOutstandingTests,
+                         Values(PRODUCER, TRACING_PRODUCER),
+                         ProducerImplTests::PrintParamName());
+INSTANTIATE_TEST_SUITE_P(AllMembers,
+                         ProducerImplUpdateTopology,
+                         Values(PRODUCER, TRACING_PRODUCER),
+                         ProducerImplTests::PrintParamName());
 
-INSTANTIATE_TEST_CASE_P(AllMembers,
-                        ProducerImplTests,
-                        Values(PRODUCER, TRACING_PRODUCER),
-                        ProducerImplTests::PrintParamName());
-INSTANTIATE_TEST_CASE_P(AllMembers,
-                        ProducerImplConfirmTypeTests,
-                        Values(PRODUCER, TRACING_PRODUCER),
-                        ProducerImplTests::PrintParamName());
-INSTANTIATE_TEST_CASE_P(AllMembers,
-                        ProducerImplCallbackLifetimeTests,
-                        Values(PRODUCER, TRACING_PRODUCER),
-                        ProducerImplTests::PrintParamName());
-INSTANTIATE_TEST_CASE_P(AllMembers,
-                        ProducerImplMaxOutstandingTests,
-                        Values(PRODUCER, TRACING_PRODUCER),
-                        ProducerImplTests::PrintParamName());
-INSTANTIATE_TEST_CASE_P(AllMembers,
-                        ProducerImplUpdateTopology,
-                        Values(PRODUCER, TRACING_PRODUCER),
-                        ProducerImplTests::PrintParamName());
-
-INSTANTIATE_TEST_CASE_P(AllMembers,
-                        TracingProducerImplTests,
-                        Values(TRACING_PRODUCER),
-                        ProducerImplTests::PrintParamName());
+INSTANTIATE_TEST_SUITE_P(AllMembers,
+                         TracingProducerImplTests,
+                         Values(TRACING_PRODUCER),
+                         ProducerImplTests::PrintParamName());

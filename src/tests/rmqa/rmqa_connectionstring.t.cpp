@@ -98,10 +98,6 @@ const ConnectionStringTestCase k_CONN_STRING_TESTS[] = {
     {"amqp://rabbit1.:", false, "", "", "", "", "", ""},
 };
 
-// We need to stick to INSTANTIATE_TEST_CASE_P for a while longer
-// But we do want to build with -Werror in our CI
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
-
-INSTANTIATE_TEST_CASE_P(ConnectionStringTests,
-                        ConnectionStringPTests,
-                        testing::ValuesIn(k_CONN_STRING_TESTS));
+INSTANTIATE_TEST_SUITE_P(ConnectionStringTests,
+                         ConnectionStringPTests,
+                         testing::ValuesIn(k_CONN_STRING_TESTS));
