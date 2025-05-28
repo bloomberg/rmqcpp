@@ -23,6 +23,7 @@
 #include <rmqtestutil_mockchannel.t.h>
 #include <rmqtestutil_mockeventloop.t.h>
 #include <rmqtestutil_savethreadid.h>
+#include <rmqtestutil_testsuite.t.h>
 
 #include <rmqt_consumerackbatch.h>
 #include <rmqt_envelope.h>
@@ -449,11 +450,7 @@ TEST_P(ConsumerImplTests, UpdateCallbackFromTwoThreadsAtOnce)
     EXPECT_TRUE(future2.blockResult());
 }
 
-// We need to stick to INSTANTIATE_TEST_CASE_P for a while longer
-// But we do want to build with -Werror in our CI
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
-
-INSTANTIATE_TEST_CASE_P(AllMembers,
+RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         ConsumerImplTests,
                         Values(CONSUMER, TRACING_CONSUMER),
                         ConsumerImplTests::PrintParamName());
