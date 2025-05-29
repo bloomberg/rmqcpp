@@ -449,11 +449,7 @@ TEST_P(ConsumerImplTests, UpdateCallbackFromTwoThreadsAtOnce)
     EXPECT_TRUE(future2.blockResult());
 }
 
-// We need to stick to INSTANTIATE_TEST_CASE_P for a while longer
-// But we do want to build with -Werror in our CI
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
-
-INSTANTIATE_TEST_CASE_P(AllMembers,
-                        ConsumerImplTests,
-                        Values(CONSUMER, TRACING_CONSUMER),
-                        ConsumerImplTests::PrintParamName());
+INSTANTIATE_TEST_SUITE_P(AllMembers,
+                         ConsumerImplTests,
+                         Values(CONSUMER, TRACING_CONSUMER),
+                         ConsumerImplTests::PrintParamName());
