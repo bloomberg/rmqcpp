@@ -98,7 +98,7 @@ TEST_F(ResolverTests, ShufflesResolverResults)
     for (int i = 0; i < 5; i++) {
         bsl::string ip = bsl::to_string(i) + ".0.0.0";
         entry_type::endpoint_type endpoint(
-            boost::asio::ip::address::from_string(std::string(ip)), 1);
+            boost::asio::ip::make_address(std::string(ip)), 1);
         entries.push_back(entry_type(endpoint, host, port));
     }
     AsioResolver::results_type resolverResults =
@@ -140,7 +140,7 @@ TEST_F(ResolverTests, NoShuffleDoesNotReorderResolverResults)
     for (int i = 0; i < 5; i++) {
         bsl::string ip = bsl::to_string(i) + ".0.0.0";
         entry_type::endpoint_type endpoint(
-            boost::asio::ip::address::from_string(std::string(ip)), 1);
+            boost::asio::ip::make_address(std::string(ip)), 1);
         entries.push_back(entry_type(endpoint, host, port));
     }
     AsioResolver::results_type resolverResults =

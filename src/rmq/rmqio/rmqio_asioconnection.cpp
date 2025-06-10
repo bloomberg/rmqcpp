@@ -432,7 +432,6 @@ AsioConnection<SocketType>::prepareBuffer()
 template <typename SocketType>
 bool AsioConnection<SocketType>::doRead(bsl::size_t bytes_transferred)
 {
-
     bool success = true;
 
     // d_inbound is setup with a buffer size of maxFrameSize in ::prepareBuffer
@@ -443,20 +442,21 @@ bool AsioConnection<SocketType>::doRead(bsl::size_t bytes_transferred)
     bsl::size_t bytes_decoded                       = 0;
     boost::asio::streambuf::const_buffers_type bufs = d_inbound->data();
     bsl::vector<rmqamqpt::Frame> readFrames;
-    for (boost::asio::streambuf::const_buffers_type::const_iterator i =
-             bufs.begin();
-         i != bufs.end();
-         ++i) {
-        boost::asio::const_buffer buf(*i);
-        Decoder::ReturnCode rcode =
-            d_frameDecoder->appendBytes(&readFrames, buf.data(), buf.size());
+
+    for (const boost::asio::const_buffer* it =
+             boost::asio::buffer_sequence_begin(bufs);
+         it != boost::asio::buffer_sequence_end(bufs);
+         ++it) {
+        const boost::asio::const_buffer& buffer = *it;
+        Decoder::ReturnCode rcode               = d_frameDecoder->appendBytes(
+            &readFrames, buffer.data(), buffer.size());
         if (rcode != Decoder::OK) {
             BALL_LOG_WARN << "Bad rcode from decoder: " << rcode;
             // Fail but we still want to process frames we were able to decode
             success = false;
-            break;
-        };
-        bytes_decoded += buf.size();
+            break; // Exit the loop on error
+        }
+        bytes_decoded += buffer.size();
     }
 
     if (bytes_decoded != bytes_transferred) {
