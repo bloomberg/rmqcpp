@@ -149,7 +149,8 @@ class MockConnection : public rmqio::Connection {
 
             BSLS_ASSERT_OPT(rc == Frame::OK);
 
-            d_eventLoop.post(
+            boost::asio::post(
+                d_eventLoop,
                 bdlf::BindUtil::bind(d_connectionCallbacks.onRead, decoded));
         }
     }
@@ -158,7 +159,8 @@ class MockConnection : public rmqio::Connection {
     {
         BALL_LOG_TRACE << "MockConnection close";
 
-        d_eventLoop.post(bdlf::BindUtil::bind(cb, GRACEFUL_DISCONNECT));
+        boost::asio::post(d_eventLoop,
+                          bdlf::BindUtil::bind(cb, GRACEFUL_DISCONNECT));
     }
 
     void asyncWriteImpl(
@@ -177,7 +179,7 @@ class MockConnection : public rmqio::Connection {
             rmqamqpt::Method(
                 rmqamqpt::ConnectionMethod(rmqamqpt::ConnectionCloseOk())));
 
-        d_eventLoop.post(callback);
+        boost::asio::post(d_eventLoop, callback);
 
         if (!closeOk) {
             feedNextFrame();
@@ -303,7 +305,7 @@ ACTION_P3(ConnectMockConnection, mockConnectPtrPtr, replayFrame, eventLoop)
 
     ON_CALL(**mockConnectPtrPtr, isConnected()).WillByDefault(Return(true));
 
-    eventLoop.get().post(arg4);
+    boost::asio::post(eventLoop.get(), arg4);
 
     return *mockConnectPtrPtr;
 }

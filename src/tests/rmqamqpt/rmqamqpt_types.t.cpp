@@ -156,8 +156,6 @@ const uint8_t duplicateKeyFieldTable[] = {
     0x74, 0x61, 0x6d, 0x70, 0x5f, 0x69, 0x6e, 0x5f, 0x6d, 0x73, 0x6c, 0x00,
     0x00, 0x01, 0x7a, 0x8c, 0x5f, 0x30, 0x6c};
 
-typedef bsl::basic_stringstream<uint8_t> StringStream;
-typedef bsl::basic_string<uint8_t> StringStreamBufferType;
 typedef bsl::vector<uint8_t> BufferType;
 
 } // namespace
@@ -280,9 +278,7 @@ TEST(TypesEncoding, ShouldRoundTripShortStringCorrectly)
     // WHEN
     rmqamqpt::Types::encodeShortString(writer, shortString);
 
-    StringStreamBufferType data(storage.data(), storage.size());
-
-    rmqamqpt::Buffer buffer(data.begin(), data.size());
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
     bsl::string resultString;
     bool result = rmqamqpt::Types::decodeShortString(&resultString, &buffer);
 
@@ -337,8 +333,7 @@ TEST(TypesEncoding, ShouldRoundTripLongStringCorrectly)
     // WHEN
     rmqamqpt::Types::encodeLongString(writer, longString);
 
-    StringStreamBufferType data(storage.data(), storage.size());
-    rmqamqpt::Buffer buffer(data.begin(), data.size());
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
     bsl::string resultString;
     bool result = rmqamqpt::Types::decodeLongString(&resultString, &buffer);
 
@@ -359,8 +354,7 @@ TEST(TypesEncoding, ShouldRoundTripByteVectorCorrectly)
     // WHEN
     rmqamqpt::Types::encodeByteVector(writer, byteVector);
 
-    StringStreamBufferType data(storage.data(), storage.size());
-    rmqamqpt::Buffer buffer(data.begin(), data.size());
+    rmqamqpt::Buffer buffer(storage.begin(), storage.size());
     BufferType resultVector;
     bool result = rmqamqpt::Types::decodeByteVector(
         &resultVector, &buffer, byteVector.size());
@@ -381,8 +375,7 @@ TEST(TypesEncoding, ShouldRoundTripFieldValueBoolCorrectly)
     // WHEN
     rmqamqpt::Types::encodeFieldValue(writer, fieldValue);
 
-    StringStreamBufferType data(storage.data(), storage.size());
-    rmqamqpt::Buffer buffer(data.begin(), data.size());
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
     rmqt::FieldValue resultFieldValue(false);
     const bool result =
         rmqamqpt::Types::decodeFieldValue(&resultFieldValue, &buffer);
@@ -409,8 +402,7 @@ TEST(TypesEncoding, ShouldRoundTripFieldValueByteArrayCorrectly)
     // WHEN
     rmqamqpt::Types::encodeFieldValue(writer, fieldValue);
 
-    StringStreamBufferType data(storage.data(), storage.size());
-    const bsl::vector<bsl::uint8_t> actualData(data.begin(), data.end());
+    const bsl::vector<bsl::uint8_t> actualData(storage.begin(), storage.end());
 
     // THEN
     const bsl::vector<bsl::uint8_t> expectedData(bsl::begin(expectedBytes),
@@ -418,7 +410,7 @@ TEST(TypesEncoding, ShouldRoundTripFieldValueByteArrayCorrectly)
     ASSERT_EQ(actualData, expectedData);
 
     // WHEN
-    rmqamqpt::Buffer buffer(data.begin(), data.size());
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
     rmqt::FieldValue resultFieldValue;
     const bool result =
         rmqamqpt::Types::decodeFieldValue(&resultFieldValue, &buffer);
@@ -455,15 +447,13 @@ TEST(TypesEncoding, ShouldRoundTripFieldValueArrayCorrectly)
     // WHEN
     rmqamqpt::Types::encodeFieldValue(writer, fieldValue);
 
-    StringStreamBufferType data(storage.data(), storage.size());
+    EXPECT_EQ(sizeof(expectedBytes), storage.size());
 
-    EXPECT_EQ(sizeof(expectedBytes), data.size());
-
-    for (bsl::size_t i = 0; i < data.size(); i++) {
-        EXPECT_EQ(expectedBytes[i], data[i]);
+    for (bsl::size_t i = 0; i < storage.size(); i++) {
+        EXPECT_EQ(expectedBytes[i], storage[i]);
     }
 
-    rmqamqpt::Buffer buffer(data.begin(), data.size());
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
     rmqt::FieldValue resultFieldValue;
     const bool result =
         rmqamqpt::Types::decodeFieldValue(&resultFieldValue, &buffer);
@@ -533,14 +523,12 @@ TEST(TypesEncoding, ShouldRoundTripFieldValueArrayWithFloatCorrectly)
     // WHEN
     rmqamqpt::Types::encodeFieldValue(writer, fieldValue);
 
-    StringStreamBufferType data(storage.data(), storage.size());
-
     const BufferType expectedBytesArray(bsl::begin(expectedBytes),
                                         bsl::end(expectedBytes));
-    const BufferType actualBytesArray(bsl::begin(data), bsl::end(data));
+    const BufferType actualBytesArray(bsl::begin(storage), bsl::end(storage));
     EXPECT_EQ(expectedBytesArray, actualBytesArray);
 
-    rmqamqpt::Buffer buffer(data.begin(), data.size());
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
     rmqt::FieldValue resultFieldValue;
     const bool result =
         rmqamqpt::Types::decodeFieldValue(&resultFieldValue, &buffer);
@@ -576,8 +564,7 @@ TEST(TypesEncoding, ShouldRoundTripFieldArrayStringsAndBytesCorrectly)
     // WHEN
     rmqamqpt::Types::encodeFieldArray(writer, fieldArray);
 
-    StringStreamBufferType data(storage.data(), storage.size());
-    rmqamqpt::Buffer buffer(data.begin(), data.size());
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
     rmqt::FieldArray resultFieldArray;
     bool result = rmqamqpt::Types::decodeFieldArray(&resultFieldArray, &buffer);
 
@@ -597,12 +584,11 @@ TEST(TypesEncoding, EmptyFieldTable)
 
     rmqamqpt::Types::encodeFieldTable(writer, empty);
 
-    StringStreamBufferType str(storage.data(), storage.size());
-
-    EXPECT_EQ(str[0], 0);
-    EXPECT_EQ(str[1], 0);
-    EXPECT_EQ(str[2], 0);
-    EXPECT_EQ(str[3], 0);
+    EXPECT_EQ(storage.size(), 4);
+    EXPECT_EQ(storage[0], 0);
+    EXPECT_EQ(storage[1], 0);
+    EXPECT_EQ(storage[2], 0);
+    EXPECT_EQ(storage[3], 0);
 }
 
 TEST(TypesEncoding, Timestamp)
@@ -614,18 +600,16 @@ TEST(TypesEncoding, Timestamp)
 
     rmqamqpt::Types::encodeTimestamp(writer, millennium);
 
-    StringStreamBufferType str(storage.data(), storage.size());
-
     bdlb::BigEndianInt64 expected = bdlb::BigEndianInt64::make(946684800);
     bsl::uint8_t* inspect         = reinterpret_cast<bsl::uint8_t*>(&expected);
 
-    EXPECT_EQ(str.size(), 8);
-    for (bsl::size_t i = 0; i < str.size(); ++i) {
-        EXPECT_THAT(str[i], Eq(inspect[i]));
+    EXPECT_EQ(storage.size(), 8);
+    for (bsl::size_t i = 0; i < storage.size(); ++i) {
+        EXPECT_THAT(storage[i], Eq(inspect[i]));
     }
 
     bdlt::Datetime decoded;
-    rmqamqpt::Buffer buf(str.begin(), str.size());
+    rmqamqpt::Buffer buf(storage.data(), storage.size());
     rmqamqpt::Types::decodeTimestamp(&decoded, &buf), Eq(true);
 
     EXPECT_THAT(decoded, Eq(millennium));
@@ -639,8 +623,7 @@ rmqt::FieldValue roundTripFieldValue(bool* decodeResult,
 
     rmqamqpt::Types::encodeFieldValue(writer, fv);
 
-    StringStreamBufferType data(storage.data(), storage.size());
-    rmqamqpt::Buffer buffer(data.begin(), data.size());
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
     rmqt::FieldValue resultFieldValue(false);
     *decodeResult =
         rmqamqpt::Types::decodeFieldValue(&resultFieldValue, &buffer);

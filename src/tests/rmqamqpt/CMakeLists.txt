@@ -46,6 +46,7 @@ add_executable(rmqamqpt_tests
 )
 
 target_link_libraries(rmqamqpt_tests PUBLIC
+    rmqtestutil
     rmqamqpt
     rmqamqp
     $<TARGET_PROPERTY:rmqamqp,LINK_LIBRARIES>

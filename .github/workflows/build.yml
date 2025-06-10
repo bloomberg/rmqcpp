@@ -28,6 +28,8 @@ jobs:
     #Only run for push to main
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to push to gh-pages
     steps:
       - uses: actions/checkout@v3
       - name: Doxygenize
