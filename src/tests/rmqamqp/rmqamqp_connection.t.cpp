@@ -324,7 +324,6 @@ class ConnectionFactory : public rmqamqp::Connection::Factory {
     ConnectionFactory(
         const bsl::shared_ptr<rmqio::Resolver>& resolver,
         const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
-        const rmqt::ErrorCallback& errorCb,
         const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
         const rmqt::FieldTable& clientProperties,
         const bsl::shared_ptr<rmqio::RetryHandler>& retryHandler,
@@ -332,7 +331,6 @@ class ConnectionFactory : public rmqamqp::Connection::Factory {
         const bsl::shared_ptr<rmqamqp::ChannelFactory>& channelFactory)
     : rmqamqp::Connection::Factory(resolver,
                                    timerFactory,
-                                   errorCb,
                                    metricPublisher,
                                    bsl::make_shared<MockConnectionMonitor>(),
                                    clientProperties,
@@ -342,7 +340,8 @@ class ConnectionFactory : public rmqamqp::Connection::Factory {
     , d_channelFactory(channelFactory)
     {
     }
-    bsl::shared_ptr<rmqio::RetryHandler> newRetryHandler() BSLS_KEYWORD_OVERRIDE
+    bsl::shared_ptr<rmqio::RetryHandler> newRetryHandler(
+        const rmqt::ErrorCallback& errorCallback) BSLS_KEYWORD_OVERRIDE
     {
         return d_retryHandler;
     }
@@ -408,7 +407,6 @@ class ConnectionTests : public ::testing::Test {
     , d_clientProperties(generateDefaultClientProperties())
     , d_factory(bsl::make_shared<ConnectionFactory>(d_resolver,
                                                     d_timerFactory,
-                                                    d_errorCallback,
                                                     d_metricPublisher,
                                                     d_clientProperties,
                                                     d_retryHandler,
@@ -638,7 +636,7 @@ class ConnectionTests : public ::testing::Test {
     createAndStartConnection(const bsl::string& name = "test-connection")
     {
         bsl::shared_ptr<rmqamqp::Connection> conn =
-            d_factory->create(d_endpoint, d_credentials, name);
+            d_factory->create(d_endpoint, d_credentials, d_errorCallback, name);
         conn->startFirstConnection(d_onConnectCb);
 
         return conn;
@@ -685,7 +683,6 @@ TEST_F(ConnectionTests, ClientProperties)
         rmqt::FieldValue(bsl::string("BAR")); // Add one more
     d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
                                                     d_timerFactory,
-                                                    d_errorCallback,
                                                     d_metricPublisher,
                                                     overriddenClientProperties,
                                                     d_retryHandler,
@@ -723,7 +720,6 @@ TEST_F(ConnectionTests, ClientPropertiesCantOverrideReservedOnes)
         bsl::string("Should get overriden by library")); // Add one more
     d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
                                                     d_timerFactory,
-                                                    d_errorCallback,
                                                     d_metricPublisher,
                                                     overriddenClientProperties,
                                                     d_retryHandler,

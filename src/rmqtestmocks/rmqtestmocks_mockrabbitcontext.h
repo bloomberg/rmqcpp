@@ -54,6 +54,13 @@ class MockRabbitContext : public rmqp::RabbitContext {
                      const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
                      const bsl::shared_ptr<rmqt::Credentials>& credentials));
 
+    MOCK_METHOD4(createVHostConnection,
+                 bsl::shared_ptr<rmqp::Connection>(
+                     const bsl::string& userDefinedName,
+                     const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
+                     const bsl::shared_ptr<rmqt::Credentials>& credentials,
+                     const rmqt::ErrorCallback& errorCallback));
+
     MOCK_METHOD2(
         createVHostConnection,
         bsl::shared_ptr<rmqp::Connection>(const bsl::string& userDefinedName,
