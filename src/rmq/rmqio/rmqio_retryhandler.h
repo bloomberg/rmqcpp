@@ -42,6 +42,7 @@ class RetryHandler {
     /// \param retryStrategy    the retry strategy to use
     RetryHandler(const bsl::shared_ptr<TimerFactory>& timerFactory,
                  const rmqt::ErrorCallback& errorCb,
+                 const rmqt::SuccessCallback& successCb,
                  const bsl::shared_ptr<RetryStrategy>& retryStrategy);
 
     virtual ~RetryHandler() {}
@@ -58,6 +59,11 @@ class RetryHandler {
         return d_onError;
     }
 
+    virtual const rmqt::SuccessCallback& successCallback() const
+    {
+      return d_onSuccess;
+    }
+
   private:
     RetryHandler(const RetryHandler&) BSLS_KEYWORD_DELETED;
     RetryHandler& operator=(const RetryHandler&) BSLS_KEYWORD_DELETED;
@@ -70,6 +76,7 @@ class RetryHandler {
     bsl::shared_ptr<RetryStrategy> d_retryStrategy;
     RetryCallback d_retryCallback;
     rmqt::ErrorCallback d_onError;
+    rmqt::SuccessCallback d_onSuccess;
 };
 
 } // namespace rmqio

@@ -56,7 +56,9 @@ class RetryHandlerTests : public ::testing::Test {
         d_retryStrategy;
     StrictMock<testing::MockFunction<void(const bsl::string&, int)> >
         d_onErrorCallback;
+    StrictMock<testing::MockFunction<void()>> d_onSuccessCallback;
     rmqt::ErrorCallback d_onError;
+    rmqt::SuccessCallback d_onSuccess;
     bdlt::CurrentTime::CurrentTimeCallback d_oldTimeCb;
 
     RetryHandlerTests()
@@ -68,6 +70,9 @@ class RetryHandlerTests : public ::testing::Test {
           &d_onErrorCallback,
           bdlf::PlaceHolders::_1,
           bdlf::PlaceHolders::_2))
+    , d_onSuccess(bdlf::BindUtil::bind(
+        &testing::MockFunction<void()>::Call,
+        &d_onSuccessCallback))
     , d_oldTimeCb(bdlt::CurrentTime::setCurrentTimeCallback(fixedTimeCb<0, 0>))
     {
     }
@@ -89,12 +94,12 @@ class RetryHandlerTests : public ::testing::Test {
 
 TEST_F(RetryHandlerTests, Breathing)
 {
-    RetryHandler retryHandler(d_timerFactory, d_onError, d_retryStrategy);
+    RetryHandler retryHandler(d_timerFactory, d_onError, d_onSuccess, d_retryStrategy);
 }
 
 TEST_F(RetryHandlerTests, RetryWithoutWait)
 {
-    RetryHandler retryHandler(d_timerFactory, d_onError, d_retryStrategy);
+    RetryHandler retryHandler(d_timerFactory, d_onError, d_onSuccess, d_retryStrategy);
     int numRetries = 0;
 
     retryExpectations();
@@ -110,7 +115,7 @@ TEST_F(RetryHandlerTests, MultipleRetry)
 {
 
     RetryHandler retryHandler(
-        d_timerFactory, d_onError, d_retryStrategy); /* 3 */
+        d_timerFactory, d_onError, d_onSuccess, d_retryStrategy); /* 3 */
     int numRetries = 0;
 
     retryExpectations();
@@ -131,7 +136,7 @@ TEST_F(RetryHandlerTests, MultipleRetry)
 TEST_F(RetryHandlerTests, MultipleRetryWithWait)
 {
     RetryHandler retryHandler(
-        d_timerFactory, d_onError, d_retryStrategy); /* 1,20 */
+        d_timerFactory, d_onError, d_onSuccess, d_retryStrategy); /* 1,20 */
     int numRetries = 0;
 
     retryExpectations();
@@ -154,7 +159,7 @@ TEST_F(RetryHandlerTests, MultipleRetryWithWait)
 TEST_F(RetryHandlerTests, NoPrematureRetry)
 {
     RetryHandler retryHandler(
-        d_timerFactory, d_onError, d_retryStrategy); /* 1,20 */
+        d_timerFactory, d_onError, d_onSuccess, d_retryStrategy); /* 1,20 */
     int numRetries = 0;
 
     retryExpectations();
@@ -178,7 +183,7 @@ TEST_F(RetryHandlerTests, NoPrematureRetry)
 TEST_F(RetryHandlerTests, MultipleRetryWithWaitLimit)
 {
     RetryHandler retryHandler(
-        d_timerFactory, d_onError, d_retryStrategy); /* 1,20, 21 */
+        d_timerFactory, d_onError, d_onSuccess, d_retryStrategy); /* 1,20, 21 */
     int numRetries = 0;
 
     retryExpectations();
@@ -213,7 +218,7 @@ TEST_F(RetryHandlerTests, RetryIsNotCalledAfterBeingDestroyed)
     int numRetries = 0;
 
     {
-        RetryHandler retryHandler(d_timerFactory, d_onError, d_retryStrategy);
+        RetryHandler retryHandler(d_timerFactory, d_onError, d_onSuccess, d_retryStrategy);
 
         retryExpectations();
         retryHandler.retry(rmqtestutil::CallCount(&numRetries));

@@ -65,6 +65,8 @@ const char* TEST_VHOST = "vhostname";
 
 void noOpOnError(const bsl::string&, int) {}
 
+void noOpOnSuccess() {}
+
 void noopCloseHandler() {}
 
 void gracefulCloseHandler(bool& invoked) { invoked = true; }
@@ -325,6 +327,7 @@ class ConnectionFactory : public rmqamqp::Connection::Factory {
         const bsl::shared_ptr<rmqio::Resolver>& resolver,
         const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
         const rmqt::ErrorCallback& errorCb,
+        const rmqt::SuccessCallback& successCb,
         const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
         const rmqt::FieldTable& clientProperties,
         const bsl::shared_ptr<rmqio::RetryHandler>& retryHandler,
@@ -333,6 +336,7 @@ class ConnectionFactory : public rmqamqp::Connection::Factory {
     : rmqamqp::Connection::Factory(resolver,
                                    timerFactory,
                                    errorCb,
+                                   successCb,
                                    metricPublisher,
                                    bsl::make_shared<MockConnectionMonitor>(),
                                    clientProperties,
@@ -363,6 +367,7 @@ class ConnectionTests : public ::testing::Test {
   public:
     ReplayFrame d_replayFrame;
     rmqt::ErrorCallback d_errorCallback;
+    rmqt::SuccessCallback d_successCallback;
     bsl::shared_ptr<rmqtestutil::MockResolver> d_resolver;
     bsl::shared_ptr<rmqtestutil::MockRetryHandler> d_retryHandler;
     bsl::shared_ptr<rmqtestutil::MockTimerFactory> d_timerFactory;
@@ -393,6 +398,7 @@ class ConnectionTests : public ::testing::Test {
     ConnectionTests()
     : d_replayFrame()
     , d_errorCallback(noOpOnError)
+    , d_successCallback(noOpOnSuccess)
     , d_resolver(bsl::make_shared<rmqtestutil::MockResolver>())
     , d_retryHandler(bsl::make_shared<rmqtestutil::MockRetryHandler>())
     , d_timerFactory(bsl::make_shared<rmqtestutil::MockTimerFactory>())
@@ -409,6 +415,7 @@ class ConnectionTests : public ::testing::Test {
     , d_factory(bsl::make_shared<ConnectionFactory>(d_resolver,
                                                     d_timerFactory,
                                                     d_errorCallback,
+                                                    d_successCallback,
                                                     d_metricPublisher,
                                                     d_clientProperties,
                                                     d_retryHandler,
@@ -686,6 +693,7 @@ TEST_F(ConnectionTests, ClientProperties)
     d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
                                                     d_timerFactory,
                                                     d_errorCallback,
+                                                    d_successCallback,
                                                     d_metricPublisher,
                                                     overriddenClientProperties,
                                                     d_retryHandler,
@@ -724,6 +732,7 @@ TEST_F(ConnectionTests, ClientPropertiesCantOverrideReservedOnes)
     d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
                                                     d_timerFactory,
                                                     d_errorCallback,
+                                                    d_successCallback,
                                                     d_metricPublisher,
                                                     overriddenClientProperties,
                                                     d_retryHandler,
