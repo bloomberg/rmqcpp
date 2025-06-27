@@ -1,23 +1,13 @@
-name: Formatting check
-
-on:
-  pull_request:
-    types:
-      - "opened"
-      - "reopened"
-      - "synchronize"
-      - "labeled"
-      - "unlabeled"
-
+name: clang-format Check
+on: [push, pull_request]
 jobs:
-  formatting_check:
+  formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: clang-format style check
-        run: |
-          git clang-format-14 --diff -q origin/main | tee format_diff.txt
-          if [ -s format_diff.txt ]; then exit 1; fi
+    - uses: actions/checkout@v4
+    - name: Run clang-format style check for C++ programs.
+      uses: jidicula/clang-format-action@v4.15.0
+      with:
+        clang-format-version: '14'
+        check-path: 'src'
