@@ -21,9 +21,6 @@
 #include <rmqio_serializedframe.h>
 #include <rmqt_fieldvalue.h>
 
-#include <boost/iostreams/device/back_inserter.hpp>
-#include <boost/iostreams/stream.hpp>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -58,7 +55,6 @@ class ContentDecodeTests : public ::testing::Test {
                     uint16_t channel,
                     const rmqamqpt::ContentHeader& contentHeader)
     {
-        using namespace boost::iostreams;
 
         const size_t encodedPayloadSize = contentHeader.encodedSize();
 
@@ -83,7 +79,6 @@ class ContentDecodeTests : public ::testing::Test {
                                   uint16_t channel,
                                   const rmqamqpt::ContentBody& contentBody)
     {
-        using namespace boost::iostreams;
 
         const size_t encodedPayloadSize = contentBody.dataLength();
 
