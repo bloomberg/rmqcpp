@@ -983,13 +983,11 @@ bsl::string Connection::connectionDebugName() const
 Connection::Factory::Factory(
     const bsl::shared_ptr<rmqio::Resolver>& resolver,
     const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
-    const rmqt::ErrorCallback& errorCb,
     const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
     const bsl::shared_ptr<ConnectionMonitor>& connectionMonitor,
     const rmqt::FieldTable& clientProperties,
     const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold)
-: d_errorCb(errorCb)
-, d_clientProperties(clientProperties)
+: d_clientProperties(clientProperties)
 , d_metricPublisher(metricPublisher)
 , d_resolver(resolver)
 , d_timerFactory(timerFactory)
@@ -1001,11 +999,12 @@ Connection::Factory::Factory(
 bsl::shared_ptr<Connection> Connection::Factory::create(
     const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
     const bsl::shared_ptr<rmqt::Credentials>& credentials,
+    const rmqt::ErrorCallback& errorCallback,
     const bsl::string& name)
 {
     bsl::shared_ptr<rmqamqp::Connection> result(new rmqamqp::Connection(
         d_resolver,
-        newRetryHandler(),
+        newRetryHandler(errorCallback),
         newHeartBeatManager(),
         d_timerFactory,
         newChannelFactory(),
@@ -1020,18 +1019,19 @@ bsl::shared_ptr<Connection> Connection::Factory::create(
     return result;
 }
 
-bsl::shared_ptr<rmqio::RetryHandler> Connection::Factory::newRetryHandler()
+bsl::shared_ptr<rmqio::RetryHandler>
+Connection::Factory::newRetryHandler(const rmqt::ErrorCallback& errorCallback)
 {
     return d_connectionErrorThreshold
                ? bsl::shared_ptr<rmqio::RetryHandler>(
                      bsl::make_shared<rmqio::ConnectionRetryHandler>(
                          d_timerFactory,
-                         d_errorCb,
+                         errorCallback,
                          bsl::make_shared<rmqio::BackoffLevelRetryStrategy>(),
                          *d_connectionErrorThreshold))
                : bsl::make_shared<rmqio::RetryHandler>(
                      d_timerFactory,
-                     d_errorCb,
+                     errorCallback,
                      bsl::make_shared<rmqio::BackoffLevelRetryStrategy>());
 }
 
