@@ -28,6 +28,8 @@
 #include <rmqio_backofflevelretrystrategy.h>
 #include <rmqio_timer.h>
 
+#include <rmqp_messagetransformer.h>
+
 #include <rmqt_consumerackbatch.h>
 #include <rmqt_consumerconfig.h>
 #include <rmqt_properties.h>
@@ -41,6 +43,7 @@
 #include <bsl_limits.h>
 #include <bsl_memory.h>
 #include <bsl_ostream.h>
+#include <bsl_vector.h>
 
 namespace BloombergLP {
 namespace rmqa {
@@ -75,6 +78,7 @@ rmqt::Result<rmqp::Consumer> setupConsumer(
     bdlmt::ThreadPool& threadPool,
     const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
     const bsl::shared_ptr<rmqa::ConsumerImpl::Factory>& consumerFactory,
+    const bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >& transformers,
     const rmqt::Result<rmqamqp::ReceiveChannel>& receiveChannel)
 {
     if (receiveChannel) {
@@ -85,7 +89,8 @@ rmqt::Result<rmqp::Consumer> setupConsumer(
                                     consumerTag,
                                     bsl::ref(threadPool),
                                     bsl::ref(eventLoop),
-                                    ackQueue));
+                                    ackQueue,
+                                    transformers));
         rmqt::Result<> result = consumer->start();
         return result ? rmqt::Result<rmqp::Consumer>(consumer)
                       : rmqt::Result<rmqp::Consumer>(result.error(),
@@ -345,6 +350,7 @@ rmqt::Future<rmqp::Consumer> ConnectionImpl::createConsumerAsync(
                                     : bsl::ref(d_threadPool),
         ackQueue,
         d_consumerFactory,
+        consumerConfig.transformers(),
         bdlf::PlaceHolders::_1));
 }
 

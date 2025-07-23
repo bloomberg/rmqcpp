@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Bloomberg Finance L.P.
+// Copyright 2025 Bloomberg Finance L.P.
 // SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,24 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef INCLUDED_RMQT_CREDENTIALS
-#define INCLUDED_RMQT_CREDENTIALS
-
-#include <bsl_string.h>
+#include <rmqp_messagetransformer.h>
 
 namespace BloombergLP {
-namespace rmqt {
-
-/// \brief Base class for AMQP credentials
-
-class Credentials {
-  public:
-    virtual ~Credentials() {};
-    virtual bsl::string formatCredentials()       = 0;
-    virtual bsl::string authenticationMechanism() = 0;
-};
-
-} // namespace rmqt
+namespace rmqp {
+} // namespace rmqp
 } // namespace BloombergLP
-
-#endif

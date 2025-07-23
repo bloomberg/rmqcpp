@@ -18,6 +18,7 @@
 #define INCLUDED_RMQA_PRODUCER
 
 #include <rmqa_topologyupdate.h>
+#include <rmqp_messagetransformer.h>
 #include <rmqp_producer.h>
 #include <rmqp_topology.h>
 #include <rmqt_exchange.h>
@@ -25,6 +26,7 @@
 #include <rmqt_queue.h>
 #include <rmqt_result.h>
 
+#include <bsl_memory.h>
 #include <bsl_string.h>
 #include <bslma_managedptr.h>
 #include <bsls_timeinterval.h>
@@ -87,6 +89,14 @@ class Producer {
          const bsl::string& routingKey,
          const rmqp::Producer::ConfirmationCallback& confirmCallback,
          const bsls::TimeInterval& timeout = bsls::TimeInterval());
+
+    /// Registers the tranformation function to be applied to all outgoing
+    /// messages before being sent to the broker.
+    ///
+    /// \param transformer  The transformation function to be applied to all
+    /// messages processed by this producer
+    void addTransformer(
+        const bsl::shared_ptr<rmqp::MessageTransformer>& transformer);
 
     /// Send a message with the given `routingKey` to the exchange this
     /// Producer targets, with the specified mandatory flag.

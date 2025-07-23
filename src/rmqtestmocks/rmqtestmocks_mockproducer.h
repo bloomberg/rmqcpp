@@ -17,6 +17,7 @@
 #define INCLUDED_RMQTESTMOCKS_MOCKPRODUCER
 
 #include <rmqa_producer.h>
+#include <rmqp_messagetransformer.h>
 #include <rmqp_producer.h>
 #include <rmqt_future.h>
 #include <rmqt_message.h>
@@ -47,6 +48,10 @@ class MockProducer : public rmqp::Producer {
     rmqt::Future<rmqp::Producer> successAsync();
     static rmqt::Future<rmqp::Producer> timeoutAsync();
     static rmqt::Future<rmqp::Producer> errorAsync();
+
+    MOCK_METHOD1(
+        addTransformer,
+        void(const bsl::shared_ptr<rmqp::MessageTransformer>& transformer));
 
     MOCK_METHOD4(
         send,

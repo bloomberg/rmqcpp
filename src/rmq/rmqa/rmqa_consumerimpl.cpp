@@ -20,18 +20,21 @@
 #include <rmqio_eventloop.h>
 #include <rmqp_consumer.h>
 #include <rmqp_messageguard.h>
+#include <rmqp_messagetransformer.h>
 #include <rmqt_envelope.h>
+#include <rmqt_message.h>
 #include <rmqt_queue.h>
 #include <rmqt_result.h>
 #include <rmqt_topologyupdate.h>
 
 #include <ball_log.h>
-#include <bdlf_bind.h>
-#include <bslmt_lockguard.h>
-#include <bslmt_mutex.h>
 
+#include <bdlf_bind.h>
 #include <bsl_memory.h>
 #include <bsl_string.h>
+#include <bsl_vector.h>
+#include <bslmt_lockguard.h>
+#include <bslmt_mutex.h>
 
 namespace BloombergLP {
 namespace rmqa {
@@ -49,7 +52,9 @@ bsl::shared_ptr<ConsumerImpl> ConsumerImpl::Factory::create(
     const bsl::string& consumerTag,
     bdlmt::ThreadPool& threadPool,
     rmqio::EventLoop& eventLoop,
-    const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue) const
+    const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
+    const bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >& transformers)
+    const
 {
     return bsl::shared_ptr<ConsumerImpl>(
         new ConsumerImpl(channel,
@@ -59,7 +64,8 @@ bsl::shared_ptr<ConsumerImpl> ConsumerImpl::Factory::create(
                          threadPool,
                          eventLoop,
                          ackQueue,
-                         bsl::make_shared<rmqa::MessageGuard::Factory>()));
+                         bsl::make_shared<rmqa::MessageGuard::Factory>(),
+                         transformers));
 }
 
 ConsumerImpl::ConsumerImpl(
@@ -70,7 +76,8 @@ ConsumerImpl::ConsumerImpl(
     bdlmt::ThreadPool& threadPool,
     rmqio::EventLoop& eventLoop,
     const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
-    const bsl::shared_ptr<rmqa::MessageGuard::Factory>& guardFactory)
+    const bsl::shared_ptr<rmqa::MessageGuard::Factory>& guardFactory,
+    const bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >& transformers)
 : d_consumerTag(consumerTag)
 , d_queue(queue)
 , d_onMessage(onMessage)
@@ -81,6 +88,7 @@ ConsumerImpl::ConsumerImpl(
 , d_ackMessageMutex()
 , d_channel(channel)
 , d_guardFactory(guardFactory)
+, d_transformers(transformers)
 , d_onNewAckBatch(
       bdlf::BindUtil::bind(&rmqamqp::ReceiveChannel::consumeAckBatchFromQueue,
                            d_channel))
@@ -182,6 +190,42 @@ void ConsumerImpl::ackMessage(const rmqt::ConsumerAck& ack)
     }
 }
 
+bool ConsumerImpl::unpackTransformations(rmqt::Message& dstMessage,
+                                         const rmqt::Message& srcMessage)
+{
+    // Unpack source message
+    bsl::shared_ptr<bsl::vector<uint8_t> > rawData =
+        bsl::make_shared<bsl::vector<uint8_t> >(srcMessage.payload(),
+                                                srcMessage.payload() +
+                                                    srcMessage.payloadSize());
+    rmqt::Properties properties = srcMessage.properties();
+
+    // Undo all transformations
+    for (bsl::vector<
+             bsl::shared_ptr<rmqp::MessageTransformer> >::reverse_iterator it =
+             d_transformers.rbegin();
+         it != d_transformers.rend();
+         ++it) {
+        bsl::string headerName = "sdk.transform." + (*it)->name();
+        if (!properties.headers ||
+            properties.headers->find(headerName) == properties.headers->end()) {
+            BALL_LOG_DEBUG << "No transformation header found for "
+                           << (*it)->name();
+            continue; // No transformation header, skip
+        }
+        rmqt::Result<> r = (*it)->inverseTransform(rawData, properties);
+        if (!r) {
+            BALL_LOG_ERROR << "Inverse transformation failed: " << r.error();
+            return false;
+        }
+        properties.headers->erase(headerName); // Remove transformation header
+    }
+
+    // Pack into destination message
+    dstMessage = rmqt::Message(rawData, properties);
+    return true;
+}
+
 void ConsumerImpl::threadPoolHandleMessage(
     const bsl::weak_ptr<ConsumerImpl>& consumerWeakPtr,
     const rmqt::Message& message,
@@ -195,11 +239,22 @@ void ConsumerImpl::threadPoolHandleMessage(
         return;
     }
 
+    rmqt::Message untransformedMsg;
+    if (consumer->d_transformers.size() > 0) {
+        if (!consumer->unpackTransformations(untransformedMsg, message)) {
+            BALL_LOG_ERROR << "Failed to undo transformations to message "
+                           << message.guid();
+            return;
+        }
+    }
+    const rmqt::Message& realMsg =
+        consumer->d_transformers.size() > 0 ? untransformedMsg : message;
+
     using bdlf::PlaceHolders::_1;
 
     bslma::ManagedPtr<rmqa::MessageGuard> guard(
         consumer->d_guardFactory->create(
-            message, envelope, consumer->d_messageGuardCb, consumer.ptr()));
+            realMsg, envelope, consumer->d_messageGuardCb, consumer.ptr()));
 
     BALL_LOG_DEBUG << "Delivering: " << *guard << " to client";
 

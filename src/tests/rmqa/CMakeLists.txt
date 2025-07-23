@@ -3,6 +3,7 @@ add_executable(rmqa_tests
     rmqa_consumerimpl.t.cpp
     rmqa_connectionimpl.t.cpp
     rmqa_connectionstring.t.cpp
+    rmqa_messagetransformer.t.cpp
     rmqa_messageguard.t.cpp
     rmqa_producerimpl.t.cpp
     rmqa_rabbitcontextimpl.t.cpp
@@ -24,5 +25,9 @@ target_link_libraries(rmqa_tests PUBLIC
     GTest::gtest
     GTest::gmock
 )
+
+if (ENABLE_COMPRESSION)
+    target_compile_definitions(rmqa_tests PRIVATE RMQCPP_ENABLE_COMPRESSION)
+endif()
 
 add_test(NAME rmqa_tests COMMAND rmqa_tests)

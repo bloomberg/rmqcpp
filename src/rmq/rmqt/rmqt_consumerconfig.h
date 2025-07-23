@@ -24,9 +24,15 @@
 #include <bdlmt_threadpool.h>
 
 #include <bsl_cstdint.h>
+#include <bsl_memory.h>
 #include <bsl_optional.h>
+#include <bsl_vector.h>
 
 namespace BloombergLP {
+namespace rmqp {
+class MessageTransformer; // forward declaration
+}
+
 namespace rmqt {
 
 /// \brief Class for passing arguments to Consumer
@@ -80,6 +86,12 @@ class ConsumerConfig {
     bsl::optional<int64_t> consumerPriority() const
     {
         return d_consumerPriority;
+    }
+
+    const bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >&
+    transformers() const
+    {
+        return d_transformers;
     }
 
     // Setters
@@ -140,12 +152,24 @@ class ConsumerConfig {
         return *this;
     }
 
+    /// \param transform A message transformer to be undone for each
+    ///        message received by the consumer. Multiple transformers will be
+    ///        called in the inverse order, i.e. the last transformer in
+    ///        added is applied first.
+    ConsumerConfig&
+    addTransformer(const bsl::shared_ptr<rmqp::MessageTransformer>& transformer)
+    {
+        d_transformers.push_back(transformer);
+        return *this;
+    }
+
   private:
     bsl::string d_consumerTag;
     uint16_t d_prefetchCount;
     bdlmt::ThreadPool* d_threadpool;
     rmqt::Exclusive::Value d_exclusiveFlag;
     bsl::optional<int64_t> d_consumerPriority;
+    bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> > d_transformers;
 };
 
 } // namespace rmqt

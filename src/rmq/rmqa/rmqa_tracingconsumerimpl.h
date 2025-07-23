@@ -19,6 +19,7 @@
 #include <rmqa_consumerimpl.h>
 
 #include <bsl_memory.h>
+#include <bsl_vector.h>
 #include <bsls_keyword.h>
 
 //@PURPOSE: Provide a RabbitMQ Async Tracing Consumer API
@@ -36,7 +37,8 @@ class ReceiveChannel;
 }
 namespace rmqp {
 class ConsumerTracing;
-}
+class MessageTransformer;
+} // namespace rmqp
 
 namespace rmqa {
 
@@ -54,8 +56,9 @@ class TracingConsumerImpl {
             const bsl::string& consumerTag,
             bdlmt::ThreadPool& threadPool,
             rmqio::EventLoop& eventLoop,
-            const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue) const
-            BSLS_KEYWORD_OVERRIDE;
+            const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
+            const bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >&
+                transformers) const BSLS_KEYWORD_OVERRIDE;
 
       private:
         bsl::shared_ptr<rmqt::Endpoint> d_endpoint;
