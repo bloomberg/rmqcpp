@@ -215,7 +215,8 @@ bool ConsumerImpl::unpackTransformations(rmqt::Message& dstMessage,
         }
         rmqt::Result<> r = (*it)->inverseTransform(rawData, properties);
         if (!r) {
-            BALL_LOG_ERROR << "Inverse transformation failed: " << r.error();
+            BALL_LOG_ERROR << "Inverse transformation " << (*it)->name()
+                           << " failed: " << r.error();
             return false;
         }
         properties.headers->erase(headerName); // Remove transformation header

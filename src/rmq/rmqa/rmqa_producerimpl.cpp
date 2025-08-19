@@ -19,6 +19,7 @@
 #include <rmqio_eventloop.h>
 #include <rmqp_messagetransformer.h>
 #include <rmqt_confirmresponse.h>
+#include <rmqt_fieldvalue.h>
 #include <rmqt_future.h>
 #include <rmqt_message.h>
 #include <rmqt_topologyupdate.h>
@@ -206,6 +207,9 @@ bool ProducerImpl::applyTransformations(rmqt::Message& dstMessage,
             srcMessage.payload(),
             srcMessage.payload() + srcMessage.payloadSize());
     rmqt::Properties props = srcMessage.properties();
+    if (!props.headers) {
+        props.headers = bsl::make_shared<rmqt::FieldTable>();
+    }
 
     // Apply all transformations
     for (bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >::iterator it =
@@ -214,7 +218,8 @@ bool ProducerImpl::applyTransformations(rmqt::Message& dstMessage,
          ++it) {
         rmqt::Result<bool> r = (*it)->transform(rawData, props);
         if (!r) {
-            BALL_LOG_ERROR << "Transformation failed";
+            BALL_LOG_ERROR << "Transformation " << (*it)->name()
+                           << " failed: " << r.error();
             return false;
         }
         else if (*r.value()) {
@@ -222,13 +227,13 @@ bool ProducerImpl::applyTransformations(rmqt::Message& dstMessage,
                      ->emplace("sdk.transform." + (*it)->name(),
                                rmqt::FieldValue(bsl::string("ok")))
                      .second) {
-                BALL_LOG_ERROR << "Reserved header 'sdk.transform."
+                BALL_LOG_ERROR << "Transformation header 'sdk.transform."
                                << (*it)->name() << "' already exists";
                 return false;
             }
         }
         else {
-            BALL_LOG_DEBUG << "Transformation ignored";
+            BALL_LOG_DEBUG << "Transformation " << (*it)->name() << " ignored";
         }
     }
 
