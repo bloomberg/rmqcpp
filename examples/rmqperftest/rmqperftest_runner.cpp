@@ -86,7 +86,7 @@ class ConfirmCallback {
 
     void operator()(const rmqt::Message&,
                     const bsl::string&,
-                    const rmqt::ConfirmResponse&){};
+                    const rmqt::ConfirmResponse&) {};
 };
 
 bsl::string_view queueNameOrRoutingKey(bsl::string_view routingKey,
