@@ -13,41 +13,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef INCLUDED_RMQTESTUTIL_TIMEOVERRIDE
-#define INCLUDED_RMQTESTUTIL_TIMEOVERRIDE
+#ifndef INCLUDED_RMQTESTUTIL_CLOCKOVERRIDE
+#define INCLUDED_RMQTESTUTIL_CLOCKOVERRIDE
 
 #include <boost/asio.hpp>
+#include <rmqio_asiotimer.h>
 
-//@PURPOSE: Provides TimeOverride class extended from
-// boost::asio::deadline_timer::traits_type
+//@PURPOSE: Provides ClockOverride class extended from
+// rmqio::DefaultClockType
 //
 //@CLASSES:
-//  rmqtestutil::TimeOverride: Steps time in testing to trigger handler waiting
-//  on deadline_timer
+//  rmqtestutil::ClockOverride: Steps time in testing to trigger handler waiting
+//  on timer
 
 namespace BloombergLP {
 namespace rmqtestutil {
 
-class TimeOverride : public boost::asio::deadline_timer::traits_type {
+class ClockOverride : public rmqio::DefaultClockType {
   public:
-    static time_type now()
+    static void step_time(duration t) { d_timeOffset += t; }
+
+    static time_point now()
     {
-        return add(boost::asio::deadline_timer::traits_type::now(),
-                   d_timeOffset);
+        return rmqio::DefaultClockType::now() + d_timeOffset;
     }
-    static void step_time(duration_type t) { d_timeOffset += t; }
-    static boost::posix_time::time_duration to_posix_duration(duration_type d)
+    static duration to_wait_duration(duration d)
     {
         // This is the secret sauce to ensure that boost::asio keeps calling
         // `now()` and responds to our adjustments via `step_time`
-        return d < boost::posix_time::milliseconds(1)
+        return d < boost::asio::chrono::milliseconds(1)
                    ? d
-                   : boost::posix_time::milliseconds(1);
+                   : boost::asio::chrono::milliseconds(1);
     }
 
-    static duration_type d_timeOffset;
+    static duration d_timeOffset;
 };
-
 } // namespace rmqtestutil
 } // namespace BloombergLP
 

@@ -1,6 +1,7 @@
 add_library(rmqtestutil
     rmqtestutil.m.cpp
     rmqtestutil_callcount.cpp
+    rmqtestutil_clockoverride.cpp
     rmqtestutil_mockchannel.t.cpp
     rmqtestutil_mockeventloop.t.cpp
     rmqtestutil_mockmetricpublisher.cpp
@@ -10,7 +11,6 @@ add_library(rmqtestutil
     rmqtestutil_replayframe.cpp
     rmqtestutil_savethreadid.cpp
     rmqtestutil_timedmetric.cpp
-    rmqtestutil_timeoverride.cpp
 )
 
 target_link_libraries(rmqtestutil PUBLIC 

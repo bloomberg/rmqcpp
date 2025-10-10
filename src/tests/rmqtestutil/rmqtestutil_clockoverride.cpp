@@ -13,13 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <rmqtestutil_timeoverride.h>
+#include <rmqtestutil_clockoverride.h>
 
 namespace BloombergLP {
 namespace rmqtestutil {
 
-TimeOverride::duration_type TimeOverride::d_timeOffset =
-    boost::posix_time::seconds(0);
+ClockOverride::duration ClockOverride::d_timeOffset =
+    boost::asio::chrono::seconds(0);
 
 }
 } // namespace BloombergLP
