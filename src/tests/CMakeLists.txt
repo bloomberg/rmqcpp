@@ -1,10 +1,10 @@
 if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "SunPro" )
     # _RWSTD_ALLOCATOR tells the solaris <memory> header to define a std::allocator
-    # which conforms better to the C++ standard, which is expected by Boost. Without
-    # this, the library does not build due to missing std::allocator<..>::rebind
+    # which conforms better to the C++ standard; without this, the library does not
+    # build due to missing std::allocator<..>::rebind
 
     # "-D_XOPEN_SOURCE=500" "-D__EXTENSIONS__" tells the solaris sys/socket.h to conform
-    # better to what boost asio expects (to have a msg_flags member)
+    # better to what Asio expects (to have a msg_flags member)
     add_compile_options(_RWSTD_ALLOCATOR "-D_XOPEN_SOURCE=500" "-D__EXTENSIONS__")
 endif()
 

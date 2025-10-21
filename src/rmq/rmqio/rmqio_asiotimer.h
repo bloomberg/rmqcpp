@@ -19,7 +19,7 @@
 #include <rmqio_asioeventloop.h>
 #include <rmqio_timer.h>
 
-#include <boost/asio.hpp>
+#include <asio.hpp>
 
 #include <ball_log.h>
 #include <bdlf_bind.h>
@@ -31,7 +31,7 @@
 namespace BloombergLP {
 namespace rmqio {
 
-//@PURPOSE: Timer implementation using ASIO deadline_timer
+//@PURPOSE: Timer implementation using ASIO steady_timer
 //
 //@CLASSES:
 //  rmqio::AsioTimerFactory: Provides a factory for creating AsioTimers
@@ -39,48 +39,38 @@ namespace rmqio {
 //  rmqio::AsioTimer: Provides a class for scheduling a cancellable
 //  callback to be executed after a given timeout
 
-template <typename TIME        = boost::asio::deadline_timer::time_type,
-          typename TIME_TRAITS = boost::asio::time_traits<TIME> >
-class basic_AsioTimer
+class AsioTimer
 : public Timer,
-  public bsl::enable_shared_from_this<basic_AsioTimer<TIME, TIME_TRAITS> > {
+  public bsl::enable_shared_from_this<AsioTimer> {
   public:
-    basic_AsioTimer(boost::asio::io_context& context,
-                    const bsls::TimeInterval& timeout);
-    basic_AsioTimer(boost::asio::io_context& context,
-                    const Timer::Callback& callback);
-    virtual ~basic_AsioTimer() BSLS_KEYWORD_OVERRIDE;
+    AsioTimer(asio::io_context& context, const bsls::TimeInterval& timeout);
+    AsioTimer(asio::io_context& context, const Timer::Callback& callback);
+    virtual ~AsioTimer() BSLS_KEYWORD_OVERRIDE;
     virtual void reset(const bsls::TimeInterval& timeout) BSLS_KEYWORD_OVERRIDE;
     virtual void cancel() BSLS_KEYWORD_OVERRIDE;
     virtual void resetCallback(const Callback& callback) BSLS_KEYWORD_OVERRIDE;
     virtual void start(const Timer::Callback& callback) BSLS_KEYWORD_OVERRIDE;
 
   private:
-    basic_AsioTimer(basic_AsioTimer&) BSLS_KEYWORD_DELETED;
-    basic_AsioTimer& operator=(const basic_AsioTimer&) BSLS_KEYWORD_DELETED;
+    AsioTimer(AsioTimer&) BSLS_KEYWORD_DELETED;
+    AsioTimer& operator=(const AsioTimer&) BSLS_KEYWORD_DELETED;
 
-    static void
-    handler_internal(bsl::weak_ptr<basic_AsioTimer<TIME, TIME_TRAITS> > timer,
-                     const Timer::Callback callback,
-                     const boost::system::error_code& error);
-    void handler(const Timer::Callback& callback,
-                 const boost::system::error_code& error);
+    static void handler_internal(bsl::weak_ptr<AsioTimer> timer,
+                                 const Timer::Callback callback,
+                                 const asio::error_code& error);
+    void handler(const Timer::Callback& callback, const asio::error_code& error);
     void startTimer();
 
-    boost::asio::basic_deadline_timer<TIME, TIME_TRAITS> d_timer;
+    asio::steady_timer d_timer;
     Timer::Callback d_callback;
     bsls::TimeInterval d_timeout;
     BALL_LOG_SET_CLASS_CATEGORY("RMQIO.ASIOTIMER");
 };
 
-typedef basic_AsioTimer<> AsioTimer;
-
-template <typename TIME        = boost::asio::deadline_timer::time_type,
-          typename TIME_TRAITS = boost::asio::time_traits<TIME> >
-class basic_AsioTimerFactory : public TimerFactory {
+class AsioTimerFactory : public TimerFactory {
   public:
-    basic_AsioTimerFactory(rmqio::AsioEventLoop& eventLoop);
-    virtual ~basic_AsioTimerFactory() BSLS_KEYWORD_OVERRIDE {}
+    AsioTimerFactory(rmqio::AsioEventLoop& eventLoop);
+    virtual ~AsioTimerFactory() BSLS_KEYWORD_OVERRIDE {}
 
     virtual bsl::shared_ptr<rmqio::Timer>
     createWithTimeout(const bsls::TimeInterval& timeout) BSLS_KEYWORD_OVERRIDE;
@@ -93,11 +83,11 @@ class basic_AsioTimerFactory : public TimerFactory {
     BALL_LOG_SET_CLASS_CATEGORY("RMQIO.ASIOTIMERFACTORY");
 };
 
-typedef basic_AsioTimerFactory<> AsioTimerFactory;
-
-template <typename T, typename TT>
-basic_AsioTimer<T, TT>::basic_AsioTimer(boost::asio::io_context& io_context,
-                                        const bsls::TimeInterval& timeout)
+//================
+// AsioTimer impl
+//================
+inline AsioTimer::AsioTimer(asio::io_context& io_context,
+                            const bsls::TimeInterval& timeout)
 : Timer()
 , d_timer(io_context)
 , d_callback()
@@ -105,9 +95,8 @@ basic_AsioTimer<T, TT>::basic_AsioTimer(boost::asio::io_context& io_context,
 {
 }
 
-template <typename T, typename TT>
-basic_AsioTimer<T, TT>::basic_AsioTimer(boost::asio::io_context& io_context,
-                                        const Timer::Callback& callback)
+inline AsioTimer::AsioTimer(asio::io_context& io_context,
+                            const Timer::Callback& callback)
 : Timer()
 , d_timer(io_context)
 , d_callback(callback)
@@ -115,13 +104,9 @@ basic_AsioTimer<T, TT>::basic_AsioTimer(boost::asio::io_context& io_context,
 {
 }
 
-template <typename T, typename TT>
-basic_AsioTimer<T, TT>::~basic_AsioTimer()
-{
-}
+inline AsioTimer::~AsioTimer() {}
 
-template <typename T, typename TT>
-void basic_AsioTimer<T, TT>::reset(const bsls::TimeInterval& timeout)
+inline void AsioTimer::reset(const bsls::TimeInterval& timeout)
 {
     if (!d_callback) {
         BALL_LOG_ERROR << "reset() called before start()";
@@ -131,46 +116,37 @@ void basic_AsioTimer<T, TT>::reset(const bsls::TimeInterval& timeout)
     startTimer();
 }
 
-template <typename T, typename TT>
-void basic_AsioTimer<T, TT>::cancel()
-{
-    d_timer.cancel();
-}
+inline void AsioTimer::cancel() { d_timer.cancel(); }
 
-template <typename T, typename TT>
-void basic_AsioTimer<T, TT>::resetCallback(const Callback& callback)
+inline void AsioTimer::resetCallback(const Callback& callback)
 {
     d_callback = callback;
 }
 
-template <typename T, typename TT>
-void basic_AsioTimer<T, TT>::start(const Timer::Callback& callback)
+inline void AsioTimer::start(const Timer::Callback& callback)
 {
     d_callback = callback;
     startTimer();
 }
 
-template <typename T, typename TT>
-void basic_AsioTimer<T, TT>::handler_internal(
-    bsl::weak_ptr<basic_AsioTimer<T, TT> > timer,
-    const Timer::Callback callback,
-    const boost::system::error_code& error)
+inline void AsioTimer::handler_internal(bsl::weak_ptr<AsioTimer> timer,
+                                        const Timer::Callback callback,
+                                        const asio::error_code& error)
 {
-    bsl::shared_ptr<basic_AsioTimer<T, TT> > t = timer.lock();
+    bsl::shared_ptr<AsioTimer> t = timer.lock();
     if (t) {
         t->handler(callback, error);
     }
 }
 
-template <typename T, typename TT>
-void basic_AsioTimer<T, TT>::handler(const Timer::Callback& callback,
-                                     const boost::system::error_code& error)
+inline void AsioTimer::handler(const Timer::Callback& callback,
+                               const asio::error_code& error)
 {
-    if (!error && d_timer.expires_at() <= TT::now()) {
+    if (!error) {
         callback(Timer::EXPIRE);
     }
     else {
-        if (error != boost::asio::error::operation_aborted) {
+        if (error != asio::error::operation_aborted) {
             BALL_LOG_ERROR << "Unexpected error code: " << error;
         }
         // Cancelled
@@ -178,39 +154,36 @@ void basic_AsioTimer<T, TT>::handler(const Timer::Callback& callback,
     }
 }
 
-template <typename T, typename TT>
-void basic_AsioTimer<T, TT>::startTimer()
+inline void AsioTimer::startTimer()
 {
-    d_timer.expires_from_now(
-        boost::posix_time::milliseconds(d_timeout.totalMilliseconds()));
-    d_timer.async_wait(
-        bdlf::BindUtil::bind(&basic_AsioTimer<T, TT>::handler_internal,
-                             this->weak_from_this(),
-                             d_callback,
-                             bdlf::PlaceHolders::_1));
+    using namespace std::chrono;
+    d_timer.expires_after(milliseconds(d_timeout.totalMilliseconds()));
+    d_timer.async_wait(bdlf::BindUtil::bind(&AsioTimer::handler_internal,
+                                            this->weak_from_this(),
+                                            d_callback,
+                                            bdlf::PlaceHolders::_1));
 }
 
-template <typename T, typename TT>
-basic_AsioTimerFactory<T, TT>::basic_AsioTimerFactory(
-    rmqio::AsioEventLoop& eventLoop)
+//=========================
+// AsioTimerFactory impl
+//=========================
+inline AsioTimerFactory::AsioTimerFactory(rmqio::AsioEventLoop& eventLoop)
 : d_eventLoop(eventLoop)
 {
 }
 
-template <typename T, typename TT>
-bsl::shared_ptr<rmqio::Timer> basic_AsioTimerFactory<T, TT>::createWithTimeout(
-    const bsls::TimeInterval& timeout)
+inline bsl::shared_ptr<rmqio::Timer>
+AsioTimerFactory::createWithTimeout(const bsls::TimeInterval& timeout)
 {
-    return bsl::make_shared<rmqio::basic_AsioTimer<T, TT> >(
-        bsl::ref(d_eventLoop.context()), timeout);
+    return bsl::make_shared<rmqio::AsioTimer>(bsl::ref(d_eventLoop.context()),
+                                              timeout);
 }
 
-template <typename T, typename TT>
-bsl::shared_ptr<rmqio::Timer> basic_AsioTimerFactory<T, TT>::createWithCallback(
-    const Timer::Callback& callback)
+inline bsl::shared_ptr<rmqio::Timer>
+AsioTimerFactory::createWithCallback(const Timer::Callback& callback)
 {
-    return bsl::make_shared<rmqio::basic_AsioTimer<T, TT> >(
-        bsl::ref(d_eventLoop.context()), callback);
+    return bsl::make_shared<rmqio::AsioTimer>(bsl::ref(d_eventLoop.context()),
+                                              callback);
 }
 
 } // namespace rmqio

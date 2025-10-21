@@ -17,9 +17,5 @@
 
 namespace BloombergLP {
 namespace rmqtestutil {
-
-TimeOverride::duration_type TimeOverride::d_timeOffset =
-    boost::posix_time::seconds(0);
-
 }
 } // namespace BloombergLP

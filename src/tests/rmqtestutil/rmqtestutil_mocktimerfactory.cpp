@@ -34,7 +34,7 @@ MockTimerFactory::~MockTimerFactory() { cancel(); }
 
 void MockTimerFactory::cancel()
 {
-    // Invoke every timer with cancel as per boost spec
+    // Invoke every timer with cancel as per timer semantics
     for (bsl::list<TimerCallback>::iterator it = d_timerCallbacks.begin();
          it != d_timerCallbacks.end();
          ++it) {

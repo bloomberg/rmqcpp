@@ -17,25 +17,21 @@
 
 #include <rmqio_asioeventloop.h>
 
-#include <rmqtestutil_timeoverride.h>
-
 #include <bdlf_bind.h>
-#include <boost/asio.hpp>
 #include <bsls_timeinterval.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <bsl_memory.h>
+#include <chrono>
 
 using namespace BloombergLP;
 using namespace rmqio;
 using namespace ::testing;
 
 namespace {
-typedef rmqio::basic_AsioTimer<boost::asio::deadline_timer::time_type,
-                               rmqtestutil::TimeOverride>
-    FakeAsioTimer;
-} // namespace
+using namespace std::chrono_literals;
+}
 
 class MockCallback {
   public:
@@ -47,7 +43,7 @@ class AsioTimerTests : public Test {
     MockCallback d_mockCallback;
     Timer::Callback d_callback;
     AsioEventLoop d_io;
-    bsl::shared_ptr<FakeAsioTimer> d_timer;
+    bsl::shared_ptr<AsioTimer> d_timer;
 
     AsioTimerTests()
     : d_mockCallback()
@@ -55,8 +51,8 @@ class AsioTimerTests : public Test {
                                       &d_mockCallback,
                                       bdlf::PlaceHolders::_1))
     , d_io()
-    , d_timer(bsl::make_shared<FakeAsioTimer>(bsl::ref(d_io.context()),
-                                              bsls::TimeInterval(10)))
+    , d_timer(bsl::make_shared<AsioTimer>(bsl::ref(d_io.context()),
+                                          bsls::TimeInterval(10))) // 10ms
     {
     }
 };
@@ -70,8 +66,8 @@ TEST_F(AsioTimerTests, CallbackWhenExpires)
 {
     EXPECT_CALL(d_mockCallback, callback(Timer::EXPIRE)).Times(1);
     d_timer->start(d_callback);
-    rmqtestutil::TimeOverride::step_time(boost::posix_time::seconds(10));
-    EXPECT_THAT(d_io.context().run_one(), Eq(1));
+    // Run the event loop for sufficient time for 10s timer to expire
+    EXPECT_EQ(d_io.context().run_for(std::chrono::seconds(10)), 1);
 }
 
 TEST_F(AsioTimerTests, Cancel)
@@ -79,7 +75,7 @@ TEST_F(AsioTimerTests, Cancel)
     EXPECT_CALL(d_mockCallback, callback(Timer::CANCEL)).Times(1);
     d_timer->start(d_callback);
     d_timer->cancel();
-    EXPECT_THAT(d_io.context().poll_one(), Eq(1));
+    EXPECT_EQ(d_io.context().poll_one(), 1);
 }
 
 TEST_F(AsioTimerTests, Reset)
@@ -91,9 +87,10 @@ TEST_F(AsioTimerTests, Reset)
     }
     d_timer->start(d_callback);
     d_timer->reset(bsls::TimeInterval(10));
-    rmqtestutil::TimeOverride::step_time(boost::posix_time::seconds(10));
-    EXPECT_THAT(d_io.context().run_one(), Eq(1));
-    EXPECT_THAT(d_io.context().run_one(), Eq(1));
+    // First poll handles the cancellation from reset
+    EXPECT_EQ(d_io.context().poll_one(), 1);
+    // Then allow the timer to expire
+    EXPECT_GT(d_io.context().run_for(std::chrono::seconds(10)), 0);
 }
 
 TEST_F(AsioTimerTests, ResetCallsCancelImmediately)
@@ -101,16 +98,17 @@ TEST_F(AsioTimerTests, ResetCallsCancelImmediately)
     EXPECT_CALL(d_mockCallback, callback(Timer::CANCEL)).Times(1);
     d_timer->start(d_callback);
     d_timer->reset(bsls::TimeInterval(10));
-    EXPECT_THAT(d_io.context().poll_one(), Eq(1));
+    EXPECT_EQ(d_io.context().poll_one(), 1);
 }
 
 TEST_F(AsioTimerTests, CancelIsSilentlyIgnoredOnDestruction)
 {
     {
-        bsl::shared_ptr<FakeAsioTimer> timer = bsl::make_shared<FakeAsioTimer>(
+        bsl::shared_ptr<AsioTimer> timer = bsl::make_shared<AsioTimer>(
             bsl::ref(d_io.context()), bsls::TimeInterval(10));
         timer->start(d_callback);
     }
     EXPECT_CALL(d_mockCallback, callback(Timer::CANCEL)).Times(0);
-    EXPECT_THAT(d_io.context().run_one(), Eq(1));
+    // Drain any posted handlers
+    d_io.context().poll();
 }

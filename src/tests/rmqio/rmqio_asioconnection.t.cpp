@@ -21,7 +21,7 @@
 #include <rmqt_result.h>
 
 #include <bdlf_bind.h>
-#include <boost/asio.hpp>
+#include <asio.hpp>
 #include <bslma_managedptr.h>
 
 #include <gmock/gmock.h>
@@ -77,7 +77,7 @@ class TestableAsioConnection : public AsioConnection<AsioSocket> {
     TestableAsioConnection(const Connection::Callbacks& cb,
                            bslma::ManagedPtr<rmqio::Decoder> decoder)
     : AsioConnection<AsioSocket>(
-          bsl::shared_ptr<boost::asio::ip::tcp::socket>(),
+          bsl::shared_ptr<asio::ip::tcp::socket>(),
           cb,
           bsl::ref(decoder))
     {
@@ -90,12 +90,12 @@ class TestableAsioConnection : public AsioConnection<AsioSocket> {
     }
     void proxyDoClose(Connection::ReturnCode rc) { doClose(rc); }
 
-    void proxyHandleReadError(const boost::system::error_code& error)
+    void proxyHandleReadError(const asio::error_code& error)
     {
         handleReadError(error);
     }
 
-    void proxyHandleError(const boost::system::error_code& error)
+    void proxyHandleError(const asio::error_code& error)
     {
         handleError(error);
     }
@@ -161,8 +161,7 @@ TEST_F(TestConnection, Breathing)
     EXPECT_THAT(d_connection.get(),
                 Ne(static_cast<TestableAsioConnection*>(NULL)));
 }
-// test handle error with success throws
-// boost::system::errc::make_error_code(boost::system::errc::success),
+
 TEST_F(TestConnection, OneFrameRead)
 {
     EXPECT_THAT(d_callbacks.consumeCount, Eq(0));
@@ -257,8 +256,8 @@ TEST_F(TestConnection, SomeGoodFramesSomeBad)
 
 TEST_F(TestConnection, SocketSnap)
 {
-    d_connection->proxyHandleReadError(boost::asio::error::make_error_code(
-        boost::asio::error::connection_reset));
+    d_connection->proxyHandleReadError(asio::error::make_error_code(
+        asio::error::connection_reset));
     EXPECT_THAT(d_callbacks.consumeCount, Eq(0));
     EXPECT_THAT(d_callbacks.errorCount, Eq(1));
 }
@@ -266,7 +265,7 @@ TEST_F(TestConnection, SocketSnap)
 TEST_F(TestConnection, SocketClosed)
 {
     d_connection->proxyHandleReadError(
-        boost::asio::error::make_error_code(boost::asio::error::eof));
+        asio::error::make_error_code(asio::error::eof));
     EXPECT_THAT(d_callbacks.consumeCount, Eq(0));
     EXPECT_THAT(d_callbacks.errorCount, Eq(1));
 }
@@ -286,7 +285,7 @@ class AsioConnectionTests : public Test {
                                  bdlf::PlaceHolders::_1);
     }
 
-    boost::asio::io_context d_eventLoop;
+    asio::io_context d_eventLoop;
     TestConnection::Callbacks d_mockCallbacks;
     Connection::Callbacks d_callbacks;
 };

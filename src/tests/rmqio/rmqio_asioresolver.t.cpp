@@ -19,6 +19,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <asio.hpp>
 
 #include <bsl_cstdio.h>
 #include <bsl_memory.h>
@@ -91,14 +92,13 @@ TEST_F(ResolverTests, ShufflesResolverResults)
 {
     std::string host = "host";
     std::string port = "port";
-    typedef boost::asio::ip::basic_resolver_entry<boost::asio::ip::tcp>
-        entry_type;
+    typedef asio::ip::basic_resolver_entry<asio::ip::tcp> entry_type;
 
     bsl::vector<entry_type> entries;
     for (int i = 0; i < 5; i++) {
         bsl::string ip = bsl::to_string(i) + ".0.0.0";
         entry_type::endpoint_type endpoint(
-            boost::asio::ip::make_address(std::string(ip)), 1);
+            asio::ip::make_address(std::string(ip)), 1);
         entries.push_back(entry_type(endpoint, host, port));
     }
     AsioResolver::results_type resolverResults =
@@ -133,14 +133,13 @@ TEST_F(ResolverTests, NoShuffleDoesNotReorderResolverResults)
 {
     std::string host = "host";
     std::string port = "port";
-    typedef boost::asio::ip::basic_resolver_entry<boost::asio::ip::tcp>
-        entry_type;
+    typedef asio::ip::basic_resolver_entry<asio::ip::tcp> entry_type;
 
     bsl::vector<entry_type> entries;
     for (int i = 0; i < 5; i++) {
         bsl::string ip = bsl::to_string(i) + ".0.0.0";
         entry_type::endpoint_type endpoint(
-            boost::asio::ip::make_address(std::string(ip)), 1);
+            asio::ip::make_address(std::string(ip)), 1);
         entries.push_back(entry_type(endpoint, host, port));
     }
     AsioResolver::results_type resolverResults =

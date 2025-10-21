@@ -16,37 +16,31 @@
 #ifndef INCLUDED_RMQTESTUTIL_TIMEOVERRIDE
 #define INCLUDED_RMQTESTUTIL_TIMEOVERRIDE
 
-#include <boost/asio.hpp>
+#include <chrono>
 
-//@PURPOSE: Provides TimeOverride class extended from
-// boost::asio::deadline_timer::traits_type
-//
+//@PURPOSE: Provides TimeOverride class for tests without Boost.Asio
 //@CLASSES:
-//  rmqtestutil::TimeOverride: Steps time in testing to trigger handler waiting
-//  on deadline_timer
+//  rmqtestutil::TimeOverride: Steps time in testing to simulate time passage
 
 namespace BloombergLP {
 namespace rmqtestutil {
 
-class TimeOverride : public boost::asio::deadline_timer::traits_type {
+class TimeOverride {
   public:
-    static time_type now()
-    {
-        return add(boost::asio::deadline_timer::traits_type::now(),
-                   d_timeOffset);
-    }
+    using clock         = std::chrono::steady_clock;
+    using duration_type = clock::duration;
+    using time_type     = clock::time_point;
+
+    static time_type now() { return clock::now() + d_timeOffset; }
     static void step_time(duration_type t) { d_timeOffset += t; }
-    static boost::posix_time::time_duration to_posix_duration(duration_type d)
-    {
-        // This is the secret sauce to ensure that boost::asio keeps calling
-        // `now()` and responds to our adjustments via `step_time`
-        return d < boost::posix_time::milliseconds(1)
-                   ? d
-                   : boost::posix_time::milliseconds(1);
-    }
+
+    // For compatibility with previous interface; unused in current tests.
+    static duration_type to_posix_duration(duration_type d) { return d; }
 
     static duration_type d_timeOffset;
 };
+
+inline TimeOverride::duration_type TimeOverride::d_timeOffset{std::chrono::seconds(0)};
 
 } // namespace rmqtestutil
 } // namespace BloombergLP

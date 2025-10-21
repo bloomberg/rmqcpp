@@ -127,7 +127,7 @@ class RabbitContextOptions {
     RabbitContextOptions& useRabbitMQFieldValueEncoding(bool rabbitEncoding);
 
     /// \brief Shuffle endpoints rmq connects to.
-    /// By default, boost asio (libc) resolves and connects
+    /// By default, Asio (libc) resolves and connects
     /// to the node with longest matching subnet prefix
     /// causing disproportionately more connections with certain endpoints.
     /// Setting this option will shuffle resolver results.

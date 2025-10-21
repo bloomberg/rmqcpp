@@ -5,10 +5,10 @@ RUN apt-get update && apt-get install -y \
     clang-format \
     cmake \
     curl \
-    gcc \ 
+    gcc \
     gdb \
     git \
-    libboost-dev \
+    libasio-dev \
     libssl-dev \
     net-tools \
     netcat-traditional \

@@ -29,8 +29,7 @@
 #include <bslma_managedptr.h>
 #include <bsls_keyword.h>
 
-#include <boost/asio.hpp>
-#include <boost/system/error_code.hpp>
+#include <asio.hpp>
 
 namespace BloombergLP {
 namespace rmqio {
@@ -60,36 +59,35 @@ class AsioConnection
   protected:
     static void
     handleWriteCb(const bsl::weak_ptr<AsioConnection>& weakSelf,
-                  boost::system::error_code error,
+                  asio::error_code error,
                   bsl::size_t bytes_transferred,
                   const bsl::shared_ptr<SocketType>& socketLifetime);
-    void handleWrite(boost::system::error_code error,
-                     bsl::size_t bytes_transferred);
+    void handleWrite(asio::error_code error, bsl::size_t bytes_transferred);
 
     static void
     handleReadCb(const bsl::weak_ptr<AsioConnection>& weakSelf,
-                 boost::system::error_code error, // Result of operation.
+                 asio::error_code error, // Result of operation.
                  bsl::size_t bytes_transferred,   // Number of bytes received.
                  const bsl::shared_ptr<SocketType>& socketLifetime,
-                 const bsl::shared_ptr<boost::asio::streambuf>& bufferLifetime);
+                 const bsl::shared_ptr<asio::streambuf>& bufferLifetime);
 
-    void handleRead(boost::system::error_code error, // Result of operation.
+    void handleRead(asio::error_code error, // Result of operation.
                     bsl::size_t bytes_transferred // Number of bytes received.
     );
 
     bool doRead(bsl::size_t bytes_transferred);
 
-    void handleReadError(boost::system::error_code error);
+    void handleReadError(asio::error_code error);
 
-    bool handleSecureError(boost::system::error_code error);
+    bool handleSecureError(asio::error_code error);
 
-    void handleError(boost::system::error_code error);
+    void handleError(asio::error_code error);
 
-    const boost::asio::streambuf::mutable_buffers_type prepareBuffer();
+    const asio::streambuf::mutable_buffers_type prepareBuffer();
 
     static void
     handleCloseCb(const bsl::weak_ptr<AsioConnection>& weakSelf,
-                  boost::system::error_code error,
+                  asio::error_code error,
                   const bsl::shared_ptr<SocketType>& socketLifetime);
 
     void doClose(ReturnCode e = Connection::DISCONNECTED_ERROR);
@@ -106,7 +104,7 @@ class AsioConnection
     bslma::ManagedPtr<Decoder> d_frameDecoder;
     bsl::optional<DoneCallback> d_shutdown;
     State d_state;
-    bsl::shared_ptr<boost::asio::streambuf> d_inbound;
+    bsl::shared_ptr<asio::streambuf> d_inbound;
 
     typedef bsl::pair<SuccessWriteCallback,
                       bsl::vector<bsl::shared_ptr<SerializedFrame> > >

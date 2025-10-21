@@ -36,7 +36,7 @@ Cpp11BracedListStyle: true
 DerivePointerAlignment: false
 DisableFormat:   false
 ExperimentalAutoDetectBinPacking: false
-ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
+ForEachMacros:   [ foreach, Q_FOREACH ]
 IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: true
 MacroBlockBegin: ''

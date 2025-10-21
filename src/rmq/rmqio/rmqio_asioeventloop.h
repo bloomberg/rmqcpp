@@ -18,7 +18,7 @@
 
 #include <rmqio_eventloop.h>
 
-#include <boost/asio.hpp>
+#include <asio.hpp>
 #include <bslmt_condition.h>
 #include <bslmt_mutex.h>
 #include <bsls_keyword.h>
@@ -32,8 +32,8 @@ class Resolver;
 class TimerFactory;
 
 class AsioEventLoop : public EventLoop {
-    boost::asio::io_context d_context;
-    boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
+    asio::io_context d_context;
+    asio::executor_work_guard<asio::io_context::executor_type>
         d_workGuard;
     bsl::shared_ptr<rmqio::Resolver> d_resolver;
     bsl::shared_ptr<rmqio::TimerFactory> d_timerFactory;
@@ -50,7 +50,7 @@ class AsioEventLoop : public EventLoop {
     bool waitForEventLoopExit(int64_t waitTimeSec)
         BSLS_KEYWORD_OVERRIDE BSLS_KEYWORD_FINAL;
 
-    boost::asio::io_context& context() { return d_context; }
+    asio::io_context& context() { return d_context; }
 
     bsl::shared_ptr<rmqio::Resolver>
     resolver(bool shuffleConnectionEndpoints) BSLS_KEYWORD_OVERRIDE;

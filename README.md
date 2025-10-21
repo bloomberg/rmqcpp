@@ -66,12 +66,11 @@ graph TD;
 [rmqtestmocks](src/rmqtestmocks) | gmock types  | Objects useful for testing applications using `rmqcpp`
 [rmqamqp](src/rmq/rmqamqp) | AMQP abstraction layer | All logic relating to amqp communication, framing, classes and state machines - connection, channel queue
 [rmqamqpt](src/rmq/rmqamqpt) | Low-level AMQP data types (from 0-9-1 spec) | Primitives of the AMQP standard, methods, frame, amqp types to C++ types mapping
-[rmqio](src/rmq/rmqio) | IO abstraction layer | Raw socket connections management, reads/writes AMQP frames from/to the wire. Contains a set of async io interfaces, and an implementation using `boost::asio`
+[rmqio](src/rmq/rmqio) | IO abstraction layer | Raw socket connections management, reads/writes AMQP frames from/to the wire. Contains a set of async io interfaces, and an implementation using `asio`
 
 ## Quick Start
 The quickest way to get started is to take a look at our integration tests and sample 'hello world' program, which is possible by following the Docker [Build](#building) steps and then: from the interactive shell window running `./build/examples/helloworld/rmqhelloworld_producer`
  
-
 ## Usage
 
 ```cpp

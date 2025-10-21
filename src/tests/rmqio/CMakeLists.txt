@@ -28,16 +28,16 @@ target_link_libraries(rmqio_tests PUBLIC
 
 if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "SunPro" )
     # _RWSTD_ALLOCATOR tells the solaris <memory> header to define a std::allocator
-    # which conforms better to the C++ standard, which is expected by Boost. Without
-    # this, the library does not build due to missing std::allocator<..>::rebind
+    # which conforms better to the C++ standard; without this, the library does not
+    # build due to missing std::allocator<..>::rebind
 
     # "-D_XOPEN_SOURCE=500" "-D__EXTENSIONS__" tells the solaris sys/socket.h to conform
-    # better to what boost asio expects (to have a msg_flags member)
+    # better to what Asio expects (to have a msg_flags member)
     target_compile_definitions(rmqio_tests PRIVATE _RWSTD_ALLOCATOR "-D_XOPEN_SOURCE=500" "-D__EXTENSIONS__")
 endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "XL")
-    target_compile_definitions(rmqio_tests PRIVATE BOOST_ASIO_DISABLE_HANDLER_TYPE_REQUIREMENTS)
+    target_compile_definitions(rmqio_tests PRIVATE ASIO_DISABLE_HANDLER_TYPE_REQUIREMENTS)
 endif()
 
 add_test(NAME rmqio_tests COMMAND rmqio_tests)

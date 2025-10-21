@@ -3,7 +3,7 @@
     "name": "rmqcpp",
     "version": "1.0.0",
     "dependencies": [
-      "boost-asio",
+      "asio",
       "openssl",
       "gtest",
       "bde"

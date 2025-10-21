@@ -50,6 +50,7 @@
 #include <bsls_keyword.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <asio.hpp>
 
 using namespace BloombergLP;
 using namespace rmqamqp;
@@ -102,7 +103,7 @@ class MockConnection : public rmqio::Connection {
   public:
     MockConnection(const rmqio::Connection::Callbacks& callbacks,
                    ReplayFrame& replayFrame,
-                   boost::asio::io_context& eventLoop)
+                   asio::io_context& eventLoop)
     : d_replayFrame(replayFrame)
     , d_connectionCallbacks(callbacks)
     , d_eventLoop(eventLoop)
@@ -147,7 +148,7 @@ class MockConnection : public rmqio::Connection {
 
             BSLS_ASSERT_OPT(rc == Frame::OK);
 
-            boost::asio::post(
+            asio::post(
                 d_eventLoop,
                 bdlf::BindUtil::bind(d_connectionCallbacks.onRead, decoded));
         }
@@ -157,7 +158,7 @@ class MockConnection : public rmqio::Connection {
     {
         BALL_LOG_TRACE << "MockConnection close";
 
-        boost::asio::post(d_eventLoop,
+        asio::post(d_eventLoop,
                           bdlf::BindUtil::bind(cb, GRACEFUL_DISCONNECT));
     }
 
@@ -177,7 +178,7 @@ class MockConnection : public rmqio::Connection {
             rmqamqpt::Method(
                 rmqamqpt::ConnectionMethod(rmqamqpt::ConnectionCloseOk())));
 
-        boost::asio::post(d_eventLoop, callback);
+        asio::post(d_eventLoop, callback);
 
         if (!closeOk) {
             feedNextFrame();
@@ -195,7 +196,7 @@ class MockConnection : public rmqio::Connection {
 
     ReplayFrame& d_replayFrame;
     rmqio::Connection::Callbacks d_connectionCallbacks;
-    boost::asio::io_context& d_eventLoop;
+    asio::io_context& d_eventLoop;
 };
 
 class MockHeartbeatManager : public rmqamqp::HeartbeatManager {
@@ -303,7 +304,7 @@ ACTION_P3(ConnectMockConnection, mockConnectPtrPtr, replayFrame, eventLoop)
 
     ON_CALL(**mockConnectPtrPtr, isConnected()).WillByDefault(Return(true));
 
-    boost::asio::post(eventLoop.get(), arg4);
+    asio::post(eventLoop.get(), arg4);
 
     return *mockConnectPtrPtr;
 }
@@ -388,7 +389,7 @@ class ConnectionTests : public ::testing::Test {
 
     bsl::vector<bsl::pair<bsl::string, bsl::string> > d_vhostTag;
 
-    boost::asio::io_context d_eventLoop;
+    asio::io_context d_eventLoop;
 
     ConnectionTests()
     : d_replayFrame()
@@ -1231,6 +1232,8 @@ TEST_F(ConnectionTests, PublishReconnectTimeMetric)
         // 1. Setup connection
         d_eventLoop.run();
         d_eventLoop.restart();
+
+        EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
 
         EXPECT_CALL(*d_channelFactory,
                     createReceiveChannel(_, _, _, _, _, _, _, _, _))

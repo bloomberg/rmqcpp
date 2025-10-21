@@ -16,9 +16,8 @@
 #ifndef INCLUDED_RMQIO_ASIOSOCKETWRAPPER
 #define INCLUDED_RMQIO_ASIOSOCKETWRAPPER
 
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include <boost/system/error_code.hpp>
+#include <asio.hpp>
+#include <asio/ssl.hpp>
 
 #include <ball_log.h>
 #include <bdlb_variant.h>
@@ -27,14 +26,14 @@
 namespace BloombergLP {
 namespace rmqio {
 
-typedef boost::asio::ip::tcp::socket AsioSocket;
-typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> AsioSSLSocket;
+typedef asio::ip::tcp::socket AsioSocket;
+typedef asio::ssl::stream<asio::ip::tcp::socket> AsioSSLSocket;
 
 class AsioSecureSocketWrapper {
   public:
     AsioSecureSocketWrapper(
         AsioSSLSocket::executor_type executor,
-        const bsl::shared_ptr<boost::asio::ssl::context>& context)
+        const bsl::shared_ptr<asio::ssl::context>& context)
     : d_context(context)
     , d_socket(bsl::make_shared<AsioSSLSocket>(executor, bsl::ref(*d_context)))
     {
@@ -42,7 +41,7 @@ class AsioSecureSocketWrapper {
 
     void close()
     {
-        boost::system::error_code ec;
+        asio::error_code ec;
         d_socket->lowest_layer().close(ec);
 
         if (ec) {
@@ -56,12 +55,12 @@ class AsioSecureSocketWrapper {
     {
         return d_socket->lowest_layer();
     }
-    void shutdown(int /*not in ssl api*/, boost::system::error_code& ec)
+    void shutdown(int /*not in ssl api*/, asio::error_code& ec)
     {
         // This will cause the receive loop to terminate with short read err,
         // this is the TLS equivalent of EOF
         d_socket->lowest_layer().shutdown(
-            boost::asio::ip::tcp::socket::shutdown_receive, ec);
+            asio::ip::tcp::socket::shutdown_receive, ec);
         if (ec) {
             BALL_LOG_SET_CATEGORY("RMQIO.ASIOSOCKETWRAPPER");
             BALL_LOG_WARN << "Failed to Shutdown TLS cleanly: " << ec.message();
@@ -73,7 +72,7 @@ class AsioSecureSocketWrapper {
     AsioSSLSocket& socket() { return *d_socket; }
 
   private:
-    bsl::shared_ptr<boost::asio::ssl::context> d_context;
+    bsl::shared_ptr<asio::ssl::context> d_context;
     bsl::shared_ptr<AsioSSLSocket> d_socket;
 };
 

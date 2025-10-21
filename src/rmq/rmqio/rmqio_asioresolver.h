@@ -34,9 +34,8 @@
 #include <rmqt_result.h>
 #include <rmqt_securityparameters.h>
 
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include <boost/system/error_code.hpp>
+#include <asio.hpp>
+#include <asio/ssl.hpp>
 
 #include <bdlb_random.h>
 
@@ -99,7 +98,7 @@ class AsioResolver : public Resolver,
         const NewConnectionCallback& onSuccess,
         const ErrorCallback& onFail);
 
-    typedef boost::asio::ip::tcp::resolver::results_type results_type;
+    typedef asio::ip::tcp::resolver::results_type results_type;
 
     static void shuffleResolverResults(results_type& resolverResults,
                                        bool shuffleConnectionEndpoints,
@@ -122,7 +121,7 @@ class AsioResolver : public Resolver,
     template <typename SocketType>
     void handleConnect(
         const bsl::string& host,
-        boost::system::error_code error,
+        asio::error_code error,
         AsioResolver::results_type::iterator endpoint,
         const bsl::weak_ptr<AsioConnection<SocketType> >& weakConnection,
         const NewConnectionCallback& onSuccess,
@@ -132,7 +131,7 @@ class AsioResolver : public Resolver,
     static void handleConnectCb(
         bsl::weak_ptr<AsioResolver> weakSelf,
         const bsl::string& host,
-        boost::system::error_code error,
+        asio::error_code error,
         AsioResolver::results_type::iterator endpoint,
         const bsl::weak_ptr<AsioConnection<SocketType> >& weakConnection,
         const bsl::shared_ptr<SocketType>& socketLifetime,
@@ -142,7 +141,7 @@ class AsioResolver : public Resolver,
     template <typename SocketType>
     static void handleHandshakeCb(
         bsl::weak_ptr<AsioResolver> weakSelf,
-        boost::system::error_code error,
+        asio::error_code error,
         const bsl::weak_ptr<AsioConnection<SocketType> >& weakConnection,
         const bsl::shared_ptr<SocketType>& socketLifetime,
         const NewConnectionCallback& onSuccess,
@@ -152,7 +151,7 @@ class AsioResolver : public Resolver,
     void handleResolve(
         const bsl::string& host,
         const bsl::string& port,
-        boost::system::error_code error,
+        asio::error_code error,
         AsioResolver::results_type resolverResults,
         const bsl::weak_ptr<AsioConnection<SocketType> >& weakConnection,
         const bsl::weak_ptr<SocketType>& weakSocket,
@@ -164,7 +163,7 @@ class AsioResolver : public Resolver,
         bsl::weak_ptr<AsioResolver> weakSelf,
         const bsl::string& host,
         const bsl::string& port,
-        boost::system::error_code error,
+        asio::error_code error,
         AsioResolver::results_type resolver_results,
         const bsl::weak_ptr<AsioConnection<SocketType> >& weakConnection,
         const bsl::weak_ptr<SocketType>& weakSocket,
@@ -177,7 +176,7 @@ class AsioResolver : public Resolver,
     }
 
   private:
-    boost::asio::ip::tcp::resolver d_resolver;
+    asio::ip::tcp::resolver d_resolver;
     bool d_shuffleConnectionEndpoints;
 };
 

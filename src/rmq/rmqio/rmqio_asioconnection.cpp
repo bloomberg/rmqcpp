@@ -18,7 +18,7 @@
 #include <rmqio_asiosocketwrapper.h>
 #include <rmqt_securityparameters.h>
 
-#include <boost/asio.hpp>
+#include <asio.hpp>
 #include <fcntl.h>
 
 #include <ball_log.h>
@@ -40,10 +40,10 @@ namespace {
 
 BALL_LOG_SET_NAMESPACE_CATEGORY("RMQIO.ASIOCONNECTION")
 
-boost::asio::const_buffer
+asio::const_buffer
 frame2buffer(const bsl::shared_ptr<SerializedFrame>& frame)
 {
-    return boost::asio::const_buffer(frame->serialized(), frame->frameLength());
+    return asio::const_buffer(frame->serialized(), frame->frameLength());
 }
 
 bsl::size_t accumulateFun(bsl::size_t totalLen,
@@ -73,8 +73,7 @@ bool prepareSocket(bsl::shared_ptr<SocketType>& socket)
         int newSocket;
         if ((newSocket = fcntl(s, F_DUPFD, 256)) != -1) {
             socket->lowest_layer().close();
-            socket->lowest_layer().assign(boost::asio::ip::tcp::v4(),
-                                          newSocket);
+            socket->lowest_layer().assign(asio::ip::tcp::v4(), newSocket);
         }
     }
     BALL_LOG_DEBUG << "File descriptor is "
@@ -82,24 +81,23 @@ bool prepareSocket(bsl::shared_ptr<SocketType>& socket)
 #endif
 
     BALL_LOG_DEBUG << "Turning on TCP_NODELAY & KEEP_ALIVE";
-    boost::system::error_code ec;
+    asio::error_code ec;
 
     // Nagle must be disabled before the first send
-    socket->lowest_layer().set_option(boost::asio::ip::tcp::no_delay(true), ec);
+    socket->lowest_layer().set_option(asio::ip::tcp::no_delay(true), ec);
     if (ec) {
         BALL_LOG_ERROR << "Failed to set socket no_delay";
         return false;
     }
 
-    ec = boost::system::error_code();
-    socket->lowest_layer().set_option(
-        boost::asio::socket_base::keep_alive(true), ec);
+    ec = asio::error_code();
+    socket->lowest_layer().set_option(asio::socket_base::keep_alive(true), ec);
     if (ec) {
         BALL_LOG_ERROR << "Failed to set socket keep_alive";
         return false;
     }
 
-    ec = boost::system::error_code();
+    ec = asio::error_code();
     socket->lowest_layer().non_blocking(true, ec);
     if (ec) {
         BALL_LOG_ERROR << "Failed to set socket non-blocking";
@@ -135,14 +133,14 @@ void AsioConnection<SocketType>::startNextWrite()
     const bsl::vector<bsl::shared_ptr<SerializedFrame> >& framePtrs =
         d_writeQueue[0].second;
 
-    bsl::vector<boost::asio::const_buffer> buffers;
+    bsl::vector<asio::const_buffer> buffers;
     buffers.reserve(framePtrs.size());
     bsl::transform(framePtrs.cbegin(),
                    framePtrs.cend(),
                    bsl::back_inserter(buffers),
                    &frame2buffer);
 
-    boost::asio::async_write(
+    asio::async_write(
         use_socket(*d_socket),
         buffers,
         bdlf::BindUtil::bind(&AsioConnection<SocketType>::handleWriteCb,
@@ -173,10 +171,10 @@ bool AsioConnection<SocketType>::startRead()
         return false;
     }
 
-    boost::asio::async_read(
+    asio::async_read(
         use_socket(*d_socket),
         prepareBuffer(),
-        boost::asio::transfer_at_least(1), // read at least 1byte
+        asio::transfer_at_least(1), // read at least 1byte
         bdlf::BindUtil::bind(&AsioConnection<SocketType>::handleReadCb,
                              AsioConnection<SocketType>::weak_from_this(),
                              bdlf::PlaceHolders::_1,
@@ -192,10 +190,10 @@ void AsioConnection<SocketType>::close(const DoneCallback& cb)
 {
     d_shutdown = cb;
     d_state    = CLOSING;
-    boost::system::error_code ec;
+    asio::error_code ec;
     if (d_socket) {
         BALL_LOG_TRACE << "Shutting down socket";
-        d_socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+        d_socket->shutdown(asio::ip::tcp::socket::shutdown_both, ec);
     }
     if (ec) {
         BALL_LOG_WARN << "Failed to shutdown socket: " << ec;
@@ -216,7 +214,7 @@ AsioConnection<SocketType>::AsioConnection(
 , d_frameDecoder(decoder)
 , d_shutdown()
 , d_state(CONNECTING)
-, d_inbound(bsl::make_shared<boost::asio::streambuf>())
+, d_inbound(bsl::make_shared<asio::streambuf>())
 , d_writeQueue()
 {
 }
@@ -234,7 +232,7 @@ AsioConnection<SocketType>::~AsioConnection()
 }
 
 template <typename SocketType>
-void AsioConnection<SocketType>::handleWrite(boost::system::error_code error,
+void AsioConnection<SocketType>::handleWrite(asio::error_code error,
                                              bsl::size_t bytes_transferred)
 
 {
@@ -262,7 +260,7 @@ void AsioConnection<SocketType>::handleWrite(boost::system::error_code error,
 template <typename SocketType>
 void AsioConnection<SocketType>::handleWriteCb(
     const bsl::weak_ptr<AsioConnection>& weakSelf,
-    boost::system::error_code error,
+    asio::error_code error,
     bsl::size_t bytes_transferred,
     const bsl::shared_ptr<SocketType>&)
 {
@@ -281,10 +279,10 @@ void AsioConnection<SocketType>::handleWriteCb(
 template <typename SocketType>
 void AsioConnection<SocketType>::handleReadCb(
     const bsl::weak_ptr<AsioConnection>& weakSelf,
-    boost::system::error_code error, // Result of operation.
+    asio::error_code error, // Result of operation.
     bsl::size_t bytes_transferred,   // Number of bytes received.
     const bsl::shared_ptr<SocketType>&,
-    const bsl::shared_ptr<boost::asio::streambuf>&)
+    const bsl::shared_ptr<asio::streambuf>&)
 {
     // Extend socket/buffer lifetime to the end of this completion handler
 
@@ -299,7 +297,7 @@ void AsioConnection<SocketType>::handleReadCb(
 }
 
 template <typename SocketType>
-void AsioConnection<SocketType>::handleRead(boost::system::error_code error,
+void AsioConnection<SocketType>::handleRead(asio::error_code error,
                                             bsl::size_t bytes_transferred)
 
 {
@@ -318,7 +316,7 @@ void AsioConnection<SocketType>::handleRead(boost::system::error_code error,
 
 template <>
 bool AsioConnection<AsioSecureSocketWrapper>::handleSecureError(
-    boost::system::error_code)
+    asio::error_code)
 {
     d_socket->socket().async_shutdown(bdlf::BindUtil::bind(
         &AsioConnection<AsioSecureSocketWrapper>::handleCloseCb,
@@ -329,17 +327,17 @@ bool AsioConnection<AsioSecureSocketWrapper>::handleSecureError(
 }
 
 template <typename SocketType>
-bool AsioConnection<SocketType>::handleSecureError(boost::system::error_code)
+bool AsioConnection<SocketType>::handleSecureError(asio::error_code)
 {
     return false;
 }
 
 template <typename SocketType>
 void AsioConnection<SocketType>::handleReadError(
-    boost::system::error_code error)
+    asio::error_code error)
 {
     switch (error.value()) {
-        case boost::asio::error::eof:
+        case asio::error::eof:
             if (d_state == CLOSING) {
                 BALL_LOG_DEBUG << "Received EOF from broker (Already Closing)";
             }
@@ -347,7 +345,7 @@ void AsioConnection<SocketType>::handleReadError(
                 BALL_LOG_DEBUG << "Received unexpected EOF from remote peer";
             }
             break;
-        case boost::asio::error::operation_aborted:
+        case asio::error::operation_aborted:
             if (d_state == CLOSING) {
                 BALL_LOG_DEBUG << "Callback Cancelled (operation aborted): "
                                   "graceful shutdown";
@@ -358,9 +356,9 @@ void AsioConnection<SocketType>::handleReadError(
                               << d_state;
             }
             break;
-        case boost::asio::ssl::error::stream_truncated: // ungraceful TLS stream
-                                                        // termination
-            if (error.category() == boost::asio::error::get_ssl_category()) {
+        case asio::ssl::error::stream_truncated: // ungraceful TLS stream
+                                                // termination
+            if (error.category() == asio::error::get_ssl_category()) {
                 bsl::ostringstream tlsError;
                 char buf[128] = {};
                 ERR_error_string_n(error.value(), buf, sizeof(buf));
@@ -370,7 +368,7 @@ void AsioConnection<SocketType>::handleReadError(
             }
             break;
         default:
-            if (error.category() == boost::asio::error::get_ssl_category()) {
+            if (error.category() == asio::error::get_ssl_category()) {
                 bsl::ostringstream tlsError;
                 tlsError << error.message() << ": ";
 
@@ -394,14 +392,14 @@ void AsioConnection<SocketType>::handleReadError(
 }
 
 template <typename SocketType>
-void AsioConnection<SocketType>::handleError(boost::system::error_code error)
+void AsioConnection<SocketType>::handleError(asio::error_code error)
 {
     switch (error.value()) {
-        case boost::asio::error::eof:
+        case asio::error::eof:
             BALL_LOG_DEBUG << "Socket closed: " << error.message()
                            << ". Current state: " << d_state;
             break;
-        case boost::asio::error::operation_aborted:
+        case asio::error::operation_aborted:
             BALL_LOG_DEBUG << "Socket closed: " << error.message()
                            << ". Current state: " << d_state;
             break;
@@ -423,7 +421,7 @@ bool AsioConnection<SocketType>::isConnected() const
 }
 
 template <typename SocketType>
-const boost::asio::streambuf::mutable_buffers_type
+const asio::streambuf::mutable_buffers_type
 AsioConnection<SocketType>::prepareBuffer()
 {
     return d_inbound->prepare(d_frameDecoder->maxFrameSize());
@@ -439,16 +437,15 @@ bool AsioConnection<SocketType>::doRead(bsl::size_t bytes_transferred)
 
     d_inbound->commit(bytes_transferred);
 
-    bsl::size_t bytes_decoded                       = 0;
-    boost::asio::streambuf::const_buffers_type bufs = d_inbound->data();
+    bsl::size_t bytes_decoded                    = 0;
+    asio::streambuf::const_buffers_type bufs = d_inbound->data();
     bsl::vector<rmqamqpt::Frame> readFrames;
 
-    for (const boost::asio::const_buffer* it =
-             boost::asio::buffer_sequence_begin(bufs);
-         it != boost::asio::buffer_sequence_end(bufs);
+    for (const asio::const_buffer* it = asio::buffer_sequence_begin(bufs);
+         it != asio::buffer_sequence_end(bufs);
          ++it) {
-        const boost::asio::const_buffer& buffer = *it;
-        Decoder::ReturnCode rcode               = d_frameDecoder->appendBytes(
+        const asio::const_buffer& buffer = *it;
+        Decoder::ReturnCode rcode        = d_frameDecoder->appendBytes(
             &readFrames, buffer.data(), buffer.size());
         if (rcode != Decoder::OK) {
             BALL_LOG_WARN << "Bad rcode from decoder: " << rcode;
@@ -471,13 +468,13 @@ bool AsioConnection<SocketType>::doRead(bsl::size_t bytes_transferred)
 template <typename SocketType>
 void AsioConnection<SocketType>::handleCloseCb(
     const bsl::weak_ptr<AsioConnection>& weakSelf,
-    boost::system::error_code error, // Result of operation.
+    asio::error_code error, // Result of operation.
     const bsl::shared_ptr<SocketType>&)
 {
     // Extend socket lifetime to the end of this completion handler
     BALL_LOG_TRACE << "async_shutdown: " << error.message();
 
-    if (error && error.value() != boost::asio::ssl::error::stream_truncated) {
+    if (error && error.value() != asio::ssl::error::stream_truncated) {
         BALL_LOG_INFO << "rcode with async_shutdown: " << error.message();
     }
 

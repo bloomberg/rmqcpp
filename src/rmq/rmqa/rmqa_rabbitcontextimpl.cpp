@@ -39,8 +39,6 @@
 #include <bsls_review.h>
 #include <bsls_timeinterval.h>
 
-#include <boost/algorithm/string/join.hpp>
-
 #include <bsl_sstream.h>
 #include <bsl_string.h>
 #include <bsl_vector.h>
@@ -247,9 +245,13 @@ RabbitContextImpl::~RabbitContextImpl()
                               << it->second.size() << " producers/consumers";
 
                     if (it->second.size() > 0) {
-                        bsl::string channelsDebugInfo =
-                            boost::algorithm::join(it->second, ", ");
-
+                        std::string channelsDebugInfo;
+                        for (size_t i = 0; i < it->second.size(); ++i) {
+                            if (i > 0) {
+                                channelsDebugInfo += ", ";
+                            }
+                            channelsDebugInfo += it->second.at(i);
+                        }
                         logOutput << ": [" << channelsDebugInfo << "]. ";
                     }
                 }

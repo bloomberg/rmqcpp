@@ -27,9 +27,6 @@
 #include <bsls_systemtime.h>
 #include <bsls_types.h>
 
-#include <boost/range/algorithm.hpp>
-#include <boost/system/error_code.hpp>
-
 #include <bsl_algorithm.h>
 #include <bsl_cstdint.h>
 #include <bsl_functional.h>
@@ -47,7 +44,7 @@ namespace rmqio {
 namespace {
 BALL_LOG_SET_NAMESPACE_CATEGORY("RMQIO.ASIORESOLVER")
 
-typedef bsl::function<void(const boost::system::error_code& error,
+typedef bsl::function<void(const asio::error_code& error,
                            AsioResolver::results_type::iterator)>
     ConnectHandler;
 
@@ -102,7 +99,7 @@ void logTlsConnectionAlert(const SSL* s, int where, int ret)
 }
 
 bool logCertVerificationFailure(bool preverified,
-                                boost::asio::ssl::verify_context& ctx)
+                                asio::ssl::verify_context& ctx)
 {
     if (!preverified) {
         char subject_name[256];
@@ -118,11 +115,11 @@ bool logCertVerificationFailure(bool preverified,
     return preverified;
 }
 
-bsl::string augmentTlsError(const boost::system::error_code& ec)
+bsl::string augmentTlsError(const asio::error_code& ec)
 {
     bsl::string err = ec.message();
 
-    if (ec.category() == boost::asio::error::get_ssl_category()) {
+    if (ec.category() == asio::error::get_ssl_category()) {
         err += " (" + bsl::to_string(ERR_GET_LIB(ec.value())) + "," +
                bsl::to_string(ERR_GET_REASON(ec.value())) + ") ";
 
@@ -134,7 +131,7 @@ bsl::string augmentTlsError(const boost::system::error_code& ec)
     return err;
 }
 
-void handleTLSHandshake(boost::system::error_code error,
+void handleTLSHandshake(asio::error_code error,
                         const bsl::string& host,
                         const Resolver::ErrorCallback& onFail,
                         const ConnectHandler& afterHandshake,
@@ -153,7 +150,7 @@ void handleTLSHandshake(boost::system::error_code error,
 
 void startTLSHandshake(
     const bsl::string& host,
-    boost::system::error_code error,
+    asio::error_code error,
     AsioResolver::results_type::iterator endpoint,
     const bsl::shared_ptr<AsioSecureSocketWrapper>& socketWrapper,
     const Resolver::ErrorCallback& onFail,
@@ -166,7 +163,7 @@ void startTLSHandshake(
                       << ", starting TLS Handshake";
 
         socketWrapper->socket().async_handshake(
-            boost::asio::ssl::stream_base::client,
+            asio::ssl::stream_base::client,
             bdlf::BindUtil::bind(&handleTLSHandshake,
                                  bdlf::PlaceHolders::_1,
                                  host,
@@ -181,31 +178,30 @@ void startTLSHandshake(
     }
 }
 
-bsl::shared_ptr<boost::asio::ssl::context>
+bsl::shared_ptr<asio::ssl::context>
 createSecureContext(const bsl::shared_ptr<rmqt::SecurityParameters>& params)
 {
-    bsl::shared_ptr<boost::asio::ssl::context> result =
-        bsl::make_shared<boost::asio::ssl::context>(
-            boost::asio::ssl::context::tls_client);
+    bsl::shared_ptr<asio::ssl::context> result =
+        bsl::make_shared<asio::ssl::context>(asio::ssl::context::tls_client);
 
     bool fail = false;
-    boost::system::error_code ec;
-    result->set_verify_mode(boost::asio::ssl::verify_peer, ec);
+    asio::error_code ec;
+    result->set_verify_mode(asio::ssl::verify_peer, ec);
     if (ec) {
         BALL_LOG_ERROR << "Error setting verify mode: " << ec;
         fail = true;
         ec.clear();
     }
 
-    boost::asio::ssl::context::options tls_options(
-        boost::asio::ssl::context::default_workarounds |
-        boost::asio::ssl::context::single_dh_use);
+    asio::ssl::context::options tls_options(
+        asio::ssl::context::default_workarounds |
+        asio::ssl::context::single_dh_use);
     switch (params->method()) {
         case rmqt::SecurityParameters::TLS_1_2_OR_BETTER:
-            tls_options |= (boost::asio::ssl::context::no_sslv2 |
-                            boost::asio::ssl::context::no_sslv3 |
-                            boost::asio::ssl::context::no_tlsv1 |
-                            boost::asio::ssl::context::no_tlsv1_1);
+            tls_options |= (asio::ssl::context::no_sslv2 |
+                            asio::ssl::context::no_sslv3 |
+                            asio::ssl::context::no_tlsv1 |
+                            asio::ssl::context::no_tlsv1_1);
             break;
     }
 
@@ -219,7 +215,7 @@ createSecureContext(const bsl::shared_ptr<rmqt::SecurityParameters>& params)
     switch (params->verification()) {
         case rmqt::SecurityParameters::MUTUAL:
             result->use_private_key_file(
-                params->clientKeyPath(), boost::asio::ssl::context::pem, ec);
+                params->clientKeyPath(), asio::ssl::context::pem, ec);
             if (ec) {
                 BALL_LOG_ERROR << "Error using Client Key File: "
                                << params->clientKeyPath()
@@ -311,7 +307,7 @@ AsioResolver::asyncConnect(const bsl::string& host,
     d_resolver.async_resolve(
         host.c_str(),
         bsl::to_string(port).c_str(),
-        boost::asio::ip::resolver_query_base::numeric_service,
+        asio::ip::resolver_base::numeric_service,
         bdlf::BindUtil::bind(
             &AsioResolver::handleResolveCb<AsioSocket>,
             weak_from_this(),
@@ -337,7 +333,7 @@ bsl::shared_ptr<Connection> AsioResolver::asyncSecureConnect(
     const ErrorCallback& onFail)
 {
     bsl::shared_ptr<AsioConnection<AsioSecureSocketWrapper> > connection;
-    bsl::shared_ptr<boost::asio::ssl::context> secureContext =
+    bsl::shared_ptr<asio::ssl::context> secureContext =
         createSecureContext(securityParameters);
     if (!secureContext) {
         BALL_LOG_ERROR << "Failed to setup TLS client with parameters: ["
@@ -357,7 +353,7 @@ bsl::shared_ptr<Connection> AsioResolver::asyncSecureConnect(
     d_resolver.async_resolve(
         host.c_str(),
         bsl::to_string(port).c_str(),
-        boost::asio::ip::resolver_query_base::numeric_service,
+        asio::ip::resolver_base::numeric_service,
         bdlf::BindUtil::bind(
             &AsioResolver::handleResolveCb<AsioSecureSocketWrapper>,
             weak_from_this(),
@@ -402,7 +398,7 @@ void AsioResolver::startConnect<AsioSecureSocketWrapper>(
         onSuccess,
         onFail);
 
-    boost::asio::async_connect(
+    asio::async_connect(
         socket->lowest_layer(),
         resolverResults.begin(),
         resolverResults.end(),
@@ -433,7 +429,7 @@ void AsioResolver::startConnect(
         return;
     }
 
-    boost::asio::async_connect(
+    asio::async_connect(
         *socket,
         resolverResults.begin(),
         resolverResults.end(),
@@ -451,7 +447,7 @@ void AsioResolver::startConnect(
 template <typename SocketType>
 void AsioResolver::handleConnect(
     const bsl::string& host,
-    boost::system::error_code error,
+    asio::error_code error,
     AsioResolver::results_type::iterator endpoint,
     const bsl::weak_ptr<AsioConnection<SocketType> >& weakConnection,
     const NewConnectionCallback& onSuccess,
@@ -492,16 +488,17 @@ void AsioResolver::shuffleResolverResults(
     const bsl::string& host,
     const bsl::string& port)
 {
-    if (shuffleConnectionEndpoints && resolverResults.size()) {
-        typedef boost::asio::ip::basic_resolver_entry<boost::asio::ip::tcp>
-            entry_type;
+    if (shuffleConnectionEndpoints && !resolverResults.empty()) {
+        typedef asio::ip::basic_resolver_entry<asio::ip::tcp> entry_type;
         // 1. copy endpoint entries to a vector to shuffle
         bsl::vector<entry_type> entries(resolverResults.size());
-        bsl::copy(
-            resolverResults.begin(), resolverResults.end(), entries.begin());
+        bsl::copy(resolverResults.begin(), resolverResults.end(), entries.begin());
 
-        // 2. shuffle vector (c++ standard dependent)
-        boost::range::random_shuffle(entries, g);
+        // 2. Fisher-Yates shuffle using provided generator
+        for (bsl::ptrdiff_t i = static_cast<bsl::ptrdiff_t>(entries.size()) - 1; i > 0; --i) {
+            bsl::ptrdiff_t j = g(i + 1); // 0..i
+            bsl::swap(entries[static_cast<bsl::size_t>(i)], entries[static_cast<bsl::size_t>(j)]);
+        }
 
         // 3. re-create shuffled results_type
         resolverResults = AsioResolver::results_type::create(
@@ -513,7 +510,7 @@ template <typename SocketType>
 void AsioResolver::handleResolve(
     const bsl::string& host,
     const bsl::string& port,
-    boost::system::error_code error,
+    asio::error_code error,
     AsioResolver::results_type resolverResults,
     const bsl::weak_ptr<AsioConnection<SocketType> >& weakConnection,
     const bsl::weak_ptr<SocketType>& weakSocket,
@@ -551,7 +548,7 @@ template <typename SocketType>
 void AsioResolver::handleConnectCb(
     bsl::weak_ptr<AsioResolver> weakSelf,
     const bsl::string& host,
-    boost::system::error_code error,
+    asio::error_code error,
     AsioResolver::results_type::iterator endpoint,
     const bsl::weak_ptr<AsioConnection<SocketType> >& connection,
     const bsl::shared_ptr<SocketType>& socketLifetime,
@@ -579,7 +576,7 @@ void AsioResolver::handleResolveCb(
     bsl::weak_ptr<AsioResolver> weakSelf,
     const bsl::string& host,
     const bsl::string& port,
-    boost::system::error_code error,
+    asio::error_code error,
     AsioResolver::results_type resolver_results,
     const bsl::weak_ptr<AsioConnection<SocketType> >& weakConnection,
     const bsl::weak_ptr<SocketType>& weakSocket,

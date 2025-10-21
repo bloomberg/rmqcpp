@@ -18,7 +18,7 @@
 #include <rmqio_asiotimer.h>
 
 #include <ball_log.h>
-#include <boost/asio.hpp>
+#include <asio.hpp>
 #include <bslmt_lockguard.h>
 
 #include <bsl_iostream.h>
@@ -35,7 +35,7 @@ BALL_LOG_SET_NAMESPACE_CATEGORY("RMQIO.ASIOEVENTLOOP")
 AsioEventLoop::AsioEventLoop()
 : EventLoop()
 , d_context()
-, d_workGuard(boost::asio::make_work_guard(d_context))
+, d_workGuard(asio::make_work_guard(d_context))
 , d_resolver()
 , d_timerFactory()
 , d_mutex()
@@ -110,12 +110,12 @@ void AsioEventLoop::onThreadStarted()
 
 void AsioEventLoop::postImpl(const Item& item)
 {
-    boost::asio::post(d_context, item);
+    asio::post(d_context, item);
 }
 
 void AsioEventLoop::dispatchImpl(const Item& item)
 {
-    boost::asio::dispatch(d_context, item);
+    asio::dispatch(d_context, item);
 }
 
 bsl::shared_ptr<rmqio::Resolver>
