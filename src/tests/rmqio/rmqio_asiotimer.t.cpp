@@ -17,7 +17,7 @@
 
 #include <rmqio_asioeventloop.h>
 
-#include <rmqtestutil_timeoverride.h>
+#include <rmqtestutil_clockoverride.h>
 
 #include <bdlf_bind.h>
 #include <boost/asio.hpp>
@@ -32,9 +32,7 @@ using namespace rmqio;
 using namespace ::testing;
 
 namespace {
-typedef rmqio::basic_AsioTimer<boost::asio::deadline_timer::time_type,
-                               rmqtestutil::TimeOverride>
-    FakeAsioTimer;
+typedef rmqio::basic_AsioTimer<rmqtestutil::ClockOverride> FakeAsioTimer;
 } // namespace
 
 class MockCallback {
@@ -70,7 +68,7 @@ TEST_F(AsioTimerTests, CallbackWhenExpires)
 {
     EXPECT_CALL(d_mockCallback, callback(Timer::EXPIRE)).Times(1);
     d_timer->start(d_callback);
-    rmqtestutil::TimeOverride::step_time(boost::posix_time::seconds(10));
+    rmqtestutil::ClockOverride::step_time(boost::asio::chrono::seconds(10));
     EXPECT_THAT(d_io.context().run_one(), Eq(1));
 }
 
@@ -91,7 +89,7 @@ TEST_F(AsioTimerTests, Reset)
     }
     d_timer->start(d_callback);
     d_timer->reset(bsls::TimeInterval(10));
-    rmqtestutil::TimeOverride::step_time(boost::posix_time::seconds(10));
+    rmqtestutil::ClockOverride::step_time(boost::asio::chrono::seconds(10));
     EXPECT_THAT(d_io.context().run_one(), Eq(1));
     EXPECT_THAT(d_io.context().run_one(), Eq(1));
 }
