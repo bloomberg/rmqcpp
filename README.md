@@ -31,7 +31,7 @@ This library has been built from experience learned while supporting other Rabbi
     + `rmqcpp` always declares topology when creating consumers & producers, as per RabbitMQ best practices.
 4. ✉ Reliable Message Delivery 'on' by default
     + Publisher confirmations. This ensures clients are aware when messages are owned by RabbitMQ, and avoids messages being silently black holed.
-    + Consumer acknowledgements. Switching these on manually helps avoid messages being silently dropped during restart/outages, as would be the case with 'autoack'. 
+    + Consumer acknowledgements. Switching these on manually helps avoid messages being silently dropped during restart/outages, as would be the case with 'autoack'.
     + Durable queues and persistent delivery mode ensure messages always persist during broker restarts and total datacenter shutdowns.
     + [Mandatory flag](https://www.rabbitmq.com/amqp-0-9-1-reference.html#basic.publish.mandatory) is defaulted to 'true' for all messages to ensure none are silently dropped due to missed bindings.
     + All of the above properties are used by default. Publisher confirms and consumer acknowledgements are required.
@@ -58,7 +58,7 @@ graph TD;
     rmqp-->rmqt;
 ```
 
-**Library** | **Purpose** | **Examples** 
+**Library** | **Purpose** | **Examples**
  :--- | :---- | :----
 [rmqp](src/rmq/rmqp) | RabbitMQ library interface (protocol) | Interfaces used to allow testing/mocking of `rmqcpp` applications
 [rmqa](src/rmq/rmqa) | RabbitMQ Library interface implementation | The main concrete objects used by applications
@@ -70,7 +70,7 @@ graph TD;
 
 ## Quick Start
 The quickest way to get started is to take a look at our integration tests and sample 'hello world' program, which is possible by following the Docker [Build](#building) steps and then: from the interactive shell window running `./build/examples/helloworld/rmqhelloworld_producer`
- 
+
 
 ## Usage
 
@@ -195,7 +195,7 @@ consumer->cancelAndDrain();
 
 ## Documentation
 Doxygen generated API documentation can be found [here](https://bloomberg.github.io/rmqcpp/index.html)
- 
+
 ## Building
 
 ### Prerequisites
@@ -205,6 +205,8 @@ Doxygen generated API documentation can be found [here](https://bloomberg.github
 `vcpkg` is the primary prerequisite for building `rmqcpp`. [Follow the instructions here](https://vcpkg.io/en/getting-started.html) and set the environment variable `VCPKG_ROOT` to the install location, i.e. `export VCPKG_ROOT=/build/vcpkg`.
 
 There are build configuration options which can be specified using the environment variable `CMAKE_PRESET` (choose from configurations in `CMakePresets.json`) - eg. `export CMAKE_PRESET=macos-arm64-vcpkg`.
+
+`zstd` compression support is enabled by default, and requires the `zstd` library to be installed. To disable this, pass the `-DENABLE_COMPRESSION=OFF` option to cmake.
 
 ### Build Steps
 Once the prerequisites are configured:
@@ -221,8 +223,8 @@ We also provide Dockerfiles for building and running this in an isolated
 environment. If you don't wish to get vcpkg set up on your build machine, this can be an alternative
 quick way to get started.
 
-1. `make docker-setup` - Build required base images and setup vcpkg, prerequisite for running commands below 
-2. `make docker-build` - Build rmqcpp in the container using vcpkg 
+1. `make docker-setup` - Build required base images and setup vcpkg, prerequisite for running commands below
+2. `make docker-build` - Build rmqcpp in the container using vcpkg
 3. `make docker-unit`  - Build rmqcpp and run unit tests in the container
 4. `make docker-shell` - Get an interactive shell within the build environment container
 

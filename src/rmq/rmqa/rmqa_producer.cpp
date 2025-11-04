@@ -25,6 +25,12 @@ Producer::Producer(bslma::ManagedPtr<rmqp::Producer>& impl)
 
 Producer::~Producer() {}
 
+void Producer::addTransformer(
+    const bsl::shared_ptr<rmqp::MessageTransformer>& transformer)
+{
+    d_impl->addTransformer(transformer);
+}
+
 rmqp::Producer::SendStatus
 Producer::send(const rmqt::Message& message,
                const bsl::string& routingKey,

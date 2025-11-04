@@ -5,11 +5,12 @@ RUN apt-get update && apt-get install -y \
     clang-format \
     cmake \
     curl \
-    gcc \ 
+    gcc \
     gdb \
     git \
     libboost-dev \
     libssl-dev \
+    libzstd-dev \
     net-tools \
     netcat-traditional \
     ninja-build \
@@ -24,7 +25,7 @@ RUN apt-get update && apt-get install -y \
     zip \
     && rm -rf /var/lib/apt/lists/*
 
-ENV VCPKG_FORCE_SYSTEM_BINARIES=1 
+ENV VCPKG_FORCE_SYSTEM_BINARIES=1
 
 # clone and install vcpkg
 RUN git clone https://github.com/Microsoft/vcpkg.git /build/vcpkg && \

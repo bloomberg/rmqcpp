@@ -17,6 +17,7 @@
 
 #include <rmqamqp_sendchannel.h>
 #include <rmqio_eventloop.h>
+#include <rmqp_messagetransformer.h>
 #include <rmqt_confirmresponse.h>
 #include <rmqt_future.h>
 #include <rmqt_message.h>
@@ -32,6 +33,7 @@
 #include <bsl_memory.h>
 #include <bsl_string.h>
 #include <bsl_utility.h>
+#include <bsl_vector.h>
 
 namespace BloombergLP {
 namespace rmqa {
@@ -163,6 +165,12 @@ bool ProducerImpl::registerUniqueCallback(
     return true;
 }
 
+void ProducerImpl::addTransformer(
+    const bsl::shared_ptr<rmqp::MessageTransformer>& transformer)
+{
+    d_transformers.push_back(transformer);
+}
+
 rmqp::Producer::SendStatus
 ProducerImpl::send(const rmqt::Message& message,
                    const bsl::string& routingKey,
@@ -189,6 +197,46 @@ ProducerImpl::send(const rmqt::Message& message,
         message, routingKey, mandatoryFlag, confirmCallback, timeout);
 }
 
+bool ProducerImpl::applyTransformations(rmqt::Message& dstMessage,
+                                        const rmqt::Message& srcMessage)
+{
+    // Unpack source message
+    bsl::shared_ptr<bsl::vector<unsigned char> > rawData =
+        bsl::make_shared<bsl::vector<unsigned char> >(
+            srcMessage.payload(),
+            srcMessage.payload() + srcMessage.payloadSize());
+    rmqt::Properties props = srcMessage.properties();
+
+    // Apply all transformations
+    for (bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >::iterator it =
+             d_transformers.begin();
+         it != d_transformers.end();
+         ++it) {
+        rmqt::Result<bool> r = (*it)->transform(rawData, props);
+        if (!r) {
+            BALL_LOG_ERROR << "Transformation failed";
+            return false;
+        }
+        else if (*r.value()) {
+            if (!props.headers
+                     ->emplace("sdk.transform." + (*it)->name(),
+                               rmqt::FieldValue(bsl::string("ok")))
+                     .second) {
+                BALL_LOG_ERROR << "Reserved header 'sdk.transform."
+                               << (*it)->name() << "' already exists";
+                return false;
+            }
+        }
+        else {
+            BALL_LOG_DEBUG << "Transformation ignored";
+        }
+    }
+
+    // Pack into destination message
+    dstMessage = rmqt::Message(rawData, props);
+    return true;
+}
+
 rmqp::Producer::SendStatus ProducerImpl::sendImpl(
     const rmqt::Message& message,
     const bsl::string& routingKey,
@@ -196,9 +244,20 @@ rmqp::Producer::SendStatus ProducerImpl::sendImpl(
     const rmqp::Producer::ConfirmationCallback& confirmCallback,
     const bsls::TimeInterval& timeout)
 {
+    rmqt::Message transformedMsg;
+    if (d_transformers.size() > 0) {
+        if (!applyTransformations(transformedMsg, message)) {
+            BALL_LOG_ERROR << "Failed to apply transformations to message "
+                           << message.guid();
+            return rmqp::Producer::TRANSFORM_ERROR;
+        }
+    }
+    const rmqt::Message& realMsg =
+        d_transformers.size() > 0 ? transformedMsg : message;
+
     BALL_LOG_TRACE
         << "Waiting on send(exchange) outstanding message limit for message "
-        << message;
+        << realMsg;
 
     if (timeout.totalNanoseconds()) {
         if (d_sharedState->outstandingMessagesCap.timedWait(
@@ -210,7 +269,7 @@ rmqp::Producer::SendStatus ProducerImpl::sendImpl(
         d_sharedState->outstandingMessagesCap.wait();
     }
 
-    return doSend(message, routingKey, mandatoryFlag, confirmCallback);
+    return doSend(realMsg, routingKey, mandatoryFlag, confirmCallback);
 }
 
 rmqp::Producer::SendStatus ProducerImpl::trySend(

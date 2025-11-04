@@ -6,6 +6,7 @@
       "boost-asio",
       "openssl",
       "gtest",
-      "bde"
+      "bde",
+      "zstd"
     ]
 }
