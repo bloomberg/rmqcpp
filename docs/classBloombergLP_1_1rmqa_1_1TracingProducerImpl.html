@@ -71,7 +71,7 @@ $(function() {
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classBloombergLP_1_1rmqa_1_1TracingProducerImpl-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">BloombergLP::rmqa::TracingProducerImpl Class Reference</div></div>
+  <div class="headertitle"><div class="title">BloombergLP::rmqa::TracingProducerImpl Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
@@ -105,10 +105,14 @@ Public Types</h2></td></tr>
 <tr class="memitem:ac09ac2301c28b295bdc0184a669a1af2"><td class="memItemLeft" align="right" valign="top"><a id="ac09ac2301c28b295bdc0184a669a1af2" name="ac09ac2301c28b295bdc0184a669a1af2"></a>
 typedef bsl::unordered_map&lt; bdlb::Guid, <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a3ba11df167d55aa55a42247003ee44a3">rmqp::Producer::ConfirmationCallback</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>CallbackMap</b></td></tr>
 <tr class="separator:ac09ac2301c28b295bdc0184a669a1af2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa7a286807e3d94b3c17acc7f0e5c845e"><td class="memItemLeft" align="right" valign="top"><a id="aa7a286807e3d94b3c17acc7f0e5c845e" name="aa7a286807e3d94b3c17acc7f0e5c845e"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#aa7a286807e3d94b3c17acc7f0e5c845e">SendStatus</a> { <b>SENDING</b>
+<tr class="memitem:aa7a286807e3d94b3c17acc7f0e5c845e"><td class="memItemLeft" align="right" valign="top"><a id="aa7a286807e3d94b3c17acc7f0e5c845e" name="aa7a286807e3d94b3c17acc7f0e5c845e"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#aa7a286807e3d94b3c17acc7f0e5c845e">SendStatus</a> { <br />
+&#160;&#160;<b>SENDING</b>
 , <b>DUPLICATE</b>
 , <b>TIMEOUT</b>
 , <b>INFLIGHT_LIMIT</b>
+, <br />
+&#160;&#160;<b>TRANSFORM_ERROR</b>
+<br />
  }</td></tr>
 <tr class="memdesc:aa7a286807e3d94b3c17acc7f0e5c845e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Possible results of <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a03981c82096a257ebe27728eeb8870b6" title="Send a message with the given routingKey to the exchange targeted by the producer.">rmqp::Producer::send</a>. <br /></td></tr>
 <tr class="separator:aa7a286807e3d94b3c17acc7f0e5c845e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -127,6 +131,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5d3fee3a7d5d851b9da58c491671450f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#aa7a286807e3d94b3c17acc7f0e5c845e">SendStatus</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1TracingProducerImpl.html#a5d3fee3a7d5d851b9da58c491671450f">trySend</a> (const <a class="el" href="classBloombergLP_1_1rmqt_1_1Message.html">rmqt::Message</a> &amp;message, const bsl::string &amp;routingKey, const <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a3ba11df167d55aa55a42247003ee44a3">rmqp::Producer::ConfirmationCallback</a> &amp;confirmCallback) BSLS_KEYWORD_OVERRIDE</td></tr>
 <tr class="memdesc:a5d3fee3a7d5d851b9da58c491671450f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send a message with the given <code>routingKey</code> to the exchange targeted by the producer.  <a href="classBloombergLP_1_1rmqa_1_1TracingProducerImpl.html#a5d3fee3a7d5d851b9da58c491671450f">More...</a><br /></td></tr>
 <tr class="separator:a5d3fee3a7d5d851b9da58c491671450f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59b38f3039342430034fd665734d3f14"><td class="memItemLeft" align="right" valign="top"><a id="a59b38f3039342430034fd665734d3f14" name="a59b38f3039342430034fd665734d3f14"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>addTransformer</b> (const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &amp;transformer) BSLS_KEYWORD_OVERRIDE</td></tr>
+<tr class="separator:a59b38f3039342430034fd665734d3f14"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39e4da37bb06067193bed1043b11d6e9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a39e4da37bb06067193bed1043b11d6e9">addTransformer</a> (const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &amp;transformer)=0</td></tr>
+<tr class="memdesc:a39e4da37bb06067193bed1043b11d6e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a transformation function to be run on all messages.  <a href="classBloombergLP_1_1rmqp_1_1Producer.html#a39e4da37bb06067193bed1043b11d6e9">More...</a><br /></td></tr>
+<tr class="separator:a39e4da37bb06067193bed1043b11d6e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a63ff185cf5ee3b230d3479128819718e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#aa7a286807e3d94b3c17acc7f0e5c845e">SendStatus</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1ProducerImpl.html#a63ff185cf5ee3b230d3479128819718e">send</a> (const <a class="el" href="classBloombergLP_1_1rmqt_1_1Message.html">rmqt::Message</a> &amp;message, const bsl::string &amp;routingKey, rmqt::Mandatory::Value mandatoryFlag, const <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a3ba11df167d55aa55a42247003ee44a3">rmqp::Producer::ConfirmationCallback</a> &amp;confirmCallback, const bsls::TimeInterval &amp;timeout) BSLS_KEYWORD_OVERRIDE</td></tr>
 <tr class="memdesc:a63ff185cf5ee3b230d3479128819718e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send a message with the given <code>routingKey</code> to the exchange targeted by the producer.  <a href="classBloombergLP_1_1rmqa_1_1ProducerImpl.html#a63ff185cf5ee3b230d3479128819718e">More...</a><br /></td></tr>
 <tr class="separator:a63ff185cf5ee3b230d3479128819718e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -165,6 +175,40 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a39e4da37bb06067193bed1043b11d6e9" name="a39e4da37bb06067193bed1043b11d6e9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39e4da37bb06067193bed1043b11d6e9">&#9670;&nbsp;</a></span>addTransformer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void BloombergLP::rmqp::Producer::addTransformer </td>
+          <td>(</td>
+          <td class="paramtype">const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>transformer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span><span class="mlabel">inherited</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Adds a transformation function to be run on all messages. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">transformer</td><td>The transformation function </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="a7af0e09c9d65fdb7378fe129f1d44e4a" name="a7af0e09c9d65fdb7378fe129f1d44e4a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7af0e09c9d65fdb7378fe129f1d44e4a">&#9670;&nbsp;</a></span>send() <span class="overload">[1/2]</span></h2>
 

@@ -99,6 +99,9 @@ rmqt::Exclusive::Value&#160;</td><td class="memItemRight" valign="bottom"><b>exc
 <tr class="memitem:a7598019b92fb5a73dd26b601117d0c2c"><td class="memItemLeft" align="right" valign="top"><a id="a7598019b92fb5a73dd26b601117d0c2c" name="a7598019b92fb5a73dd26b601117d0c2c"></a>
 bsl::optional&lt; int64_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>consumerPriority</b> () const</td></tr>
 <tr class="separator:a7598019b92fb5a73dd26b601117d0c2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab25ffdebc59da553bde4be8ef94df992"><td class="memItemLeft" align="right" valign="top"><a id="ab25ffdebc59da553bde4be8ef94df992" name="ab25ffdebc59da553bde4be8ef94df992"></a>
+const bsl::vector&lt; bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>transformers</b> () const</td></tr>
+<tr class="separator:ab25ffdebc59da553bde4be8ef94df992"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a06ece12edc8051fcfb29fa70bc475e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html">ConsumerConfig</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a6a06ece12edc8051fcfb29fa70bc475e">setConsumerTag</a> (const bsl::string &amp;consumerTag)</td></tr>
 <tr class="separator:a6a06ece12edc8051fcfb29fa70bc475e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a416292d96a20f425184b6545af7b4406"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html">ConsumerConfig</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a416292d96a20f425184b6545af7b4406">setPrefetchCount</a> (uint16_t prefetchCount)</td></tr>
@@ -109,6 +112,8 @@ bsl::optional&lt; int64_t &gt;&#160;</td><td class="memItemRight" valign="bottom
 <tr class="separator:a04ca800a0dc69030a48f5c3a6133f9b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f29cf9de7adad5fe77df898dea8807d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html">ConsumerConfig</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a0f29cf9de7adad5fe77df898dea8807d">setConsumerPriority</a> (const bsl::optional&lt; int64_t &gt; &amp;consumerPriority)</td></tr>
 <tr class="separator:a0f29cf9de7adad5fe77df898dea8807d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc63911db8586d0c9a4f72f54dccaa84"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html">ConsumerConfig</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#acc63911db8586d0c9a4f72f54dccaa84">addTransformer</a> (const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &amp;transformer)</td></tr>
+<tr class="separator:acc63911db8586d0c9a4f72f54dccaa84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -192,6 +197,38 @@ static const uint16_t&#160;</td><td class="memItemRight" valign="bottom"><b>s_de
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="acc63911db8586d0c9a4f72f54dccaa84" name="acc63911db8586d0c9a4f72f54dccaa84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acc63911db8586d0c9a4f72f54dccaa84">&#9670;&nbsp;</a></span>addTransformer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html">ConsumerConfig</a> &amp; BloombergLP::rmqt::ConsumerConfig::addTransformer </td>
+          <td>(</td>
+          <td class="paramtype">const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>transformer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">transform</td><td>A message transformer to be undone for each message received by the consumer. Multiple transformers will be called in the inverse order, i.e. the last transformer in added is applied first. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="a0f29cf9de7adad5fe77df898dea8807d" name="a0f29cf9de7adad5fe77df898dea8807d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0f29cf9de7adad5fe77df898dea8807d">&#9670;&nbsp;</a></span>setConsumerPriority()</h2>
 

@@ -70,6 +70,7 @@ $(function() {
 <li>addPassiveExchange()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1Topology.html#a842c75c8aa0b3559ffc2f22266c8ec05">BloombergLP::rmqa::Topology</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1Topology.html#a6a314334d2c403a2fb112a8dcf5a87a7">BloombergLP::rmqp::Topology</a></li>
 <li>addPassiveQueue()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1Topology.html#a57f6a0312a1235e96c0ac2c40803482f">BloombergLP::rmqa::Topology</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1Topology.html#acaad689e71b4879f5e7d8212286f6d7b">BloombergLP::rmqp::Topology</a></li>
 <li>addQueue()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1Topology.html#a26f1f491cf8adae3eaed12dc8cec7462">BloombergLP::rmqa::Topology</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1Topology.html#a10ab2bcdab9337bf758a975177a73941">BloombergLP::rmqp::Topology</a></li>
+<li>addTransformer()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1Producer.html#a7c707003a8956402df1bdbab27eaae3c">BloombergLP::rmqa::Producer</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a39e4da37bb06067193bed1043b11d6e9">BloombergLP::rmqp::Producer</a>, <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#acc63911db8586d0c9a4f72f54dccaa84">BloombergLP::rmqt::ConsumerConfig</a></li>
 <li>arguments()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1Queue.html#a8534b3a8cfa316a49aa2d857dfc03a74">BloombergLP::rmqt::Queue</a></li>
 <li>autoDelete()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1Queue.html#a7b31a10eeee38184f95499466d5ba26d">BloombergLP::rmqt::Queue</a></li>
 </ul>
@@ -95,7 +96,7 @@ $(function() {
 <li>ConsumerConfig()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#ad1accc6e92da23a43c3a5de7f17b80b3">BloombergLP::rmqt::ConsumerConfig</a></li>
 <li>consumerTag()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1Envelope.html#a0f42932d5fa1ab6e9e215ddd844726e8">BloombergLP::rmqt::Envelope</a></li>
 <li>convertViaManagedPtr()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1FutureUtil.html#ac8d679cbdc3e954a0ee638c0bc083797">BloombergLP::rmqt::FutureUtil</a></li>
-<li>create()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqp_1_1ConsumerTracing.html#a79bb78bc112d4cee5eb72778a4a6e7a0">BloombergLP::rmqp::ConsumerTracing</a></li>
+<li>create()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1CompressionTransformer.html#abe88e4f895da50bdc22fa26712001817">BloombergLP::rmqa::CompressionTransformer</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1ConsumerTracing.html#a79bb78bc112d4cee5eb72778a4a6e7a0">BloombergLP::rmqp::ConsumerTracing</a></li>
 <li>createAndTag()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqp_1_1ProducerTracing.html#ab7b4e37b003a78c565ec128051679baa">BloombergLP::rmqp::ProducerTracing</a></li>
 <li>createConsumer()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1ConnectionImpl.html#a7088d0719cce3ac539669f0be688cf2a">BloombergLP::rmqa::ConnectionImpl</a>, <a class="el" href="classBloombergLP_1_1rmqa_1_1VHost.html#a31a531a9fb391f5fb9bf24a850bca9d8">BloombergLP::rmqa::VHost</a>, <a class="el" href="classBloombergLP_1_1rmqa_1_1VHostImpl.html#ac67bda816c6a123c6f2abbe3c2543872">BloombergLP::rmqa::VHostImpl</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1Connection.html#ad1971657334f1c87b42c278a9bad0451">BloombergLP::rmqp::Connection</a></li>
 <li>createProducer()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1ConnectionImpl.html#a4e1f7e4a118e892ac4adbf9894d9a4ba">BloombergLP::rmqa::ConnectionImpl</a>, <a class="el" href="classBloombergLP_1_1rmqa_1_1VHost.html#a42bf3409bae2035e685ba4d5a6f2df23">BloombergLP::rmqa::VHost</a>, <a class="el" href="classBloombergLP_1_1rmqa_1_1VHostImpl.html#a42e027f69d964c50d975f5fd821e2fb4">BloombergLP::rmqa::VHostImpl</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1Connection.html#ac412a20236b6cd9795675779e13ac31e">BloombergLP::rmqp::Connection</a></li>
@@ -135,6 +136,7 @@ $(function() {
 
 
 <h3><a id="index_i" name="index_i"></a>- i -</h3><ul>
+<li>inverseTransform()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1CompressionTransformer.html#ac703e3677ac4bdda1db23709a807656c">BloombergLP::rmqa::CompressionTransformer</a>, <a class="el" href="classBloombergLP_1_1rmqa_1_1CompressionTransformerImpl.html#aa7b953605afa64585031d62cac0492c4">BloombergLP::rmqa::CompressionTransformerImpl</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html#abdc6e12ed1d4df7150f6c005ea53f17c">BloombergLP::rmqp::MessageTransformer</a></li>
 <li>isDefault()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1Exchange.html#ae9c75b77111e9221a5ecb53e22f0005d">BloombergLP::rmqt::Exchange</a></li>
 <li>isPersistent()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1Message.html#adb34456f72ec70932c3cacf65fe940fb">BloombergLP::rmqt::Message</a></li>
 </ul>
@@ -151,7 +153,7 @@ $(function() {
 
 <h3><a id="index_n" name="index_n"></a>- n -</h3><ul>
 <li>nack()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1MessageGuard.html#a3406f30957f7c165e62415cb0207452e">BloombergLP::rmqa::MessageGuard</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageGuard.html#ad511fe075c74eece8332f9c5ab0e8682">BloombergLP::rmqp::MessageGuard</a></li>
-<li>name()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1Queue.html#a4f2a355e6401244da840c5d73f0b3b3a">BloombergLP::rmqt::Queue</a></li>
+<li>name()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1CompressionTransformer.html#a21f47b5e5017163db75569d370288bb4">BloombergLP::rmqa::CompressionTransformer</a>, <a class="el" href="classBloombergLP_1_1rmqt_1_1Queue.html#a4f2a355e6401244da840c5d73f0b3b3a">BloombergLP::rmqt::Queue</a></li>
 </ul>
 
 
@@ -214,6 +216,7 @@ $(function() {
 <li>topologyUpdate()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1TopologyUpdate.html#a48f610ae151acf169b5876c1d64bfed9">BloombergLP::rmqa::TopologyUpdate</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1TopologyUpdate.html#ae816ade7fab6728d667855ab961fca91">BloombergLP::rmqp::TopologyUpdate</a></li>
 <li>TracingMessageGuard()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1TracingMessageGuard.html#a96803979ff168b8a42223cde57799783">BloombergLP::rmqa::TracingMessageGuard</a></li>
 <li>transferOwnership()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1MessageGuard.html#ae2aff72f2f6bc274f49eb723e0e03b2a">BloombergLP::rmqa::MessageGuard</a>, <a class="el" href="classBloombergLP_1_1rmqa_1_1TracingMessageGuard.html#a649d3e2655968be58996e9d3fc18ac56">BloombergLP::rmqa::TracingMessageGuard</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageGuard.html#ac7eb24756feb90e5d282cacaa3057aed">BloombergLP::rmqp::MessageGuard</a></li>
+<li>transform()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1CompressionTransformer.html#a2fb91aa91b4bce4e3d9978b939c882d3">BloombergLP::rmqa::CompressionTransformer</a>, <a class="el" href="classBloombergLP_1_1rmqa_1_1CompressionTransformerImpl.html#a316796893f75eea6d253cae9a53ca3a9">BloombergLP::rmqa::CompressionTransformerImpl</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html#ae21fc722cbef898731c9c8def40ee65d">BloombergLP::rmqp::MessageTransformer</a></li>
 <li>tryResult()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1Future.html#ad4241559157ee4b8059d85a6045e8a2c">BloombergLP::rmqt::Future&lt; T &gt;</a></li>
 <li>trySend()&#160;:&#160;<a class="el" href="classBloombergLP_1_1rmqa_1_1ProducerImpl.html#a7119b6a36fbf3d2d5ece026dcf9ecb0d">BloombergLP::rmqa::ProducerImpl</a>, <a class="el" href="classBloombergLP_1_1rmqa_1_1TracingProducerImpl.html#a5d3fee3a7d5d851b9da58c491671450f">BloombergLP::rmqa::TracingProducerImpl</a>, <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a9f32435017734398940f9f7e1efe7703">BloombergLP::rmqp::Producer</a></li>
 </ul>

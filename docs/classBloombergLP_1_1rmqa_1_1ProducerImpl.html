@@ -71,7 +71,7 @@ $(function() {
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classBloombergLP_1_1rmqa_1_1ProducerImpl-members.html">List of all members</a>  </div>
-  <div class="headertitle"><div class="title">BloombergLP::rmqa::ProducerImpl Class Reference</div></div>
+  <div class="headertitle"><div class="title">BloombergLP::rmqa::ProducerImpl Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div></div>
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
@@ -106,10 +106,14 @@ Public Types</h2></td></tr>
 <tr class="memitem:ac09ac2301c28b295bdc0184a669a1af2"><td class="memItemLeft" align="right" valign="top"><a id="ac09ac2301c28b295bdc0184a669a1af2" name="ac09ac2301c28b295bdc0184a669a1af2"></a>
 typedef bsl::unordered_map&lt; bdlb::Guid, <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a3ba11df167d55aa55a42247003ee44a3">rmqp::Producer::ConfirmationCallback</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>CallbackMap</b></td></tr>
 <tr class="separator:ac09ac2301c28b295bdc0184a669a1af2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa7a286807e3d94b3c17acc7f0e5c845e"><td class="memItemLeft" align="right" valign="top"><a id="aa7a286807e3d94b3c17acc7f0e5c845e" name="aa7a286807e3d94b3c17acc7f0e5c845e"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#aa7a286807e3d94b3c17acc7f0e5c845e">SendStatus</a> { <b>SENDING</b>
+<tr class="memitem:aa7a286807e3d94b3c17acc7f0e5c845e"><td class="memItemLeft" align="right" valign="top"><a id="aa7a286807e3d94b3c17acc7f0e5c845e" name="aa7a286807e3d94b3c17acc7f0e5c845e"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#aa7a286807e3d94b3c17acc7f0e5c845e">SendStatus</a> { <br />
+&#160;&#160;<b>SENDING</b>
 , <b>DUPLICATE</b>
 , <b>TIMEOUT</b>
 , <b>INFLIGHT_LIMIT</b>
+, <br />
+&#160;&#160;<b>TRANSFORM_ERROR</b>
+<br />
  }</td></tr>
 <tr class="memdesc:aa7a286807e3d94b3c17acc7f0e5c845e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Possible results of <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a03981c82096a257ebe27728eeb8870b6" title="Send a message with the given routingKey to the exchange targeted by the producer.">rmqp::Producer::send</a>. <br /></td></tr>
 <tr class="separator:aa7a286807e3d94b3c17acc7f0e5c845e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -122,6 +126,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a333bffc2689a836c904090c19e87004f"><td class="memItemLeft" align="right" valign="top"><a id="a333bffc2689a836c904090c19e87004f" name="a333bffc2689a836c904090c19e87004f"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>ProducerImpl</b> (uint16_t maxOutstandingConfirms, const bsl::shared_ptr&lt; rmqamqp::SendChannel &gt; &amp;channel, bdlmt::ThreadPool &amp;threadPool, rmqio::EventLoop &amp;eventLoop)</td></tr>
 <tr class="separator:a333bffc2689a836c904090c19e87004f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59b38f3039342430034fd665734d3f14"><td class="memItemLeft" align="right" valign="top"><a id="a59b38f3039342430034fd665734d3f14" name="a59b38f3039342430034fd665734d3f14"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>addTransformer</b> (const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &amp;transformer) BSLS_KEYWORD_OVERRIDE</td></tr>
+<tr class="separator:a59b38f3039342430034fd665734d3f14"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0e8bb449f27e2d0b6df9e7f81bfe2168"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#aa7a286807e3d94b3c17acc7f0e5c845e">SendStatus</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1ProducerImpl.html#a0e8bb449f27e2d0b6df9e7f81bfe2168">send</a> (const <a class="el" href="classBloombergLP_1_1rmqt_1_1Message.html">rmqt::Message</a> &amp;message, const bsl::string &amp;routingKey, const <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a3ba11df167d55aa55a42247003ee44a3">rmqp::Producer::ConfirmationCallback</a> &amp;confirmCallback, const bsls::TimeInterval &amp;timeout) BSLS_KEYWORD_OVERRIDE</td></tr>
 <tr class="memdesc:a0e8bb449f27e2d0b6df9e7f81bfe2168"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send a message with the given <code>routingKey</code> to the exchange targeted by the producer.  <a href="classBloombergLP_1_1rmqa_1_1ProducerImpl.html#a0e8bb449f27e2d0b6df9e7f81bfe2168">More...</a><br /></td></tr>
 <tr class="separator:a0e8bb449f27e2d0b6df9e7f81bfe2168"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -137,6 +144,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af300b77b9718e19892b15437edb679ec"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqt_1_1Result.html">rmqt::Result</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1ProducerImpl.html#af300b77b9718e19892b15437edb679ec">waitForConfirms</a> (const bsls::TimeInterval &amp;timeout=bsls::TimeInterval(0)) BSLS_KEYWORD_OVERRIDE</td></tr>
 <tr class="memdesc:af300b77b9718e19892b15437edb679ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wait for all outstanding publisher confirms to arrive.  <a href="classBloombergLP_1_1rmqa_1_1ProducerImpl.html#af300b77b9718e19892b15437edb679ec">More...</a><br /></td></tr>
 <tr class="separator:af300b77b9718e19892b15437edb679ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39e4da37bb06067193bed1043b11d6e9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a39e4da37bb06067193bed1043b11d6e9">addTransformer</a> (const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &amp;transformer)=0</td></tr>
+<tr class="memdesc:a39e4da37bb06067193bed1043b11d6e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a transformation function to be run on all messages.  <a href="classBloombergLP_1_1rmqp_1_1Producer.html#a39e4da37bb06067193bed1043b11d6e9">More...</a><br /></td></tr>
+<tr class="separator:a39e4da37bb06067193bed1043b11d6e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Typedef Documentation</h2>
 <a id="a3ba11df167d55aa55a42247003ee44a3" name="a3ba11df167d55aa55a42247003ee44a3"></a>
@@ -166,6 +176,40 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a39e4da37bb06067193bed1043b11d6e9" name="a39e4da37bb06067193bed1043b11d6e9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39e4da37bb06067193bed1043b11d6e9">&#9670;&nbsp;</a></span>addTransformer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void BloombergLP::rmqp::Producer::addTransformer </td>
+          <td>(</td>
+          <td class="paramtype">const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>transformer</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span><span class="mlabel">inherited</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Adds a transformation function to be run on all messages. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">transformer</td><td>The transformation function </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="a0e8bb449f27e2d0b6df9e7f81bfe2168" name="a0e8bb449f27e2d0b6df9e7f81bfe2168"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0e8bb449f27e2d0b6df9e7f81bfe2168">&#9670;&nbsp;</a></span>send() <span class="overload">[1/2]</span></h2>
 

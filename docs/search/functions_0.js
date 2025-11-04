@@ -5,6 +5,7 @@ var searchData=
   ['addpassiveexchange_2',['addPassiveExchange',['../classBloombergLP_1_1rmqa_1_1Topology.html#a842c75c8aa0b3559ffc2f22266c8ec05',1,'BloombergLP::rmqa::Topology::addPassiveExchange()'],['../classBloombergLP_1_1rmqp_1_1Topology.html#a6a314334d2c403a2fb112a8dcf5a87a7',1,'BloombergLP::rmqp::Topology::addPassiveExchange()']]],
   ['addpassivequeue_3',['addPassiveQueue',['../classBloombergLP_1_1rmqa_1_1Topology.html#a57f6a0312a1235e96c0ac2c40803482f',1,'BloombergLP::rmqa::Topology::addPassiveQueue()'],['../classBloombergLP_1_1rmqp_1_1Topology.html#acaad689e71b4879f5e7d8212286f6d7b',1,'BloombergLP::rmqp::Topology::addPassiveQueue()']]],
   ['addqueue_4',['addQueue',['../classBloombergLP_1_1rmqa_1_1Topology.html#a26f1f491cf8adae3eaed12dc8cec7462',1,'BloombergLP::rmqa::Topology::addQueue()'],['../classBloombergLP_1_1rmqp_1_1Topology.html#a10ab2bcdab9337bf758a975177a73941',1,'BloombergLP::rmqp::Topology::addQueue()']]],
-  ['arguments_5',['arguments',['../classBloombergLP_1_1rmqt_1_1Queue.html#a8534b3a8cfa316a49aa2d857dfc03a74',1,'BloombergLP::rmqt::Queue']]],
-  ['autodelete_6',['autoDelete',['../classBloombergLP_1_1rmqt_1_1Queue.html#a7b31a10eeee38184f95499466d5ba26d',1,'BloombergLP::rmqt::Queue']]]
+  ['addtransformer_5',['addTransformer',['../classBloombergLP_1_1rmqa_1_1Producer.html#a7c707003a8956402df1bdbab27eaae3c',1,'BloombergLP::rmqa::Producer::addTransformer()'],['../classBloombergLP_1_1rmqp_1_1Producer.html#a39e4da37bb06067193bed1043b11d6e9',1,'BloombergLP::rmqp::Producer::addTransformer()'],['../classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#acc63911db8586d0c9a4f72f54dccaa84',1,'BloombergLP::rmqt::ConsumerConfig::addTransformer()']]],
+  ['arguments_6',['arguments',['../classBloombergLP_1_1rmqt_1_1Queue.html#a8534b3a8cfa316a49aa2d857dfc03a74',1,'BloombergLP::rmqt::Queue']]],
+  ['autodelete_7',['autoDelete',['../classBloombergLP_1_1rmqt_1_1Queue.html#a7b31a10eeee38184f95499466d5ba26d',1,'BloombergLP::rmqt::Queue']]]
 ];
