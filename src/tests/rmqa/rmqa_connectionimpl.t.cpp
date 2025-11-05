@@ -116,6 +116,7 @@ class ConnectionTests : public ::testing::Test {
     NiceMock<rmqtestutil::MockEventLoop> d_eventLoop;
     bsl::shared_ptr<rmqamqp::HeartbeatManager> d_hb;
     rmqt::ErrorCallback d_onError;
+    rmqt::SuccessCallback d_onSuccess;
     bsl::shared_ptr<rmqio::RetryHandler> d_retryHandler;
     bsl::shared_ptr<rmqamqp::ChannelFactory> d_channelFactory;
     bsl::shared_ptr<rmqtestutil::MockMetricPublisher> d_metricPublisher;
@@ -140,9 +141,11 @@ class ConnectionTests : public ::testing::Test {
     , d_eventLoop(d_timerFactory)
     , d_hb(new rmqamqp::HeartbeatManagerImpl(d_timerFactory))
     , d_onError()
+    , d_onSuccess()
     , d_retryHandler(bsl::make_shared<rmqio::RetryHandler>(
           d_timerFactory,
           d_onError,
+          d_onSuccess,
           bsl::make_shared<rmqio::BackoffLevelRetryStrategy>()))
     , d_channelFactory(bsl::make_shared<rmqamqp::ChannelFactory>())
     , d_metricPublisher(bsl::make_shared<rmqtestutil::MockMetricPublisher>())
@@ -200,6 +203,7 @@ TEST_F(ConnectionTests, BreathingTest)
                                    d_eventLoop,
                                    d_threadPool,
                                    d_onError,
+                                   d_onSuccess,
                                    d_endpoint,
                                    d_tunables,
                                    d_consumerFactory,
@@ -218,6 +222,7 @@ TEST_F(ConnectionTests, CreateSyncSuccess)
                                    d_eventLoop,
                                    d_threadPool,
                                    d_onError,
+                                   d_onSuccess,
                                    d_endpoint,
                                    d_tunables,
                                    d_consumerFactory,
@@ -254,6 +259,7 @@ TEST_F(ConnectionTests, CreateConsumer)
                                    d_eventLoop,
                                    d_threadPool,
                                    d_onError,
+                                   d_onSuccess,
                                    d_endpoint,
                                    d_tunables,
                                    d_consumerFactory,
@@ -277,6 +283,7 @@ TEST_F(ConnectionTests, CreateProducer)
                                    d_eventLoop,
                                    d_threadPool,
                                    d_onError,
+                                   d_onSuccess,
                                    d_endpoint,
                                    d_tunables,
                                    d_consumerFactory,
@@ -298,6 +305,7 @@ TEST_F(ConnectionTests, CloseCreatesTimerAndInvokesClose)
                                    d_eventLoop,
                                    d_threadPool,
                                    d_onError,
+                                   d_onSuccess,
                                    d_endpoint,
                                    d_tunables,
                                    d_consumerFactory,
@@ -326,6 +334,7 @@ TEST_F(ConnectionTests, GracefulCloseHitsTimeoutAndSuccessfulCloseRace)
                                    d_eventLoop,
                                    d_threadPool,
                                    d_onError,
+                                   d_onSuccess,
                                    d_endpoint,
                                    d_tunables,
                                    d_consumerFactory,
