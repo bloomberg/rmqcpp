@@ -16,8 +16,8 @@
 #include <rmqio_backofflevelretrystrategy.h>
 
 #include <rmqtestutil_callcount.h>
+#include <rmqtestutil_clockoverride.h>
 #include <rmqtestutil_mocktimerfactory.h>
-#include <rmqtestutil_timeoverride.h>
 
 #include <bdlf_bind.h>
 

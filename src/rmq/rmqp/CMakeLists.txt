@@ -3,6 +3,7 @@ add_library(rmqp OBJECT
     rmqp_consumertracing.cpp
     rmqp_connection.cpp
     rmqp_messageguard.cpp
+    rmqp_messagetransformer.cpp
     rmqp_metricpublisher.cpp
     rmqp_producer.cpp
     rmqp_producertracing.cpp

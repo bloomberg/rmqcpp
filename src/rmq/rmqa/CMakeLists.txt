@@ -1,4 +1,6 @@
-add_library(rmqa OBJECT 
+add_library(rmqa OBJECT
+    rmqa_compressiontransformer.cpp
+    rmqa_compressiontransformerimpl.cpp
     rmqa_consumer.cpp
     rmqa_consumerimpl.cpp
     rmqa_connectionimpl.cpp
@@ -25,12 +27,16 @@ target_link_libraries(rmqa PUBLIC
     bsl
     bdl
     bal
-    rmqt 
+    rmqt
     rmqp
     rmqamqp
     rmqio
     rmqamqpt
 )
+if (ENABLE_COMPRESSION)
+    target_link_libraries(rmqa PUBLIC zstd::libzstd_static)
+    target_compile_definitions(rmqa PRIVATE RMQCPP_ENABLE_COMPRESSION)
+endif()
 if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "SunPro" )
     # _RWSTD_ALLOCATOR tells the solaris <memory> header to define a std::allocator
     # which conforms better to the C++ standard, which is expected by Boost. Without

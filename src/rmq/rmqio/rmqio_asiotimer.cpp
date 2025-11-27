@@ -14,3 +14,14 @@
 // limitations under the License.
 
 #include <rmqio_asiotimer.h>
+
+namespace {
+void instantiateTemplates()
+{
+    // Instantiate the templates to ensure that they compile.
+    BloombergLP::rmqio::AsioEventLoop eventLoop;
+    BloombergLP::rmqio::AsioTimerFactory timerFactory(eventLoop);
+    BloombergLP::rmqio::AsioTimer timer(eventLoop.context(),
+                                        BloombergLP::bsls::TimeInterval(1));
+}
+} // namespace

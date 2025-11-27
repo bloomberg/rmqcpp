@@ -19,10 +19,12 @@
 #include <rmqa_messageguard.h>
 
 #include <rmqp_consumertracing.h>
+#include <rmqp_messagetransformer.h>
 
 #include <rmqtestutil_mockchannel.t.h>
 #include <rmqtestutil_mockeventloop.t.h>
 #include <rmqtestutil_savethreadid.h>
+#include <rmqtestutil_testsuite.t.h>
 
 #include <rmqt_consumerackbatch.h>
 #include <rmqt_envelope.h>
@@ -127,6 +129,7 @@ class ConsumerImplTests : public TestWithParam<ConsumerType> {
     bsl::shared_ptr<rmqp::Consumer::ConsumerFunc> d_callback;
     bsl::shared_ptr<MockConsumerTracing> d_tracing;
     bsl::shared_ptr<rmqa::ConsumerImpl::Factory> d_factory;
+    bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> > d_transformers;
 
     ConsumerImplTests()
     : d_queue(bsl::make_shared<rmqt::Queue>("test"))
@@ -142,7 +145,7 @@ class ConsumerImplTests : public TestWithParam<ConsumerType> {
                                _1)))
     , d_tracing(bsl::make_shared<MockConsumerTracing>())
     , d_factory(paramPicker(GetParam()))
-
+    , d_transformers(bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >())
     {
         d_threadPool.start();
         ON_CALL(d_eventLoop, postImpl(_)).WillByDefault(ExecuteItem());
@@ -170,7 +173,8 @@ TEST_P(ConsumerImplTests, ItsAlive)
                           d_consumerTag,
                           bsl::ref(d_threadPool),
                           bsl::ref(d_eventLoop),
-                          d_ackQueue);
+                          d_ackQueue,
+                          d_transformers);
 }
 
 TEST_P(ConsumerImplTests, MessageTriggersClientCallback)
@@ -186,7 +190,8 @@ TEST_P(ConsumerImplTests, MessageTriggersClientCallback)
                           d_consumerTag,
                           bsl::ref(d_threadPool),
                           bsl::ref(d_eventLoop),
-                          d_ackQueue);
+                          d_ackQueue,
+                          d_transformers);
     consumer->start();
 
     bsl::shared_ptr<bsl::vector<uint8_t> > data =
@@ -226,7 +231,8 @@ TEST_P(ConsumerImplTests, MessageTriggersChannelAck)
                           d_consumerTag,
                           bsl::ref(d_threadPool),
                           bsl::ref(d_eventLoop),
-                          d_ackQueue);
+                          d_ackQueue,
+                          d_transformers);
     consumer->start();
 
     bsl::shared_ptr<bsl::vector<uint8_t> > data =
@@ -264,7 +270,8 @@ TEST_P(ConsumerImplTests, Cancel)
                           d_consumerTag,
                           bsl::ref(d_threadPool),
                           bsl::ref(d_eventLoop),
-                          d_ackQueue);
+                          d_ackQueue,
+                          d_transformers);
 
     EXPECT_CALL(*d_channel, cancel())
         .WillOnce(Return(fakeyCancelFuture.second));
@@ -288,7 +295,8 @@ TEST_P(ConsumerImplTests, Drain)
                           d_consumerTag,
                           bsl::ref(d_threadPool),
                           bsl::ref(d_eventLoop),
-                          d_ackQueue);
+                          d_ackQueue,
+                          d_transformers);
 
     EXPECT_CALL(*d_channel, drain()).WillOnce(Return(fakeyDrainFuture.second));
     rmqt::Future<> future = consumer->drain();
@@ -312,7 +320,8 @@ TEST_P(ConsumerImplTests, UpdateCallback)
                           d_consumerTag,
                           bsl::ref(d_threadPool),
                           bsl::ref(d_eventLoop),
-                          d_ackQueue);
+                          d_ackQueue,
+                          d_transformers);
 
     bsl::shared_ptr<rmqt::Exchange> exchangePtr =
         bsl::make_shared<rmqt::Exchange>("exchange");
@@ -349,7 +358,8 @@ TEST_P(ConsumerImplTests, BindUnbind)
                           d_consumerTag,
                           bsl::ref(d_threadPool),
                           bsl::ref(d_eventLoop),
-                          d_ackQueue);
+                          d_ackQueue,
+                          d_transformers);
 
     bsl::shared_ptr<rmqt::Exchange> exchangePtr =
         bsl::make_shared<rmqt::Exchange>("exchange");
@@ -395,7 +405,8 @@ TEST_P(ConsumerImplTests, DestructionInitiatesChannelClose)
                           d_consumerTag,
                           bsl::ref(d_threadPool),
                           bsl::ref(d_eventLoop),
-                          d_ackQueue);
+                          d_ackQueue,
+                          d_transformers);
     consumer->start();
 
     EXPECT_CALL(*d_channel, gracefulClose());
@@ -417,7 +428,8 @@ TEST_P(ConsumerImplTests, UpdateCallbackFromTwoThreadsAtOnce)
                           d_consumerTag,
                           bsl::ref(d_threadPool),
                           bsl::ref(d_eventLoop),
-                          d_ackQueue);
+                          d_ackQueue,
+                          d_transformers);
 
     bsl::shared_ptr<rmqt::Exchange> exchangePtr =
         bsl::make_shared<rmqt::Exchange>("exchange");
@@ -449,11 +461,7 @@ TEST_P(ConsumerImplTests, UpdateCallbackFromTwoThreadsAtOnce)
     EXPECT_TRUE(future2.blockResult());
 }
 
-// We need to stick to INSTANTIATE_TEST_CASE_P for a while longer
-// But we do want to build with -Werror in our CI
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
-
-INSTANTIATE_TEST_CASE_P(AllMembers,
+RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         ConsumerImplTests,
                         Values(CONSUMER, TRACING_CONSUMER),
                         ConsumerImplTests::PrintParamName());

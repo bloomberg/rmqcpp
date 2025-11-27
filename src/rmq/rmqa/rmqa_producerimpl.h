@@ -16,6 +16,7 @@
 #ifndef INCLUDED_RMQA_PRODUCERIMPL
 #define INCLUDED_RMQA_PRODUCERIMPL
 
+#include <rmqp_messagetransformer.h>
 #include <rmqp_producer.h>
 #include <rmqt_endpoint.h>
 #include <rmqt_exchange.h>
@@ -37,6 +38,7 @@
 #include <bsl_memory.h>
 #include <bsl_string.h>
 #include <bsl_unordered_map.h>
+#include <bsl_vector.h>
 
 //@PURPOSE: Implements the rmqa::Producer interface
 //
@@ -69,6 +71,10 @@ class ProducerImpl : public rmqp::Producer {
                  rmqio::EventLoop& eventLoop);
 
     ~ProducerImpl() BSLS_KEYWORD_OVERRIDE;
+
+    void
+    addTransformer(const bsl::shared_ptr<rmqp::MessageTransformer>& transformer)
+        BSLS_KEYWORD_OVERRIDE;
 
     SendStatus send(const rmqt::Message& message,
                     const bsl::string& routingKey,
@@ -142,11 +148,16 @@ class ProducerImpl : public rmqp::Producer {
              const rmqp::Producer::ConfirmationCallback& confirmCallback,
              const bsls::TimeInterval& timeout);
 
+    bool applyTransformations(rmqt::Message& dstMessage,
+                              const rmqt::Message& srcMessage);
+
     rmqio::EventLoop& d_eventLoop;
 
     bsl::shared_ptr<rmqamqp::SendChannel> d_channel;
 
     bsl::shared_ptr<SharedState> d_sharedState;
+
+    bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> > d_transformers;
 
 }; // class Producer
 

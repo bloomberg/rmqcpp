@@ -28,6 +28,8 @@ jobs:
     #Only run for push to main
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to push to gh-pages
     steps:
       - uses: actions/checkout@v3
       - name: Doxygenize
@@ -55,7 +57,7 @@ jobs:
       - name: Run clang-format style check for C/C++/Protobuf programs.
         uses: jidicula/clang-format-action@v4.11.0
         with:
-          clang-format-version: '14'
+          clang-format-version: '20'
           check-path: ${{ matrix.path }}
 
   Linting:
