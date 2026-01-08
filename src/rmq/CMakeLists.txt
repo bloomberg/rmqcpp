@@ -15,6 +15,9 @@ add_library(rmq STATIC
 )
 
 target_link_libraries(rmq PUBLIC bsl bdl bal ZLIB::ZLIB OpenSSL::Crypto OpenSSL::SSL)
+if (ENABLE_COMPRESSION)
+    target_link_libraries(rmq PUBLIC zstd::libzstd_static)
+endif()
 
 get_target_property(OPENSSL_TARGET_TYPE OpenSSL::SSL TYPE)
 if(OPENSSL_CRYPTO_LIBRARY MATCHES "\\.a$")
@@ -42,19 +45,19 @@ install(
         COMPONENT librmq-dev
 )
 
-install(EXPORT rmqcppTargets 
-        FILE rmqcppTargets.cmake 
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/rmqcpp 
+install(EXPORT rmqcppTargets
+        FILE rmqcppTargets.cmake
+        DESTINATION share/rmqcpp
         NAMESPACE rmqcpp::)
 
 include(CMakePackageConfigHelpers)
-configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in 
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
                               "${CMAKE_CURRENT_BINARY_DIR}/rmqcppConfig.cmake"
-                              INSTALL_DESTINATION ${CMAKE_INSTALL_PREFIX}/share/rmqcpp) 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rmqcppConfig.cmake" DESTINATION ${CMAKE_INSTALL_PREFIX}/share/rmqcpp)
+                              INSTALL_DESTINATION share/rmqcpp)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/rmqcppConfig.cmake" DESTINATION share/rmqcpp)
 
 # Emit some metadata required internally
-set(RMQ_PC_DEP_NAMES bsl bdl bal openssl)
+set(RMQ_PC_DEP_NAMES bsl bdl bal openssl zstd)
 find_package(GenBDEMetadata QUIET)
 if (GenBDEMetadata_FOUND)
     gen_bde_metadata(PACKAGE_GROUP rmq INSTALL_COMPONENT librmq-dev DEPS "${RMQ_PC_DEP_NAMES}")

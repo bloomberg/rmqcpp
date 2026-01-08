@@ -20,6 +20,7 @@
 
 #include <rmqio_eventloop.h>
 #include <rmqp_consumer.h>
+#include <rmqp_messagetransformer.h>
 #include <rmqt_consumerackbatch.h>
 #include <rmqt_endpoint.h>
 #include <rmqt_envelope.h>
@@ -35,6 +36,7 @@
 #include <bsl_functional.h>
 #include <bsl_memory.h>
 #include <bsl_string.h>
+#include <bsl_vector.h>
 
 //@PURPOSE: Provide a RabbitMQ Async Consumer API
 //
@@ -62,19 +64,23 @@ class ConsumerImpl : public rmqp::Consumer,
                const bsl::string& consumerTag,
                bdlmt::ThreadPool& threadPool,
                rmqio::EventLoop& eventLoop,
-               const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue) const;
+               const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
+               const bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >&
+                   transformers) const;
     };
 
     // CREATORS
-    ConsumerImpl(const bsl::shared_ptr<rmqamqp::ReceiveChannel>& channel,
-                 rmqt::QueueHandle queue,
-                 const bsl::shared_ptr<ConsumerFunc>& onMessage,
-                 const bsl::string& consumerTag,
-                 bdlmt::ThreadPool& threadPool,
-                 rmqio::EventLoop& eventLoop,
-                 const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
-                 const bsl::shared_ptr<rmqa::MessageGuard::Factory>&
-                     messageGuardFactory);
+    ConsumerImpl(
+        const bsl::shared_ptr<rmqamqp::ReceiveChannel>& channel,
+        rmqt::QueueHandle queue,
+        const bsl::shared_ptr<ConsumerFunc>& onMessage,
+        const bsl::string& consumerTag,
+        bdlmt::ThreadPool& threadPool,
+        rmqio::EventLoop& eventLoop,
+        const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
+        const bsl::shared_ptr<rmqa::MessageGuard::Factory>& messageGuardFactory,
+        const bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >&
+            transformers);
 
     /// Destructor stops the consumer
     ~ConsumerImpl();
@@ -99,6 +105,9 @@ class ConsumerImpl : public rmqp::Consumer,
     ConsumerImpl& operator=(const ConsumerImpl&) BSLS_KEYWORD_DELETED;
 
     void ackMessage(const rmqt::ConsumerAck& ack);
+
+    bool unpackTransformations(rmqt::Message& dstMessage,
+                               const rmqt::Message& srcMessage);
 
     /// Called from the event loop thread with a received message
     /// This class dispatches this call onto a threadpool thread
@@ -128,6 +137,7 @@ class ConsumerImpl : public rmqp::Consumer,
 
     bsl::shared_ptr<rmqamqp::ReceiveChannel> d_channel;
     bsl::shared_ptr<MessageGuard::Factory> d_guardFactory;
+    bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> > d_transformers;
 
     bsl::function<void()> d_onNewAckBatch;
     bsl::function<void(const rmqt::ConsumerAck&)> d_messageGuardCb;

@@ -13,24 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef INCLUDED_RMQT_CREDENTIALS
-#define INCLUDED_RMQT_CREDENTIALS
-
-#include <bsl_string.h>
+#include <rmqtestutil_clockoverride.h>
 
 namespace BloombergLP {
-namespace rmqt {
+namespace rmqtestutil {
 
-/// \brief Base class for AMQP credentials
+ClockOverride::duration ClockOverride::d_timeOffset =
+    boost::asio::chrono::seconds(0);
 
-class Credentials {
-  public:
-    virtual ~Credentials() {};
-    virtual bsl::string formatCredentials()       = 0;
-    virtual bsl::string authenticationMechanism() = 0;
-};
-
-} // namespace rmqt
+}
 } // namespace BloombergLP
-
-#endif

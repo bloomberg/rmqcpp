@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Bloomberg Finance L.P.
+// Copyright 2025 Bloomberg Finance L.P.
 // SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,13 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <rmqtestutil_timeoverride.h>
+#include <rmqp_messagetransformer.h>
 
 namespace BloombergLP {
-namespace rmqtestutil {
-
-TimeOverride::duration_type TimeOverride::d_timeOffset =
-    boost::posix_time::seconds(0);
-
-}
+namespace rmqp {
+} // namespace rmqp
 } // namespace BloombergLP

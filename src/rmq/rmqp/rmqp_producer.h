@@ -19,6 +19,7 @@
 
 #include <rmqt_queue.h>
 
+#include <rmqp_messagetransformer.h>
 #include <rmqp_topologyupdate.h>
 #include <rmqt_confirmresponse.h>
 #include <rmqt_exchange.h>
@@ -29,6 +30,7 @@
 #include <bsls_timeinterval.h>
 
 #include <bsl_functional.h>
+#include <bsl_memory.h>
 #include <bsl_string.h>
 #include <rmqt_future.h>
 
@@ -45,7 +47,13 @@ class Producer {
   public:
     // TYPES
     /// \brief Possible results of rmqp::Producer#send.
-    enum SendStatus { SENDING, DUPLICATE, TIMEOUT, INFLIGHT_LIMIT };
+    enum SendStatus {
+        SENDING,
+        DUPLICATE,
+        TIMEOUT,
+        INFLIGHT_LIMIT,
+        TRANSFORM_ERROR
+    };
 
     /// \brief Invoked on receipt of message confirmation.
     ///
@@ -66,6 +74,12 @@ class Producer {
     virtual ~Producer();
 
     // MANIPULATORS
+
+    /// \brief Adds a transformation function to be run on all messages
+    ///
+    /// \param transformer  The transformation function
+    virtual void addTransformer(
+        const bsl::shared_ptr<rmqp::MessageTransformer>& transformer) = 0;
 
     /// \brief Send a message with the given `routingKey` to the exchange
     /// targeted by the producer.

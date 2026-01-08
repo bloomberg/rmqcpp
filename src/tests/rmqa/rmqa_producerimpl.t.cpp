@@ -22,6 +22,7 @@
 #include <rmqtestutil_mockchannel.t.h>
 #include <rmqtestutil_mockeventloop.t.h>
 #include <rmqtestutil_savethreadid.h>
+#include <rmqtestutil_testsuite.t.h>
 
 #include <rmqp_producer.h>
 #include <rmqt_confirmresponse.h>
@@ -815,32 +816,28 @@ TEST_P(TracingProducerImplTests, SendConfirmCallsTracing)
     d_threadPool.drain();
 }
 
-// We need to stick to INSTANTIATE_TEST_CASE_P for a while longer
-// But we do want to build with -Werror in our CI
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
-
-INSTANTIATE_TEST_CASE_P(AllMembers,
+RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         ProducerImplTests,
                         Values(PRODUCER, TRACING_PRODUCER),
                         ProducerImplTests::PrintParamName());
-INSTANTIATE_TEST_CASE_P(AllMembers,
+RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         ProducerImplConfirmTypeTests,
                         Values(PRODUCER, TRACING_PRODUCER),
                         ProducerImplTests::PrintParamName());
-INSTANTIATE_TEST_CASE_P(AllMembers,
+RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         ProducerImplCallbackLifetimeTests,
                         Values(PRODUCER, TRACING_PRODUCER),
                         ProducerImplTests::PrintParamName());
-INSTANTIATE_TEST_CASE_P(AllMembers,
+RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         ProducerImplMaxOutstandingTests,
                         Values(PRODUCER, TRACING_PRODUCER),
                         ProducerImplTests::PrintParamName());
-INSTANTIATE_TEST_CASE_P(AllMembers,
+RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         ProducerImplUpdateTopology,
                         Values(PRODUCER, TRACING_PRODUCER),
                         ProducerImplTests::PrintParamName());
 
-INSTANTIATE_TEST_CASE_P(AllMembers,
+RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         TracingProducerImplTests,
                         Values(TRACING_PRODUCER),
                         ProducerImplTests::PrintParamName());

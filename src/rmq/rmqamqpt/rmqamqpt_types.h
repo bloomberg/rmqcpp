@@ -84,6 +84,7 @@ class Types {
 #ifdef BSLS_COMPILERFEATURES_SUPPORT_STATIC_ASSERT
         // Ensure the bytes are always written in big-endian order
         static_assert(bsl::is_same<T, bool>::value ||
+                          bsl::is_same<T, char>::value ||
                           bsl::is_same<T, signed char>::value ||
                           bsl::is_same<T, unsigned char>::value ||
                           bsl::is_same<T, bdlb::BigEndianInt16>::value ||

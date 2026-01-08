@@ -36,7 +36,9 @@ bsl::shared_ptr<ConsumerImpl> TracingConsumerImpl::Factory::create(
     const bsl::string& consumerTag,
     bdlmt::ThreadPool& threadPool,
     rmqio::EventLoop& eventLoop,
-    const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue) const
+    const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
+    const bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >& transformers)
+    const
 {
     return bsl::shared_ptr<ConsumerImpl>(
         new ConsumerImpl(channel,
@@ -47,7 +49,8 @@ bsl::shared_ptr<ConsumerImpl> TracingConsumerImpl::Factory::create(
                          eventLoop,
                          ackQueue,
                          bsl::make_shared<rmqa::TracingMessageGuard::Factory>(
-                             queue, d_endpoint, d_tracing)));
+                             queue, d_endpoint, d_tracing),
+                         transformers));
 }
 
 } // namespace rmqa
