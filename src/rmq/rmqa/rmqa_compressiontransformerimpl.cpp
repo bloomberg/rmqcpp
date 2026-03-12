@@ -133,9 +133,9 @@ rmqt::Result<> CompressionTransformerImpl::inverseTransform(
     rmqt::FieldTable::const_iterator sizeIt =
         props.headers->find("sdk.transform.compression.size");
     if (sizeIt == props.headers->end() || !sizeIt->second.is<int64_t>()) {
-        BALL_LOG_ERROR << "Missing or invalid compression size header";
+        BALL_LOG_ERROR << "Missing or invalid compression size property";
         return rmqt::Result<>(
-            "Missing or invalid compression size header");
+            "Missing or invalid compression size property");
     }
     int64_t originalSize = sizeIt->second.the<int64_t>();
     if (originalSize <= 0) {
@@ -148,9 +148,9 @@ rmqt::Result<> CompressionTransformerImpl::inverseTransform(
     rmqt::FieldTable::const_iterator algIt =
         props.headers->find("sdk.transform.compression.alg");
     if (algIt == props.headers->end() || !algIt->second.is<bsl::string>()) {
-        BALL_LOG_ERROR << "Missing or invalid compression algorithm header";
+        BALL_LOG_ERROR << "Missing or invalid compression algorithm property";
         return rmqt::Result<>(
-            "Missing or invalid compression algorithm header");
+            "Missing or invalid compression algorithm property");
     }
     bsl::string compressionAlg = algIt->second.the<bsl::string>();
 
