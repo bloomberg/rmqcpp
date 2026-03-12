@@ -106,12 +106,10 @@ class Channel::ChannelMethodProcessor {
                            << d_channel.d_state
                            << " state, but expected state is "
                            << CHANNEL_OPEN_SENT;
-            d_channel.close(
-              rmqamqpt::Constants::UNEXPECTED_FRAME,
+            d_channel.close(rmqamqpt::Constants::UNEXPECTED_FRAME,
                             "Unexpected frame",
                             rmqamqpt::ChannelMethod::CLASS_ID,
-                            rmqamqpt::ChannelOpenOk::METHOD_ID
-              );
+                            rmqamqpt::ChannelOpenOk::METHOD_ID);
             return KEEP;
         }
 
