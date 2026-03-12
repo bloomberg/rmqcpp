@@ -242,6 +242,13 @@ int main(int argc, char* argv[])
             balcl::OccurrenceInfo(args.producer.messageFlag),
         },
         {
+            "use-compression",
+            "use-compression",
+            "Enable compression for messages sent by producers",
+            balcl::TypeInfo(&args.producer.useCompression),
+            balcl::OccurrenceInfo(balcl::OccurrenceInfo::e_OPTIONAL),
+        },
+        {
             "log-level",
             "log-level",
             "Log Level",
@@ -259,5 +266,8 @@ int main(int argc, char* argv[])
 
     configLog(logLevel);
 
+    args.consumer.useCompression =
+        args.producer.useCompression; // use same compression setting for both
+                                      // producer and consumer
     return rmqperftest::Runner::run(args);
 }
