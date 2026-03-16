@@ -249,20 +249,9 @@ rmqp::Producer::SendStatus ProducerImpl::sendImpl(
     const rmqp::Producer::ConfirmationCallback& confirmCallback,
     const bsls::TimeInterval& timeout)
 {
-    rmqt::Message transformedMsg;
-    if (d_transformers.size() > 0) {
-        if (!applyTransformations(transformedMsg, message)) {
-            BALL_LOG_ERROR << "Failed to apply transformations to message "
-                           << message.guid();
-            return rmqp::Producer::TRANSFORM_ERROR;
-        }
-    }
-    const rmqt::Message& realMsg =
-        d_transformers.size() > 0 ? transformedMsg : message;
-
     BALL_LOG_TRACE
         << "Waiting on send(exchange) outstanding message limit for message "
-        << realMsg;
+        << message;
 
     if (timeout.totalNanoseconds()) {
         if (d_sharedState->outstandingMessagesCap.timedWait(
@@ -274,7 +263,7 @@ rmqp::Producer::SendStatus ProducerImpl::sendImpl(
         d_sharedState->outstandingMessagesCap.wait();
     }
 
-    return doSend(realMsg, routingKey, mandatoryFlag, confirmCallback);
+    return doSend(message, routingKey, mandatoryFlag, confirmCallback);
 }
 
 rmqp::Producer::SendStatus ProducerImpl::trySend(
@@ -310,13 +299,26 @@ rmqp::Producer::SendStatus ProducerImpl::doSend(
 {
     BALL_LOG_TRACE << "Below confirm limit";
 
-    if (!registerUniqueCallback(message.guid(), confirmCallback)) {
+    rmqt::Message transformedMsg;
+    if (d_transformers.size() > 0) {
+        if (!applyTransformations(transformedMsg, message)) {
+            BALL_LOG_ERROR << "Failed to apply transformations to message "
+                           << message.guid();
+            d_sharedState->outstandingMessagesCap.post();
+            return rmqp::Producer::TRANSFORM_ERROR;
+        }
+    }
+    const rmqt::Message& realMsg =
+        d_transformers.size() > 0 ? transformedMsg : message;
+
+    if (!registerUniqueCallback(realMsg.guid(), confirmCallback)) {
+        d_sharedState->outstandingMessagesCap.post();
         return rmqp::Producer::DUPLICATE;
     }
 
     d_eventLoop.post(bdlf::BindUtil::bind(&rmqamqp::SendChannel::publishMessage,
                                           d_channel,
-                                          message,
+                                          realMsg,
                                           routingKey,
                                           mandatory));
 
