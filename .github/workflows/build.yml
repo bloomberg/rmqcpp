@@ -15,7 +15,7 @@ concurrency:
 jobs:
   Docker:
     name: "Check whether docker setup, build, test work correctly."
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
       - name: Docker Setup
@@ -27,7 +27,7 @@ jobs:
     name: Doxygenize
     #Only run for push to main
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write # Needed to push to gh-pages
     steps:
@@ -43,26 +43,22 @@ jobs:
           ghpagesbranch: gh-pages
           # GitHub Pages directory path
           ghpagesdir: ./docs
-  
+
   Formatting:
     name: Clang Format
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        path:
-          - 'src'
-          - 'examples'
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Run clang-format style check for C/C++/Protobuf programs.
-        uses: jidicula/clang-format-action@v4.11.0
+      - uses: actions/checkout@v4
         with:
-          clang-format-version: '20'
-          check-path: ${{ matrix.path }}
+          fetch-depth: 0
+      - name: clang-format style check
+        run: |
+          git clang-format-18 --diff -q origin/main | tee format_diff.txt
+          if [ -s format_diff.txt ]; then exit 1; fi
 
   Linting:
     name: Shellcheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
       - name: Run ShellCheck

@@ -343,7 +343,7 @@ bool BasicProperties::decode(BasicProperties* props,
     }
     if (flags & maskForProperty(USER_ID)) {
         properties.userId = "";
-        if (rmqamqpt::Types::decodeShortString(&*properties.userId, &buffer)) {
+        if (!rmqamqpt::Types::decodeShortString(&*properties.userId, &buffer)) {
             BALL_LOG_ERROR << "Decoding fail for basic property: "
                            << PROPERTY_NAMES[USER_ID];
             success = false;
