@@ -64,8 +64,8 @@ rmqt::Result<bool> CompressionTransformerImpl::transform(
 
     // Allocate space for compressed data
     bsl::shared_ptr<bsl::vector<uint8_t> > compressedData =
-        bsl::make_shared<bsl::vector<uint8_t> >();
-    compressedData->resize(data->size());
+        bsl::make_shared<bsl::vector<uint8_t> >(
+            ZSTD_compressBound(data->size()));
 
     // Perform the compression
     size_t compressedSize = ZSTD_compressCCtx(zctx,
