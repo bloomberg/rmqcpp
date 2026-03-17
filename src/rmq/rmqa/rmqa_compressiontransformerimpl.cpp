@@ -29,6 +29,7 @@
 #include <bsl_memory.h>
 #include <bsl_string.h>
 #include <bsl_vector.h>
+#include <bsls_assert.h>
 
 namespace BloombergLP {
 namespace rmqa {
@@ -84,9 +85,7 @@ rmqt::Result<bool> CompressionTransformerImpl::transform(
     }
 
     // Update headers
-    if (!props.headers) {
-        props.headers = bsl::make_shared<rmqt::FieldTable>();
-    }
+    BSLS_ASSERT(props.headers);
     props.headers->emplace("sdk.transform.compression.alg",
                            rmqt::FieldValue(bsl::string("zstd")));
     props.headers->emplace(
@@ -126,9 +125,8 @@ rmqt::Result<> CompressionTransformerImpl::inverseTransform(
     bsl::shared_ptr<bsl::vector<uint8_t> >& data,
     rmqt::Properties& props)
 {
-    if (!props.headers) {
-        return rmqt::Result<>("Malformed message");
-    }
+
+    BSLS_ASSERT(props.headers);
 
     rmqt::FieldTable::const_iterator sizeIt =
         props.headers->find("sdk.transform.compression.size");
@@ -136,7 +134,9 @@ rmqt::Result<> CompressionTransformerImpl::inverseTransform(
         BALL_LOG_ERROR << "Missing or invalid compression size header";
         return rmqt::Result<>("Missing or invalid compression size header");
     }
+
     int64_t originalSize = sizeIt->second.the<int64_t>();
+
     if (originalSize <= 0) {
         BALL_LOG_ERROR << "Invalid original size for decompression: "
                        << originalSize;
