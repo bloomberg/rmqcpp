@@ -54,6 +54,7 @@ struct ProducerArgs {
     , messageSize(10)
     , messageFlag("")
     , numProducers(1)
+    , useCompression(false)
     {
     }
 
@@ -64,6 +65,7 @@ struct ProducerArgs {
     int messageSize;
     bsl::string messageFlag;
     int numProducers;
+    bool useCompression;
 
     // TODO bsl::string messageContentType;
     // TODO double producerRandomStartDelay = 0.0;
@@ -77,6 +79,7 @@ struct ConsumerArgs {
     , consumerRateLimit(0)
     , numConsumers(1)
     , consumerArgs("")
+    , useCompression(false)
     {
     }
 
@@ -86,6 +89,7 @@ struct ConsumerArgs {
     int numConsumers;
     bsl::string
         consumerArgs; // expected comma separated "key=value, key=value, ..."
+    bool useCompression;
 
     // TODO bool consumerSlowStart = false;
     // TODO int consumerLatencyUSec  = 0;

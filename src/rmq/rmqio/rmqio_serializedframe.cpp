@@ -47,8 +47,8 @@ bool SerializedFrame::operator==(const SerializedFrame& other) const
 
 bool SerializedFrame::operator!=(const SerializedFrame& other) const
 {
-    if (d_length == other.d_length) {
-        return false;
+    if (d_length != other.d_length) {
+        return true;
     }
 
     if (!d_buffer || !other.d_buffer) {
