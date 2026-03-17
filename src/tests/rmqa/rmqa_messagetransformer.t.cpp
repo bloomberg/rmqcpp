@@ -15,6 +15,7 @@
 
 #include <rmqa_compressiontransformer.h>
 #include <rmqp_messagetransformer.h>
+#include <rmqt_fieldvalue.h>
 #include <rmqt_message.h>
 #include <rmqt_result.h>
 
@@ -42,7 +43,10 @@ class TransformerTester {
         bsl::shared_ptr<bsl::vector<uint8_t> > data =
             bsl::make_shared<bsl::vector<uint8_t> >(
                 message.payload(), message.payload() + message.payloadSize());
-        rmqt::Properties props    = message.properties();
+        rmqt::Properties props = message.properties();
+        if (!props.headers) {
+            props.headers = bsl::make_shared<rmqt::FieldTable>();
+        }
         rmqt::Result<bool> result = transformer.transform(data, props);
         if (expectedResult == FAILURE) {
             EXPECT_FALSE(result); // Expect failure
@@ -147,6 +151,7 @@ TEST(MessageBuilderTests, ChainedCompressionIsValid)
     bsl::shared_ptr<bsl::vector<uint8_t> > data =
         bsl::make_shared<bsl::vector<uint8_t> >(s.cbegin(), s.cend());
     rmqt::Properties props = rmqt::Message(data).properties();
+    props.headers          = bsl::make_shared<rmqt::FieldTable>();
 
     // Build message
     BasicMessageTransform t1;
@@ -179,6 +184,7 @@ TEST(MessageBuilderTests, ChainedTransformIsValid)
     bsl::shared_ptr<bsl::vector<uint8_t> > data =
         bsl::make_shared<bsl::vector<uint8_t> >(s.cbegin(), s.cend());
     rmqt::Properties props = rmqt::Message(data).properties();
+    props.headers          = bsl::make_shared<rmqt::FieldTable>();
 
     // Build message
     BasicMessageTransform t1;

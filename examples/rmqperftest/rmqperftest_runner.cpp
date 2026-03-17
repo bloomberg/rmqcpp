@@ -16,12 +16,14 @@
 #include <rmqperftest_consumerargs.h>
 #include <rmqperftest_runner.h>
 
+#include <rmqa_compressiontransformer.h>
 #include <rmqa_connectionstring.h>
 #include <rmqa_consumer.h>
 #include <rmqa_producer.h>
 #include <rmqa_rabbitcontext.h>
 #include <rmqa_vhost.h>
 #include <rmqt_exchange.h>
+#include <rmqt_properties.h>
 #include <rmqt_vhostinfo.h>
 
 #include <bsl_algorithm.h>
@@ -110,6 +112,42 @@ void finalizeProducers(bsl::vector<ProducerRoutingKeyPair>& producers)
         it->first->waitForConfirms();
     }
     producers.clear();
+}
+
+// Generate a message payload of the specified size
+// The payload should be compressible, but not completely trivial (like all
+// 'a's)
+bsl::shared_ptr<bsl::vector<uint8_t> > createMessagePayload(size_t size)
+{
+    bsl::shared_ptr<bsl::vector<uint8_t> > vec =
+        bsl::make_shared<bsl::vector<uint8_t> >(size, 'a');
+    bsl::vector<uint8_t>* payload = vec.get();
+    size_t idx                    = 0;
+    for (int i = 0; i < 26; i++) {
+        for (int j = 0; j < 26; j++) {
+            for (int k = 0; k < 26; k++) {
+                for (int l = 0; l < 26; l++) {
+                    payload->at(idx++) = 'a' + i;
+                    if (idx >= size) {
+                        return vec;
+                    }
+                    payload->at(idx++) = 'a' + i;
+                    if (idx >= size) {
+                        return vec;
+                    }
+                    payload->at(idx++) = 'a' + k;
+                    if (idx >= size) {
+                        return vec;
+                    }
+                    payload->at(idx++) = 'a' + l;
+                    if (idx >= size) {
+                        return vec;
+                    }
+                }
+            }
+        }
+    }
+    return vec;
 }
 
 } // namespace
@@ -208,6 +246,15 @@ int Runner::run(const PerfTestArgs& args)
                 bsl::cerr << "Failed to create producer: " << i << "\n";
                 return 1;
             }
+            if (args.producer.useCompression) {
+                rmqt::Result<rmqp::MessageTransformer> transformer =
+                    rmqa::CompressionTransformer::create();
+                if (!transformer) {
+                    bsl::cerr << "Failed to create compression transformer\n";
+                    return 1;
+                }
+                producerResult.value()->addTransformer(transformer.value());
+            }
 
             producers.push_back(bsl::make_pair(
                 producerResult.value(),
@@ -244,6 +291,15 @@ int Runner::run(const PerfTestArgs& args)
                       << bsl::endl;
             consumerConfig.setConsumerPriority(priority.value());
         }
+        if (args.consumer.useCompression) {
+            rmqt::Result<rmqp::MessageTransformer> transformer =
+                rmqa::CompressionTransformer::create();
+            if (!transformer) {
+                bsl::cerr << "Failed to create compression transformer\n";
+                return 1;
+            }
+            consumerConfig.addTransformer(transformer.value());
+        }
 
         bsl::shared_ptr<bsls::AtomicBool> consumerFinishedFlag =
             bsl::make_shared<bsls::AtomicBool>(false);
@@ -270,6 +326,9 @@ int Runner::run(const PerfTestArgs& args)
             queues = v_queues.begin();
         }
     }
+
+    bsl::shared_ptr<bsl::vector<uint8_t> > rawPayload =
+        createMessagePayload(args.producer.messageSize);
 
     const bsls::TimeInterval startTime = bsls::SystemTime::nowMonotonicClock();
 
@@ -306,8 +365,7 @@ int Runner::run(const PerfTestArgs& args)
                       bsls::TimeInterval(args.producer.publishingInterval, 0);
 
         if (producers.size() > 0) {
-            rmqt::Message msg(bsl::make_shared<bsl::vector<uint8_t> >(
-                args.producer.messageSize, 'a'));
+            rmqt::Message msg(rawPayload);
 
             if (args.producer.messageFlag == "persistent") {
                 msg.updateDeliveryMode(rmqt::DeliveryMode::PERSISTENT);
@@ -325,8 +383,9 @@ int Runner::run(const PerfTestArgs& args)
 
             producerMessagesSent += 1;
 
-            if ((int)producerMessagesSent >=
-                args.producer.producerMessageCount) {
+            if (args.producer.producerMessageCount >= 0 &&
+                static_cast<int>(producerMessagesSent) >=
+                    args.producer.producerMessageCount) {
 
                 finalizeProducers(producers);
             }
