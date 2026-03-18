@@ -32,6 +32,18 @@ target_link_libraries(rmqio PUBLIC
     Boost::boost
 )
 
+# boost::asio::chrono maps to boost::chrono on platforms without std::chrono
+# (e.g. Solaris/C++03, IBM XL). Use header-only mode to avoid needing
+# libboost_chrono, and fall back to linking it if available elsewhere.
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "SunPro" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "XL")
+    target_compile_definitions(rmqio PUBLIC BOOST_CHRONO_HEADER_ONLY)
+else()
+    find_library(Boost_CHRONO_LIBRARY NAMES boost_chrono)
+    if(Boost_CHRONO_LIBRARY)
+        target_link_libraries(rmqio PUBLIC ${Boost_CHRONO_LIBRARY})
+    endif()
+endif()
+
 if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "SunPro" )
     # _RWSTD_ALLOCATOR tells the solaris <memory> header to define a std::allocator
     # which conforms better to the C++ standard, which is expected by Boost. Without

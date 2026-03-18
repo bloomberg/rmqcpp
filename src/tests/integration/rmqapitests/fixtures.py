@@ -19,7 +19,10 @@ from enum import Enum
 import requests
 from requests.auth import HTTPBasicAuth
 from typing import Any
-from telnetlib3 import Telnet
+try:
+    from telnetlib import Telnet
+except ImportError:
+    from telnetlib3 import Telnet
 from contextlib import contextmanager
 import logging
 import re

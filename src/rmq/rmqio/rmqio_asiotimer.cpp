@@ -15,13 +15,9 @@
 
 #include <rmqio_asiotimer.h>
 
-namespace {
-void instantiateTemplates()
-{
-    // Instantiate the templates to ensure that they compile.
-    BloombergLP::rmqio::AsioEventLoop eventLoop;
-    BloombergLP::rmqio::AsioTimerFactory timerFactory(eventLoop);
-    BloombergLP::rmqio::AsioTimer timer(eventLoop.context(),
-                                        BloombergLP::bsls::TimeInterval(1));
-}
-} // namespace
+namespace BloombergLP {
+namespace rmqio {
+template class basic_AsioTimer<DefaultClockType>;
+template class basic_AsioTimerFactory<DefaultClockType>;
+} // namespace rmqio
+} // namespace BloombergLP
