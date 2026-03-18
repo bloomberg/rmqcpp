@@ -772,6 +772,46 @@ TEST_P(ProducerImplUpdateTopology, UpdateCallbackFromTwoThreadsAtOnce)
     EXPECT_TRUE(future2.blockResult());
 }
 
+TEST_P(ProducerImplMaxOutstandingTests, SendFromConfirmCallbackDoesNotDeadlock)
+{
+    // Regression: calling send() from within a ConfirmationCallback must not
+    // deadlock even when maxOutstandingConfirms is 1.  Before the fix the
+    // callback was invoked while the internal mutex was held, so re-entering
+    // send() (which acquires the same mutex) would deadlock.
+
+    bsl::shared_ptr<rmqa::ProducerImpl> producer(d_factory->create(
+        1, d_exchange, d_mockSendChannel, d_threadPool, d_eventLoop));
+
+    rmqt::Message msg1 = newMessage();
+    rmqt::Message msg2 = newMessage();
+    const rmqt::ConfirmResponse ack(rmqt::ConfirmResponse::ACK);
+
+    // Send the first message — this should succeed immediately.
+    EXPECT_THAT(producer->send(msg1, d_queue->name(), d_callback, d_timeout),
+                Eq(rmqp::Producer::SENDING));
+
+    // When msg1 is confirmed, send msg2 from inside the callback.  The
+    // outstanding slot freed by msg1's confirm must be available before the
+    // callback executes, otherwise send() would block forever (deadlock with
+    // the old code).
+    EXPECT_CALL(*d_mockCallback, onConfirm(msg1, _, ack))
+        .WillOnce(InvokeWithoutArgs([&]() {
+            EXPECT_THAT(
+                producer->send(msg2, d_queue->name(), d_callback, d_timeout),
+                Eq(rmqp::Producer::SENDING));
+        }));
+
+    d_injectConfirm(msg1, d_queue->name(), ack);
+    d_threadPool.drain();
+
+    d_threadPool.start();
+
+    // Now confirm msg2 to leave the producer in a clean state.
+    EXPECT_CALL(*d_mockCallback, onConfirm(msg2, _, ack));
+    d_injectConfirm(msg2, d_queue->name(), ack);
+    d_threadPool.drain();
+}
+
 class TracingProducerImplTests : public ProducerImplMaxOutstandingTests {
   public:
 };
