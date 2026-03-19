@@ -48,39 +48,51 @@ void actionConfirmOnThreadPool(
     const rmqt::ConfirmResponse& confirmResponse,
     const bsl::shared_ptr<ProducerImpl::SharedState>& sharedState)
 {
-    bslmt::LockGuard<bslmt::Mutex> guard(&(sharedState->mutex));
+    rmqp::Producer::ConfirmationCallback callback;
+    bsl::optional<rmqt::Future<>::Pair> waitForConfirmsFuture;
 
-    if (!(sharedState->isValid)) {
-        BALL_LOG_ERROR << "Received publisher confirmation for message "
-                       << message.guid() << " after closing the producer";
-        return;
+    {
+        bslmt::LockGuard<bslmt::Mutex> guard(&(sharedState->mutex));
+
+        if (!(sharedState->isValid)) {
+            BALL_LOG_ERROR << "Received publisher confirmation for message "
+                           << message.guid() << " after closing the producer";
+            return;
+        }
+
+        ProducerImpl::CallbackMap::iterator it =
+            sharedState->callbackMap.find(message.guid());
+
+        if (it == sharedState->callbackMap.end()) {
+            BALL_LOG_ERROR
+                << "Failed to find Producer callback to invoke for message: "
+                << message.guid()
+                << ". Received duplicate confirm? The outstanding "
+                   "message limit will likely be affected for the lifetime of "
+                   "this "
+                   "Producer instance.";
+            return;
+        }
+
+        BALL_LOG_TRACE << confirmResponse << " for " << message;
+
+        callback.swap(it->second);
+
+        sharedState->callbackMap.erase(it);
+
+        sharedState->outstandingMessagesCap.post();
+
+        if (sharedState->callbackMap.size() == 0 &&
+            sharedState->waitForConfirmsFuture) {
+            waitForConfirmsFuture = sharedState->waitForConfirmsFuture;
+            sharedState->waitForConfirmsFuture.reset();
+        }
     }
 
-    ProducerImpl::CallbackMap::iterator it =
-        sharedState->callbackMap.find(message.guid());
+    callback(message, routingKey, confirmResponse);
 
-    if (it == sharedState->callbackMap.end()) {
-        BALL_LOG_FATAL
-            << "Failed to find Producer callback to invoke for message: "
-            << message.guid()
-            << ". Received duplicate confirm? The outstanding "
-               "message limit will likely be affected for the lifetime of this "
-               "Producer instance.";
-        return;
-    }
-
-    BALL_LOG_TRACE << confirmResponse << " for " << message;
-
-    sharedState->outstandingMessagesCap.post();
-
-    it->second(message, routingKey, confirmResponse);
-
-    sharedState->callbackMap.erase(it);
-
-    if (sharedState->callbackMap.size() == 0 &&
-        sharedState->waitForConfirmsFuture) {
-        sharedState->waitForConfirmsFuture->first(rmqt::Result<>());
-        sharedState->waitForConfirmsFuture.reset();
+    if (waitForConfirmsFuture) {
+        waitForConfirmsFuture->first(rmqt::Result<>());
     }
 }
 
@@ -98,7 +110,7 @@ void handleConfirmOnEventLoop(
                              sharedState));
 
     if (rc != 0) {
-        BALL_LOG_FATAL
+        BALL_LOG_ERROR
             << "Couldn't enqueue thread pool job for message confirm: "
             << message.guid() << " (return code " << rc
             << "). Application will NEVER be informed of confirm";

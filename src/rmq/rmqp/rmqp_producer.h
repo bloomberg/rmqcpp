@@ -65,6 +65,11 @@ class Producer {
     /// completed. For example, an application which consumes from one queue
     /// and produces to another should send the acknowledgement to the first
     /// queue once the ConfirmationCallback is invoked from the publish.
+    ///
+    /// Callbacks are invoked on a thread pool thread without holding any
+    /// internal locks. It is safe to call `send` or `trySend` from within a
+    /// ConfirmationCallback. Multiple callbacks may execute concurrently on
+    /// different thread pool threads.
     typedef bsl::function<void(const rmqt::Message&,
                                const bsl::string& routingKey,
                                const rmqt::ConfirmResponse&)>
@@ -210,13 +215,18 @@ class Producer {
 
     /// \brief Wait for all outstanding publisher confirms to arrive.
     ///
-    /// This method allows
+    /// Blocks the calling thread until every previously sent message has
+    /// received a publisher confirm from the broker (or the timeout expires).
+    /// All corresponding ConfirmationCallbacks will have completed before
+    /// this method returns. Note that messages sent from within a
+    /// ConfirmationCallback will not be covered by an in-progress
+    /// `waitForConfirms` call; a subsequent call is needed to wait for those.
     ///
     /// \param timeout   How long to wait for. If timeout is 0, the method will
-    ///                wait for confirms indefinitely.
+    ///                  wait for confirms indefinitely.
     ///
-    /// \return true   if all outstanding confirms have arrived.
-    /// \return false  if waiting timed out.
+    /// \return A default-constructed result if all outstanding confirms have
+    ///         arrived, or an error result if waiting timed out.
     virtual rmqt::Result<>
     waitForConfirms(const bsls::TimeInterval& timeout) = 0;
 
