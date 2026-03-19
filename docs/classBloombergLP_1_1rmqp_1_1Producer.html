@@ -146,7 +146,8 @@ Public Member Functions</h2></td></tr>
 
 <p>Invoked on receipt of message confirmation. </p>
 <p >The user-provided ConfirmationCallback is invoked once RabbitMQ broker provides a guarantee (publisher confirm) that the message is enqueued.</p>
-<p >A ConfirmationCallback implementation should perform any commit action, such as confirming to the sender of the message that the action will be completed. For example, an application which consumes from one queue and produces to another should send the acknowledgement to the first queue once the ConfirmationCallback is invoked from the publish. </p>
+<p >A ConfirmationCallback implementation should perform any commit action, such as confirming to the sender of the message that the action will be completed. For example, an application which consumes from one queue and produces to another should send the acknowledgement to the first queue once the ConfirmationCallback is invoked from the publish.</p>
+<p >Callbacks are invoked on a thread pool thread without holding any internal locks. It is safe to call <code>send</code> or <code>trySend</code> from within a ConfirmationCallback. Multiple callbacks may execute concurrently on different thread pool threads. </p>
 
 </div>
 </div>
@@ -442,16 +443,14 @@ INFLIGHT_LIMIT Returned if the unconfirmed message limit has been reached. </dd>
 </div><div class="memdoc">
 
 <p>Wait for all outstanding publisher confirms to arrive. </p>
-<p >This method allows</p>
+<p >Blocks the calling thread until every previously sent message has received a publisher confirm from the broker (or the timeout expires). All corresponding ConfirmationCallbacks will have completed before this method returns. Note that messages sent from within a ConfirmationCallback will not be covered by an in-progress <code>waitForConfirms</code> call; a subsequent call is needed to wait for those.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">timeout</td><td>How long to wait for. If timeout is 0, the method will wait for confirms indefinitely.</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>true if all outstanding confirms have arrived. </dd>
-<dd>
-false if waiting timed out. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A default-constructed result if all outstanding confirms have arrived, or an error result if waiting timed out. </dd></dl>
 
 <p>Implemented in <a class="el" href="classBloombergLP_1_1rmqa_1_1ProducerImpl.html#af300b77b9718e19892b15437edb679ec">BloombergLP::rmqa::ProducerImpl</a>.</p>
 
