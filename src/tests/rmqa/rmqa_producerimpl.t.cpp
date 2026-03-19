@@ -772,6 +772,16 @@ TEST_P(ProducerImplUpdateTopology, UpdateCallbackFromTwoThreadsAtOnce)
     EXPECT_TRUE(future2.blockResult());
 }
 
+static void sendAndExpectSending(bsl::shared_ptr<rmqa::ProducerImpl>* producer,
+                                 rmqt::Message* msg,
+                                 bsl::shared_ptr<rmqt::Queue>* queue,
+                                 rmqp::Producer::ConfirmationCallback* callback,
+                                 bsls::TimeInterval* timeout)
+{
+    EXPECT_THAT((*producer)->send(*msg, (*queue)->name(), *callback, *timeout),
+                Eq(rmqp::Producer::SENDING));
+}
+
 TEST_P(ProducerImplMaxOutstandingTests, SendFromConfirmCallbackDoesNotDeadlock)
 {
     // Regression: calling send() from within a ConfirmationCallback must not
@@ -795,11 +805,12 @@ TEST_P(ProducerImplMaxOutstandingTests, SendFromConfirmCallbackDoesNotDeadlock)
     // callback executes, otherwise send() would block forever (deadlock with
     // the old code).
     EXPECT_CALL(*d_mockCallback, onConfirm(msg1, _, ack))
-        .WillOnce(InvokeWithoutArgs([&]() {
-            EXPECT_THAT(
-                producer->send(msg2, d_queue->name(), d_callback, d_timeout),
-                Eq(rmqp::Producer::SENDING));
-        }));
+        .WillOnce(InvokeWithoutArgs(bdlf::BindUtil::bind(&sendAndExpectSending,
+                                                         &producer,
+                                                         &msg2,
+                                                         &d_queue,
+                                                         &d_callback,
+                                                         &d_timeout)));
 
     d_injectConfirm(msg1, d_queue->name(), ack);
     d_threadPool.drain();
