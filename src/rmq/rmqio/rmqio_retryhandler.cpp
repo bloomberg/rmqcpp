@@ -32,6 +32,7 @@ BALL_LOG_SET_NAMESPACE_CATEGORY("RMQIO.RETRYHANDLER")
 
 RetryHandler::RetryHandler(const bsl::shared_ptr<TimerFactory>& timerFactory,
                            const rmqt::ErrorCallback& errorCb,
+                           const rmqt::SuccessCallback& successCb,
                            const bsl::shared_ptr<RetryStrategy>& retryStrategy)
 : d_sleepTimer(timerFactory->createWithCallback(
       bdlf::BindUtil::bind(&RetryHandler::handleRetry,
@@ -40,6 +41,7 @@ RetryHandler::RetryHandler(const bsl::shared_ptr<TimerFactory>& timerFactory,
 , d_retryStrategy(retryStrategy)
 , d_retryCallback()
 , d_onError(errorCb)
+, d_onSuccess(successCb)
 {
 }
 
