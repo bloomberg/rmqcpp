@@ -81,6 +81,54 @@ const bsl::uint16_t k_HUNG_TIMER_SEC            = 60;
 
 BALL_LOG_SET_NAMESPACE_CATEGORY("RMQAMQP.CONNECTION")
 
+void setChainProperties(rmqt::FieldTable& props,
+                        const rmqt::FieldTable& base,
+                        const bsl::string& selfProduct,
+                        const bsl::string& selfVersion)
+{
+    using namespace rmqt;
+
+    FieldTable::const_iterator productChainIt = base.find("product_chain");
+    FieldTable::const_iterator versionChainIt = base.find("version_chain");
+    FieldTable::const_iterator productIt      = base.find("product");
+    FieldTable::const_iterator versionIt      = base.find("version");
+
+    if (productChainIt != base.end() &&
+        productChainIt->second.is<bsl::string>()) {
+        // Caller provided chains -- append ourselves
+        props["product_chain"] = FieldValue(
+            productChainIt->second.the<bsl::string>() + " | " + selfProduct);
+        props["version_chain"] =
+            FieldValue((versionChainIt != base.end() &&
+                                versionChainIt->second.is<bsl::string>()
+                            ? versionChainIt->second.the<bsl::string>()
+                            : bsl::string("unknown")) +
+                       " | " + selfVersion);
+    }
+    else if (productIt != base.end() && productIt->second.is<bsl::string>()) {
+        // Caller set product/version but no chains -- build from both
+        props["product_chain"] = FieldValue(
+            productIt->second.the<bsl::string>() + " | " + selfProduct);
+        props["version_chain"] = FieldValue(
+            (versionIt != base.end() && versionIt->second.is<bsl::string>()
+                 ? versionIt->second.the<bsl::string>()
+                 : bsl::string("unknown")) +
+            " | " + selfVersion);
+    }
+    else {
+        // No wrapper -- just ourselves
+        props["product_chain"] = FieldValue(selfProduct);
+        props["version_chain"] = FieldValue(selfVersion);
+    }
+
+    if (productIt == base.end()) {
+        props["product"] = FieldValue(bsl::string(selfProduct));
+    }
+    if (versionIt == base.end()) {
+        props["version"] = FieldValue(bsl::string(selfVersion));
+    }
+}
+
 rmqt::FieldTable generateClientProperties(const rmqt::FieldTable& base,
                                           const bsl::string& connectionName)
 {
@@ -98,8 +146,11 @@ rmqt::FieldTable generateClientProperties(const rmqt::FieldTable& base,
     props["capabilities"] = FieldValue(capabilities);
 
     props["platform"] = FieldValue(bsl::string(rmqamqpt::Constants::PLATFORM));
-    props["product"]  = FieldValue(bsl::string(rmqamqpt::Constants::PRODUCT));
-    props["version"]  = FieldValue(bsl::string(rmqamqpt::Constants::VERSION));
+
+    setChainProperties(props,
+                       base,
+                       bsl::string(rmqamqpt::Constants::PRODUCT),
+                       bsl::string(rmqamqpt::Constants::VERSION));
 
     if (!connectionName.empty()) {
         props["connection_name"] = FieldValue(connectionName);

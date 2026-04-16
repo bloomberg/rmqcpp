@@ -81,9 +81,15 @@ class RabbitContextOptions {
     /// \param name name of client property to set
     /// \param value value of client property
     /// NOTE: The following properties are set by default and can be
-    /// overridden: task, pid, os, os_version, os_patch. The following
-    /// properties are reserved and cannot be overridden: capabilities,
-    /// platform, product, version, connection_name
+    /// overridden: task, pid, os, os_version, os_patch, product, version.
+    /// If product and version are provided, "product_chain" and
+    /// "version_chain" fields are automatically populated showing the
+    /// full library stack (e.g. product_chain="my-wrapper | rmqcpp C++ Client
+    /// Library", version_chain="1.0.0 | 2.33.0").
+    /// The following properties are reserved: capabilities, platform,
+    /// connection_name. The product_chain and version_chain fields are
+    /// automatically managed by the library stack and should not be set
+    /// directly by applications.
     RabbitContextOptions& setClientProperty(const bsl::string& name,
                                             const rmqt::FieldValue& value);
 

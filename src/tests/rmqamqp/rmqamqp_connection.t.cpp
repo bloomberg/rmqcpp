@@ -90,6 +90,10 @@ rmqt::FieldTable generateDefaultClientProperties(
         rmqt::FieldValue(bsl::string(rmqamqpt::Constants::PRODUCT));
     props["version"] =
         rmqt::FieldValue(bsl::string(rmqamqpt::Constants::VERSION));
+    props["product_chain"] =
+        rmqt::FieldValue(bsl::string(rmqamqpt::Constants::PRODUCT));
+    props["version_chain"] =
+        rmqt::FieldValue(bsl::string(rmqamqpt::Constants::VERSION));
 
     if (!connectionName.empty()) {
         props["connection_name"] = rmqt::FieldValue(connectionName);
@@ -405,7 +409,7 @@ class ConnectionTests : public ::testing::Test {
     , d_sendChannel(bsl::make_shared<MockSendChannel>(d_retryHandlerChannel))
     , d_ackQueue(bsl::make_shared<rmqt::ConsumerAckQueue>())
     , d_metricPublisher(bsl::make_shared<rmqtestutil::MockMetricPublisher>())
-    , d_clientProperties(generateDefaultClientProperties())
+    , d_clientProperties()
     , d_factory(bsl::make_shared<ConnectionFactory>(d_resolver,
                                                     d_timerFactory,
                                                     d_errorCallback,
@@ -679,21 +683,23 @@ TEST_F(ConnectionTests, Handshake)
 
 TEST_F(ConnectionTests, ClientProperties)
 {
-    rmqt::FieldTable overriddenClientProperties =
-        generateDefaultClientProperties();
-    overriddenClientProperties["FOO"] =
-        rmqt::FieldValue(bsl::string("BAR")); // Add one more
+    rmqt::FieldTable inputClientProperties;
+    inputClientProperties["FOO"] =
+        rmqt::FieldValue(bsl::string("BAR")); // Add a custom property
+
     d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
                                                     d_timerFactory,
                                                     d_errorCallback,
                                                     d_metricPublisher,
-                                                    overriddenClientProperties,
+                                                    inputClientProperties,
                                                     d_retryHandler,
                                                     d_heartbeat,
                                                     d_channelFactory);
 
-    expectHeaderAndStartFrames(
-        overriddenClientProperties); // check it's as expected
+    rmqt::FieldTable expectedProperties =
+        generateDefaultClientProperties("test-connection");
+    expectedProperties["FOO"] = rmqt::FieldValue(bsl::string("BAR"));
+    expectHeaderAndStartFrames(expectedProperties);
     expectTuneFrames();
     expectOpenFrame();
 
@@ -709,18 +715,75 @@ TEST_F(ConnectionTests, ClientProperties)
     d_eventLoop.run();
 }
 
-TEST_F(ConnectionTests, ClientPropertiesCantOverrideReservedOnes)
+TEST_F(ConnectionTests, ClientPropertiesCantOverrideConnectionName)
 {
-    rmqt::FieldTable overriddenClientProperties =
-        generateDefaultClientProperties("my random connection name");
-    overriddenClientProperties["platform"] = rmqt::FieldValue(
-        bsl::string("Should get overriden by library")); // Add one more
-    overriddenClientProperties["product"] = rmqt::FieldValue(
-        bsl::string("Should get overriden by library")); // Add one more
-    overriddenClientProperties["version"] = rmqt::FieldValue(
-        bsl::string("Should get overriden by library")); // Add one more
-    overriddenClientProperties["connection_name"] = rmqt::FieldValue(
-        bsl::string("Should get overriden by library")); // Add one more
+    rmqt::FieldTable inputClientProperties;
+    inputClientProperties["connection_name"] =
+        rmqt::FieldValue(bsl::string("Should get overriden by library"));
+    d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
+                                                    d_timerFactory,
+                                                    d_errorCallback,
+                                                    d_metricPublisher,
+                                                    inputClientProperties,
+                                                    d_retryHandler,
+                                                    d_heartbeat,
+                                                    d_channelFactory);
+
+    expectHeaderAndStartFrames(generateDefaultClientProperties(
+        "my real connection name")); // connection_name is still reserved
+    expectTuneFrames();
+    expectOpenFrame();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn =
+            createAndStartConnection("my real connection name");
+
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        expectShutdownCalls();
+    }
+
+    d_eventLoop.run();
+}
+
+TEST_F(ConnectionTests, ClientPropertiesDefaultsWhenNoneProvided)
+{
+    rmqt::FieldTable emptyClientProperties;
+    d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
+                                                    d_timerFactory,
+                                                    d_errorCallback,
+                                                    d_metricPublisher,
+                                                    emptyClientProperties,
+                                                    d_retryHandler,
+                                                    d_heartbeat,
+                                                    d_channelFactory);
+
+    expectHeaderAndStartFrames(
+        generateDefaultClientProperties("my connection"));
+    expectTuneFrames();
+    expectOpenFrame();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn =
+            createAndStartConnection("my connection");
+
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        expectShutdownCalls();
+    }
+
+    d_eventLoop.run();
+}
+
+TEST_F(ConnectionTests, ClientPropertiesCanOverrideProductAndVersion)
+{
+    rmqt::FieldTable overriddenClientProperties;
+    overriddenClientProperties["product"] =
+        rmqt::FieldValue(bsl::string("xyzlib"));
+    overriddenClientProperties["version"] =
+        rmqt::FieldValue(bsl::string("4.5.6"));
     d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
                                                     d_timerFactory,
                                                     d_errorCallback,
@@ -730,24 +793,74 @@ TEST_F(ConnectionTests, ClientPropertiesCantOverrideReservedOnes)
                                                     d_heartbeat,
                                                     d_channelFactory);
 
-    expectHeaderAndStartFrames(generateDefaultClientProperties(
-        "my real connection name")); // despite setting overrides, the library
-                                     // has the final say
+    rmqt::FieldTable expectedProperties =
+        generateDefaultClientProperties("my connection");
+    expectedProperties["product"] = rmqt::FieldValue(bsl::string("xyzlib"));
+    expectedProperties["version"] = rmqt::FieldValue(bsl::string("4.5.6"));
+    expectedProperties["product_chain"] = rmqt::FieldValue(
+        bsl::string("xyzlib | ") + bsl::string(rmqamqpt::Constants::PRODUCT));
+    expectedProperties["version_chain"] = rmqt::FieldValue(
+        bsl::string("4.5.6 | ") + bsl::string(rmqamqpt::Constants::VERSION));
+    expectHeaderAndStartFrames(expectedProperties);
     expectTuneFrames();
     expectOpenFrame();
 
     {
         bsl::shared_ptr<rmqamqp::Connection> conn =
-            createAndStartConnection("my real connection name");
+            createAndStartConnection("my connection");
 
-        // 1. Handshake up to open with custom client properties
         d_eventLoop.run();
         d_eventLoop.restart();
 
         expectShutdownCalls();
     }
 
-    // 2. Shutdown cleanly
+    d_eventLoop.run();
+}
+
+TEST_F(ConnectionTests, ClientPropertiesWrapperSetsChains)
+{
+    rmqt::FieldTable wrapperClientProperties;
+    wrapperClientProperties["product"] =
+        rmqt::FieldValue(bsl::string("rmqcpp-wrapper"));
+    wrapperClientProperties["version"] = rmqt::FieldValue(bsl::string("1.2.3"));
+    wrapperClientProperties["product_chain"] =
+        rmqt::FieldValue(bsl::string("rmqcpp-wrapper"));
+    wrapperClientProperties["version_chain"] =
+        rmqt::FieldValue(bsl::string("1.2.3"));
+    d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
+                                                    d_timerFactory,
+                                                    d_errorCallback,
+                                                    d_metricPublisher,
+                                                    wrapperClientProperties,
+                                                    d_retryHandler,
+                                                    d_heartbeat,
+                                                    d_channelFactory);
+
+    rmqt::FieldTable expectedProperties =
+        generateDefaultClientProperties("my connection");
+    expectedProperties["product"] =
+        rmqt::FieldValue(bsl::string("rmqcpp-wrapper"));
+    expectedProperties["version"] = rmqt::FieldValue(bsl::string("1.2.3"));
+    expectedProperties["product_chain"] =
+        rmqt::FieldValue(bsl::string("rmqcpp-wrapper | ") +
+                         bsl::string(rmqamqpt::Constants::PRODUCT));
+    expectedProperties["version_chain"] = rmqt::FieldValue(
+        bsl::string("1.2.3 | ") + bsl::string(rmqamqpt::Constants::VERSION));
+    expectHeaderAndStartFrames(expectedProperties);
+    expectTuneFrames();
+    expectOpenFrame();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn =
+            createAndStartConnection("my connection");
+
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        expectShutdownCalls();
+    }
+
     d_eventLoop.run();
 }
 
