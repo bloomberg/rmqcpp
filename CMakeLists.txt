@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(rmq LANGUAGES C CXX)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 option(ENABLE_COMPRESSION "Enable zstd compression support" ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
