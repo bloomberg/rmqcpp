@@ -181,7 +181,8 @@ const bsl::optional&lt; bool &gt; &amp;&#160;</td><td class="memItemRight" valig
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">name</td><td>name of client property to set </td></tr>
-    <tr><td class="paramname">value</td><td>value of client property NOTE: The following properties are set by default and can be overridden: task, pid, os, os_version, os_patch. The following properties are reserved and cannot be overridden: capabilities, platform, product, version, connection_name </td></tr>
+    <tr><td class="paramname">value</td><td>value of client property NOTE: The following properties are set by default and can be overridden: task, pid, os, os_version, os_patch, product, version. If product and version are provided, "product_chain" and "version_chain" fields are automatically populated showing the full library stack (e.g. product_chain="my-wrapper | rmqcpp C++ Client
+Library", version_chain="1.0.0 | 2.33.0"). The following properties are reserved: capabilities, platform, connection_name. The product_chain and version_chain fields are automatically managed by the library stack and should not be set directly by applications. </td></tr>
   </table>
   </dd>
 </dl>
