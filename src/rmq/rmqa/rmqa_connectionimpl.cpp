@@ -53,6 +53,7 @@ BALL_LOG_SET_NAMESPACE_CATEGORY("RMQA.CONNECTIONIMPL")
 bsl::shared_ptr<rmqio::RetryHandler>
 createRetryHandler(const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
                    const rmqt::ErrorCallback& errorCb,
+                   const rmqt::SuccessCallback& successCb,
                    const rmqt::Tunables& tunables)
 {
     if (tunables.find("IIR") != tunables.end()) {
@@ -61,12 +62,14 @@ createRetryHandler(const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
         return bsl::make_shared<rmqio::RetryHandler>(
             timerFactory,
             errorCb,
+            successCb,
             bsl::make_shared<rmqio::BackoffLevelRetryStrategy>(
                 bsl::numeric_limits<unsigned int>::max()));
     }
     return bsl::make_shared<rmqio::RetryHandler>(
         timerFactory,
         errorCb,
+        successCb,
         bsl::make_shared<rmqio::BackoffLevelRetryStrategy>());
 }
 
@@ -160,6 +163,7 @@ ConnectionImpl::ConnectionImpl(
     rmqio::EventLoop& loop,
     bdlmt::ThreadPool& threadPool,
     const rmqt::ErrorCallback& errorCb,
+    const rmqt::SuccessCallback& successCb,
     const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
     const rmqt::Tunables& tunables,
     const bsl::shared_ptr<rmqa::ConsumerImpl::Factory>& consumerFactory,
@@ -169,6 +173,7 @@ ConnectionImpl::ConnectionImpl(
 , d_threadPool(threadPool)
 , d_eventLoop(loop)
 , d_onError(errorCb)
+, d_onSuccess(successCb)
 , d_endpoint(endpoint)
 , d_consumerFactory(consumerFactory)
 , d_producerFactory(producerFactory)
@@ -213,6 +218,7 @@ bsl::shared_ptr<rmqa::ConnectionImpl> ConnectionImpl::make(
     rmqio::EventLoop& eventLoop,
     bdlmt::ThreadPool& threadPool,
     const rmqt::ErrorCallback& errorCb,
+    const rmqt::SuccessCallback& successCb,
     const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
     const rmqt::Tunables& tunables,
     const bsl::shared_ptr<rmqa::ConsumerImpl::Factory>& consumerFactory,
@@ -223,6 +229,7 @@ bsl::shared_ptr<rmqa::ConnectionImpl> ConnectionImpl::make(
                                  eventLoop,
                                  threadPool,
                                  errorCb,
+                                 successCb,
                                  endpoint,
                                  tunables,
                                  consumerFactory,
@@ -295,6 +302,7 @@ ConnectionImpl::createProducerAsync(const rmqt::Topology& topology,
                     exchange,
                     createRetryHandler(d_eventLoop.timerFactory(),
                                        bsl::ref(d_onError),
+                                       bsl::ref(d_onSuccess),
                                        d_tunables)))));
 
     return sendChannelFuture.then<rmqp::Producer>(
@@ -337,6 +345,7 @@ rmqt::Future<rmqp::Consumer> ConnectionImpl::createConsumerAsync(
                     consumerConfig,
                     createRetryHandler(d_eventLoop.timerFactory(),
                                        bsl::ref(d_onError),
+                                       bsl::ref(d_onSuccess),
                                        d_tunables),
                     ackQueue))));
 
