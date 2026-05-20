@@ -24,6 +24,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <bsl_cstring.h>
 #include <bsl_memory.h>
 #include <bsl_vector.h>
 
@@ -115,6 +116,16 @@ class ContentEncodeTests : public ::testing::Test {
     rmqamqp::Framer framer;
     bsl::vector<rmqamqpt::Frame> frames;
 };
+
+bdlb::BigEndianUint64 readBodySize(const rmqamqpt::Frame& frame)
+{
+    bdlb::BigEndianUint64 val;
+    bsl::memcpy(&val,
+                frame.rawData() + rmqamqpt::Frame::frameHeaderSize() + 4,
+                sizeof(val));
+    return val;
+}
+
 } // namespace
 
 TEST(Framer, Heartbeat)
@@ -442,9 +453,8 @@ TEST_F(ContentEncodeTests, ZeroBodySizeDoesNotProduceBodyFrame)
     framer.makeFrames(&frames, 2, rmqamqp::Message(rmqt::Message()));
 
     EXPECT_THAT(frames, SizeIs(1));
-    EXPECT_TRUE(*reinterpret_cast<const bdlb::BigEndianUint64*>(
-                    frames[0].rawData() + rmqamqpt::Frame::frameHeaderSize() +
-                    4) == 0); // body size field inside content header frame
+    EXPECT_TRUE(readBodySize(frames[0]) ==
+                0); // body size field inside content header frame
     EXPECT_THAT(frames[0].payloadLength(),
                 Eq(16)); // Content-header size with delivery mode
 }
@@ -457,10 +467,8 @@ TEST_F(ContentEncodeTests, SmallMessageIsEncodedInOneFrame)
     framer.makeFrames(&frames, 2u, theMessage);
 
     EXPECT_THAT(frames, SizeIs(2));
-    EXPECT_TRUE(
-        *reinterpret_cast<const bdlb::BigEndianUint64*>(
-            frames[0].rawData() + rmqamqpt::Frame::frameHeaderSize() + 4) ==
-        messageBytes); // body size field inside content header frame
+    EXPECT_TRUE(readBodySize(frames[0]) ==
+                messageBytes); // body size field inside content header frame
     EXPECT_THAT(frames[0].payloadLength(),
                 Eq(BYTES_HEADER_WITH_MESSAGEID_DELIVERY_MODE)); // header
     EXPECT_THAT(frames[1].payloadLength(), Eq(messageBytes));   // body frame
@@ -477,10 +485,8 @@ TEST_F(ContentEncodeTests, LargerMessageIsEncodedInTwoFrames)
         rmqamqp::Message(rmqt::Message(
             bsl::make_shared<bsl::vector<uint8_t> >(messageBytes))));
     EXPECT_THAT(frames, SizeIs(3));
-    EXPECT_TRUE(
-        *reinterpret_cast<const bdlb::BigEndianUint64*>(
-            frames[0].rawData() + rmqamqpt::Frame::frameHeaderSize() + 4) ==
-        messageBytes); // body size field inside content header frame
+    EXPECT_TRUE(readBodySize(frames[0]) ==
+                messageBytes); // body size field inside content header frame
     EXPECT_THAT(frames[0].payloadLength(),
                 Eq(BYTES_HEADER_WITH_MESSAGEID_DELIVERY_MODE)); // header
     EXPECT_THAT(frames[1].payloadLength(), Eq(firstFrame));     // body frame 1
