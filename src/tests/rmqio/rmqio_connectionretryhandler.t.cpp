@@ -56,7 +56,9 @@ class ConnectionRetryHandlerTests : public ::testing::Test {
         d_retryStrategy;
     StrictMock<testing::MockFunction<void(const bsl::string&, int)> >
         d_onErrorCallback;
+    StrictMock<testing::MockFunction<void()>> d_onSuccessCallback;
     rmqt::ErrorCallback d_onError;
+    rmqt::SuccessCallback d_onSuccess;
     bdlt::CurrentTime::CurrentTimeCallback d_oldTimeCb;
 
     ConnectionRetryHandlerTests()
@@ -68,6 +70,9 @@ class ConnectionRetryHandlerTests : public ::testing::Test {
           &d_onErrorCallback,
           bdlf::PlaceHolders::_1,
           bdlf::PlaceHolders::_2))
+    , d_onSuccess(bdlf::BindUtil::bind(
+        &testing::MockFunction<void()>::Call,
+        &d_onSuccessCallback))
     , d_oldTimeCb(bdlt::CurrentTime::setCurrentTimeCallback(fixedTimeCb<0, 0>))
     {
     }
@@ -90,13 +95,13 @@ class ConnectionRetryHandlerTests : public ::testing::Test {
 TEST_F(ConnectionRetryHandlerTests, Breathing)
 {
     ConnectionRetryHandler ConnectionRetryHandler(
-        d_timerFactory, d_onError, d_retryStrategy, bsls::TimeInterval(2));
+        d_timerFactory, d_onError, d_onSuccess, d_retryStrategy, bsls::TimeInterval(2));
 }
 
 TEST_F(ConnectionRetryHandlerTests, RetryWithoutWait)
 {
     ConnectionRetryHandler ConnectionRetryHandler(
-        d_timerFactory, d_onError, d_retryStrategy, bsls::TimeInterval(2));
+        d_timerFactory, d_onError, d_onSuccess, d_retryStrategy, bsls::TimeInterval(2));
     int numRetries = 0;
 
     retryExpectations();
@@ -114,6 +119,7 @@ TEST_F(ConnectionRetryHandlerTests, MultipleRetry)
     ConnectionRetryHandler ConnectionRetryHandler(
         d_timerFactory,
         d_onError,
+        d_onSuccess,
         d_retryStrategy,
         bsls::TimeInterval(2)); /* 3 */
     int numRetries = 0;
@@ -138,6 +144,7 @@ TEST_F(ConnectionRetryHandlerTests, MultipleRetryWithWait)
     ConnectionRetryHandler ConnectionRetryHandler(
         d_timerFactory,
         d_onError,
+        d_onSuccess,
         d_retryStrategy,
         bsls::TimeInterval(2)); /* 1,20 */
     int numRetries = 0;
@@ -164,6 +171,7 @@ TEST_F(ConnectionRetryHandlerTests, NoPrematureRetry)
     ConnectionRetryHandler ConnectionRetryHandler(
         d_timerFactory,
         d_onError,
+        d_onSuccess,
         d_retryStrategy,
         bsls::TimeInterval(2)); /* 1,20 */
     int numRetries = 0;
@@ -191,6 +199,7 @@ TEST_F(ConnectionRetryHandlerTests, MultipleRetryWithWaitLimit)
     ConnectionRetryHandler ConnectionRetryHandler(
         d_timerFactory,
         d_onError,
+        d_onSuccess,
         d_retryStrategy,
         bsls::TimeInterval(2)); /* 1,20, 21 */
     int numRetries = 0;
@@ -228,7 +237,7 @@ TEST_F(ConnectionRetryHandlerTests, RetryIsNotCalledAfterBeingDestroyed)
 
     {
         ConnectionRetryHandler ConnectionRetryHandler(
-            d_timerFactory, d_onError, d_retryStrategy, bsls::TimeInterval(2));
+            d_timerFactory, d_onError, d_onSuccess, d_retryStrategy, bsls::TimeInterval(2));
 
         retryExpectations();
         ConnectionRetryHandler.retry(rmqtestutil::CallCount(&numRetries));
@@ -253,7 +262,7 @@ TEST_F(ConnectionRetryHandlerTests,
 
     {
         ConnectionRetryHandler ConnectionRetryHandler(
-            d_timerFactory, d_onError, d_retryStrategy, bsls::TimeInterval(2));
+            d_timerFactory, d_onError, d_onSuccess, d_retryStrategy, bsls::TimeInterval(2));
 
         retryExpectations();
         ConnectionRetryHandler.retry(rmqtestutil::CallCount(&numRetries));
@@ -281,7 +290,7 @@ TEST_F(ConnectionRetryHandlerTests,
     int numRetries = 0;
 
     ConnectionRetryHandler ConnectionRetryHandler(
-        d_timerFactory, d_onError, d_retryStrategy, bsls::TimeInterval(2));
+        d_timerFactory, d_onError, d_onSuccess, d_retryStrategy, bsls::TimeInterval(2));
 
     retryExpectations();
     ConnectionRetryHandler.retry(rmqtestutil::CallCount(&numRetries));

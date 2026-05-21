@@ -167,6 +167,10 @@ typedef bsl::function<void(const bsl::string& errorText, int errorCode)>
 /// The normal execution of program will not be stopped.
 /// The callback will only bubble up the error details to the client.
 
+typedef bsl::function<void()> SuccessCallback;
+/// SuccessCallback function will be called on client thread,
+/// whenever channel or connection will be restored.
+
 } // namespace rmqt
 } // namespace BloombergLP
 

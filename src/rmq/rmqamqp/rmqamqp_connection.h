@@ -311,6 +311,7 @@ class Connection::Factory {
     Factory(const bsl::shared_ptr<rmqio::Resolver>& resolver,
             const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
             const rmqt::ErrorCallback& errorCb,
+            const rmqt::SuccessCallback& successCb,
             const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
             const bsl::shared_ptr<ConnectionMonitor>& connectionMonitor,
             const rmqt::FieldTable& clientProperties,
@@ -333,6 +334,7 @@ class Connection::Factory {
     Factory& operator=(const Factory&) BSLS_KEYWORD_DELETED;
 
     const rmqt::ErrorCallback d_errorCb;
+    const rmqt::SuccessCallback d_successCb;
     const rmqt::FieldTable d_clientProperties;
     const bsl::shared_ptr<rmqp::MetricPublisher> d_metricPublisher;
     const bsl::shared_ptr<rmqio::Resolver> d_resolver;

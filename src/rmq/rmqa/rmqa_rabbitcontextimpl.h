@@ -75,6 +75,7 @@ class RabbitContextImpl : public rmqp::RabbitContext {
     bdlmt::ThreadPool* d_threadPool;
     bslma::ManagedPtr<bdlmt::ThreadPool> d_hostedThreadPool;
     rmqt::ErrorCallback d_onError;
+    rmqt::SuccessCallback d_onSuccess;
     bsl::shared_ptr<ConnectionMonitor> d_connectionMonitor;
     bslma::ManagedPtr<rmqamqp::Connection::Factory> d_connectionFactory;
     rmqt::Tunables d_tunables;

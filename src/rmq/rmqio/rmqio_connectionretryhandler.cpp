@@ -38,9 +38,10 @@ BALL_LOG_SET_NAMESPACE_CATEGORY("RMQIO.CONNECTIONRETRYHANDLER")
 ConnectionRetryHandler::ConnectionRetryHandler(
     const bsl::shared_ptr<TimerFactory>& timerFactory,
     const rmqt::ErrorCallback& errorCb,
+    const rmqt::SuccessCallback& successCb,
     const bsl::shared_ptr<RetryStrategy>& retryStrategy,
     const bsls::TimeInterval& errorThreshold)
-: RetryHandler(timerFactory, errorCb, retryStrategy)
+: RetryHandler(timerFactory, errorCb, successCb, retryStrategy)
 , d_errorThreshold(errorThreshold)
 , d_errorSince()
 
@@ -57,6 +58,7 @@ void ConnectionRetryHandler::success()
 {
     RetryHandler::success();
     d_errorSince.reset();
+    successCallback()();
 }
 
 void ConnectionRetryHandler::evaluateErrorThreshold()

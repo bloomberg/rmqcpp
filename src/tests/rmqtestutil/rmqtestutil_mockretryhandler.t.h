@@ -34,6 +34,7 @@ class MockRetryHandler : public rmqio::RetryHandler {
     explicit MockRetryHandler()
     : rmqio::RetryHandler(bsl::make_shared<rmqtestutil::MockTimerFactory>(),
                           rmqt::ErrorCallback(),
+                          rmqt::SuccessCallback(),
                           bsl::make_shared<rmqtestutil::MockRetryStrategy>())
     {
     }
