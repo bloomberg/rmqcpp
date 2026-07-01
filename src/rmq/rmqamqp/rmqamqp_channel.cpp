@@ -475,9 +475,13 @@ void Channel::retry(const bsl::weak_ptr<Channel>& weakSelf)
 
     self->open();
 }
+
 void Channel::onReset() {}
+
 void Channel::onFlowAllowed() {}
+
 void Channel::onOpen() { ready(); }
+
 void Channel::ready()
 {
     BALL_LOG_TRACE << "Channel Ready";

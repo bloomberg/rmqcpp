@@ -40,7 +40,6 @@ namespace BloombergLP {
 namespace rmqa {
 namespace {
 BALL_LOG_SET_NAMESPACE_CATEGORY("RMQA.CONSUMERIMPL")
-
 } // namespace
 
 ConsumerImpl::Factory::~Factory() {}

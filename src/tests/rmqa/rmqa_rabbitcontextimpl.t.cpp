@@ -18,6 +18,7 @@
 #include <rmqa_rabbitcontextoptions.h>
 #include <rmqio_eventloop.h>
 #include <rmqp_metricpublisher.h>
+#include <rmqt_hosthealthconfig.h>
 #include <rmqt_plaincredentials.h>
 #include <rmqt_result.h>
 #include <rmqt_simpleendpoint.h>
@@ -35,6 +36,10 @@
 using namespace BloombergLP;
 using namespace ::testing;
 using namespace bdlf::PlaceHolders;
+
+namespace {
+bool alwaysHealthy() { return true; }
+} // namespace
 
 class RabbitContextImplTests : public Test {
   protected:
@@ -64,7 +69,8 @@ class RabbitContextImplTests : public Test {
                     .setMetricPublisher(d_metricPublisher)
                     .setMessageProcessingTimeout(d_messageProcessingTimeout)
                     .setThreadpool(d_pool)
-                    .setConnectionErrorThreshold(d_connectionErrorThreshold))
+                    .setConnectionErrorThreshold(d_connectionErrorThreshold)
+                    .setHostHealthConfig(rmqt::HostHealthConfig(alwaysHealthy)))
     {
         ON_CALL(*d_mockEventLoop, isStarted()).WillByDefault(Return(false));
         ON_CALL(*d_mockEventLoop, resolver(false))
@@ -82,7 +88,7 @@ class RabbitContextImplTests : public Test {
     {
         EXPECT_CALL(*d_mockEventLoop, resolver(false)).Times(1);
         EXPECT_CALL(*d_mockEventLoop, timerFactory())
-            .Times(2)
+            .Times(3)
             .WillRepeatedly(Return(d_mockTimerFactory));
 
         EXPECT_CALL(*d_mockEventLoop, waitForEventLoopExit(_)).Times(1);

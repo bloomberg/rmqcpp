@@ -36,6 +36,7 @@ TEST(ConsumerConfig, DefaultConstructorValues)
     EXPECT_EQ(config.threadpool(), static_cast<bdlmt::ThreadPool*>(NULL));
     EXPECT_EQ(config.exclusiveFlag(), rmqt::Exclusive::OFF);
     EXPECT_FALSE(config.consumerPriority());
+    EXPECT_TRUE(config.consumeOnlyFromHealthyHost());
 }
 
 TEST(ConsumerConfig, Constructor)
@@ -62,4 +63,20 @@ TEST(ConsumerConfig, SetConsumerPriority)
 
     EXPECT_TRUE(config.consumerPriority());
     EXPECT_EQ(config.consumerPriority(), 5);
+}
+
+TEST(ConsumerConfig, SetConsumeOnlyFromHealthyHostWorksAndIsTrueByDefault)
+{
+    rmqt::ConsumerConfig config;
+
+    // Default should be true
+    EXPECT_TRUE(config.consumeOnlyFromHealthyHost());
+
+    // User can opt out by setting to false
+    config.setConsumeOnlyFromHealthyHost(false);
+    EXPECT_FALSE(config.consumeOnlyFromHealthyHost());
+
+    // Can also set back to true
+    config.setConsumeOnlyFromHealthyHost(true);
+    EXPECT_TRUE(config.consumeOnlyFromHealthyHost());
 }

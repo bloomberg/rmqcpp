@@ -123,6 +123,16 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
         const rmqt::ConsumerConfig& config,
         const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue);
 
+    // Calls `resume` on receive channels in the channel map
+    // if `respectHostHealth` is true, only resumes those channels whose
+    // consumer config has `consumeOnlyFromHealthyHost` set to true
+    virtual void resumeReceiveChannels(const bool respectHostHealth);
+
+    // Calls `pause` on receive channels in the channel map
+    // if `respectHostHealth` is true, only pauses those channels whose
+    // consumer config has `consumeOnlyFromHealthyHost` set to true
+    virtual void pauseReceiveChannels(const bool respectHostHealth);
+
     /// Declares a new channel which can be used to publish messages
     /// The function must be called from the Connection's EventLoop thread.
     /// Calling this function when disconnected will successfully return a
@@ -314,7 +324,8 @@ class Connection::Factory {
             const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
             const bsl::shared_ptr<ConnectionMonitor>& connectionMonitor,
             const rmqt::FieldTable& clientProperties,
-            const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold);
+            const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold,
+            const bool isHostHealthMonitoringEnabled);
 
     virtual ~Factory() {}
 
@@ -339,6 +350,7 @@ class Connection::Factory {
     const bsl::shared_ptr<rmqio::TimerFactory> d_timerFactory;
     const bsl::shared_ptr<ConnectionMonitor> d_connectionMonitor;
     const bsl::optional<bsls::TimeInterval> d_connectionErrorThreshold;
+    const bool d_isHostHealthMonitoringEnabled;
 }; // class Connection::Factory
 } // namespace rmqamqp
 } // namespace BloombergLP

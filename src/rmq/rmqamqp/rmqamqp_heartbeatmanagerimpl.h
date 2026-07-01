@@ -38,7 +38,9 @@ class Frame;
 }
 namespace rmqamqp {
 
-class HeartbeatManagerImpl : public HeartbeatManager {
+class HeartbeatManagerImpl
+: public HeartbeatManager,
+  public bsl::enable_shared_from_this<HeartbeatManagerImpl> {
   public:
     typedef bsl::function<void(const rmqamqpt::Frame&)> HeartbeatCallback;
     typedef bsl::function<void()> ConnectionDeathCallback;
@@ -67,13 +69,16 @@ class HeartbeatManagerImpl : public HeartbeatManager {
 
     HeartbeatManagerImpl&
     operator=(const HeartbeatManagerImpl&) BSLS_KEYWORD_DELETED;
-    void handleTick(rmqio::Timer::InterruptReason reason);
+    static void handleTick(const bsl::weak_ptr<HeartbeatManagerImpl>& weakSelf,
+                           rmqio::Timer::InterruptReason reason);
 
+    void processTick();
     void startTickTimer();
 
   private:
     uint32_t d_timeoutSeconds;
 
+    bsl::shared_ptr<rmqio::TimerFactory> d_timerFactory;
     bsl::shared_ptr<rmqio::Timer> d_tickTimer;
     HeartbeatCallback d_sendHeartbeat;
     ConnectionDeathCallback d_killConnection;

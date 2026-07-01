@@ -94,6 +94,11 @@ class ConsumerConfig {
         return d_transformers;
     }
 
+    bool consumeOnlyFromHealthyHost() const
+    {
+        return d_consumeOnlyFromHealthyHost;
+    }
+
     // Setters
     /// \param consumerTag A label for the consumer which is displayed on the
     ///        RabbitMQ Management UI. It is useful to give this a meaningful
@@ -163,6 +168,24 @@ class ConsumerConfig {
         return *this;
     }
 
+    /// \param consumeOnlyFromHealthyHost If true, the consumer will only
+    ///        consume messages when connected from a healthy host as determined
+    ///        by the host health monitoring configuration set at the context
+    ///        level. Consumers connecting from unhealthy host will pause
+    ///        message delivery until the host is deemed healthy.
+    ///        By default, this flag is true but only takes effect if
+    ///        \c RabbitContextOptions::setHostHealthConfig has been called on
+    ///        the context; otherwise this setting has no effect.
+    ///        Set this to false to opt out of host health monitoring for
+    ///        this consumer even when host health monitoring is enabled at
+    ///        the context level.
+    ConsumerConfig&
+    setConsumeOnlyFromHealthyHost(const bool consumeOnlyFromHealthyHost)
+    {
+        d_consumeOnlyFromHealthyHost = consumeOnlyFromHealthyHost;
+        return *this;
+    }
+
   private:
     bsl::string d_consumerTag;
     uint16_t d_prefetchCount;
@@ -170,6 +193,7 @@ class ConsumerConfig {
     rmqt::Exclusive::Value d_exclusiveFlag;
     bsl::optional<int64_t> d_consumerPriority;
     bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> > d_transformers;
+    bool d_consumeOnlyFromHealthyHost;
 };
 
 } // namespace rmqt

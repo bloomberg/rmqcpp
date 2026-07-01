@@ -36,6 +36,13 @@ namespace rmqamqp {
 
 class ChannelFactory {
   public:
+    enum ChannelOnOpenState {
+        PAUSED,
+        PAUSED_HOST_HEALTH_AWARE,
+        NOT_PAUSED,
+    };
+
+    ChannelFactory(const ChannelOnOpenState channelOnOpenState = NOT_PAUSED);
     virtual ~ChannelFactory() {};
 
     virtual bsl::shared_ptr<ReceiveChannel> createReceiveChannel(
@@ -58,6 +65,12 @@ class ChannelFactory {
         const bsl::string& vhost,
         const bsl::shared_ptr<rmqio::Timer>& hungProgressTimer,
         const Channel::HungChannelCallback& connErrorCb);
+
+    void setReceiveChannelOnOpenState(
+        const ChannelOnOpenState receiveChannelOnOpenState);
+
+  private:
+    ChannelOnOpenState d_receiveChannelOnOpenState;
 };
 
 } // namespace rmqamqp

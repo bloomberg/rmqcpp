@@ -37,10 +37,8 @@ BALL_LOG_SET_NAMESPACE_CATEGORY("RMQAMQP.HEARTBEATMANAGERIMPL")
 HeartbeatManagerImpl::HeartbeatManagerImpl(
     const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory)
 : d_timeoutSeconds()
-, d_tickTimer(timerFactory->createWithCallback(
-      bdlf::BindUtil::bind(&HeartbeatManagerImpl::handleTick,
-                           this,
-                           bdlf::PlaceHolders::_1)))
+, d_timerFactory(timerFactory)
+, d_tickTimer()
 , d_sendHeartbeat()
 , d_killConnection()
 , d_active(false)
@@ -70,21 +68,40 @@ void HeartbeatManagerImpl::start(
     d_totalTicksUntilHeartBeat = d_timeoutSeconds / 2 / TICK_TIME;
     d_ticksUntilHeartBeat      = d_totalTicksUntilHeartBeat;
 
+    d_tickTimer = d_timerFactory->createWithCallback(
+        bdlf::BindUtil::bind(&HeartbeatManagerImpl::handleTick,
+                             weak_from_this(),
+                             bdlf::PlaceHolders::_1));
     startTickTimer();
 }
 
 void HeartbeatManagerImpl::stop()
 {
-    d_tickTimer->cancel();
+    if (d_tickTimer) {
+        d_tickTimer->cancel();
+        d_tickTimer.reset();
+    }
     d_active = false;
 }
 
-void HeartbeatManagerImpl::handleTick(rmqio::Timer::InterruptReason reason)
+void HeartbeatManagerImpl::handleTick(
+    const bsl::weak_ptr<HeartbeatManagerImpl>& weakSelf,
+    rmqio::Timer::InterruptReason reason)
 {
     if (reason == rmqio::Timer::CANCEL) {
-        // Cancelled
         return;
     }
+
+    bsl::shared_ptr<HeartbeatManagerImpl> self = weakSelf.lock();
+    if (!self) {
+        return;
+    }
+
+    self->processTick();
+}
+
+void HeartbeatManagerImpl::processTick()
+{
     startTickTimer();
     --d_ticksUntilHeartBeat;
     --d_ticksUntilDisconnect;

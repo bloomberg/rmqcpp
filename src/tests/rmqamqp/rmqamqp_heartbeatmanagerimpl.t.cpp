@@ -49,17 +49,19 @@ class HeartbeatManager : public Test {
 
 TEST_F(HeartbeatManager, Construct)
 {
-    rmqamqp::HeartbeatManagerImpl hbManager(d_timerFactory);
+    bsl::shared_ptr<rmqamqp::HeartbeatManagerImpl> hbManager =
+        bsl::make_shared<rmqamqp::HeartbeatManagerImpl>(d_timerFactory);
 }
 
 TEST_F(HeartbeatManager, HeartbeatSendTriggersFirst)
 {
     const uint32_t TIMEOUT_SEC = 4;
 
-    rmqamqp::HeartbeatManagerImpl hbManager(d_timerFactory);
-    hbManager.start(TIMEOUT_SEC,
-                    rmqtestutil::CallCount(&d_heartbeatCallCount),
-                    rmqtestutil::CallCount(&d_connectionKilledCount));
+    bsl::shared_ptr<rmqamqp::HeartbeatManagerImpl> hbManager =
+        bsl::make_shared<rmqamqp::HeartbeatManagerImpl>(d_timerFactory);
+    hbManager->start(TIMEOUT_SEC,
+                     rmqtestutil::CallCount(&d_heartbeatCallCount),
+                     rmqtestutil::CallCount(&d_connectionKilledCount));
 
     // Move time 2 seconds into the future
     tick(2);
@@ -72,11 +74,12 @@ TEST_F(HeartbeatManager, StopCancelsTimers)
 {
     const uint32_t TIMEOUT_SEC = 4;
 
-    rmqamqp::HeartbeatManagerImpl hbManager(d_timerFactory);
-    hbManager.start(TIMEOUT_SEC,
-                    rmqtestutil::CallCount(&d_heartbeatCallCount),
-                    rmqtestutil::CallCount(&d_connectionKilledCount));
-    hbManager.stop();
+    bsl::shared_ptr<rmqamqp::HeartbeatManagerImpl> hbManager =
+        bsl::make_shared<rmqamqp::HeartbeatManagerImpl>(d_timerFactory);
+    hbManager->start(TIMEOUT_SEC,
+                     rmqtestutil::CallCount(&d_heartbeatCallCount),
+                     rmqtestutil::CallCount(&d_connectionKilledCount));
+    hbManager->stop();
 
     tick(8);
 
@@ -89,10 +92,11 @@ TEST_F(HeartbeatManager, DisconnectTriggersLateForFirstHeartbeat)
 {
     const uint32_t TIMEOUT_SEC = 4;
 
-    rmqamqp::HeartbeatManagerImpl hbManager(d_timerFactory);
-    hbManager.start(TIMEOUT_SEC,
-                    rmqtestutil::CallCount(&d_heartbeatCallCount),
-                    rmqtestutil::CallCount(&d_connectionKilledCount));
+    bsl::shared_ptr<rmqamqp::HeartbeatManagerImpl> hbManager =
+        bsl::make_shared<rmqamqp::HeartbeatManagerImpl>(d_timerFactory);
+    hbManager->start(TIMEOUT_SEC,
+                     rmqtestutil::CallCount(&d_heartbeatCallCount),
+                     rmqtestutil::CallCount(&d_connectionKilledCount));
 
     // Trigger < 3.7.11 behaviour (disconnect after timeout * 2)
 
@@ -109,11 +113,12 @@ TEST_F(HeartbeatManager, DisconnectTriggersAfterFirstHeartbeat)
 {
     const uint32_t TIMEOUT_SEC = 4;
 
-    rmqamqp::HeartbeatManagerImpl hbManager(d_timerFactory);
-    hbManager.start(TIMEOUT_SEC,
-                    rmqtestutil::CallCount(&d_heartbeatCallCount),
-                    rmqtestutil::CallCount(&d_connectionKilledCount));
-    hbManager.notifyHeartbeatReceived();
+    bsl::shared_ptr<rmqamqp::HeartbeatManagerImpl> hbManager =
+        bsl::make_shared<rmqamqp::HeartbeatManagerImpl>(d_timerFactory);
+    hbManager->start(TIMEOUT_SEC,
+                     rmqtestutil::CallCount(&d_heartbeatCallCount),
+                     rmqtestutil::CallCount(&d_connectionKilledCount));
+    hbManager->notifyHeartbeatReceived();
 
     // Trigger 3.7.11+ behaviour (disconnect after timeout)
     tick(4);
@@ -131,24 +136,25 @@ TEST_F(HeartbeatManager, NotifySendStopsSendHeartbeat)
 {
     const uint32_t TIMEOUT_SEC = 4;
 
-    rmqamqp::HeartbeatManagerImpl hbManager(d_timerFactory);
+    bsl::shared_ptr<rmqamqp::HeartbeatManagerImpl> hbManager =
+        bsl::make_shared<rmqamqp::HeartbeatManagerImpl>(d_timerFactory);
     // Trigger 3.7.11+ behaviour (disconnect after timeout*2)
-    hbManager.start(TIMEOUT_SEC,
-                    rmqtestutil::CallCount(&d_heartbeatCallCount),
-                    rmqtestutil::CallCount(&d_connectionKilledCount));
-    hbManager.notifyHeartbeatReceived();
+    hbManager->start(TIMEOUT_SEC,
+                     rmqtestutil::CallCount(&d_heartbeatCallCount),
+                     rmqtestutil::CallCount(&d_connectionKilledCount));
+    hbManager->notifyHeartbeatReceived();
 
     tick(1);
-    hbManager.notifyMessageSent();
+    hbManager->notifyMessageSent();
 
     tick(1);
-    hbManager.notifyMessageSent();
+    hbManager->notifyMessageSent();
 
     // Advance to kill timeout
     tick(1);
-    hbManager.notifyMessageSent();
+    hbManager->notifyMessageSent();
     tick(1);
-    hbManager.notifyMessageSent();
+    hbManager->notifyMessageSent();
     // Ensure no callbacks were hit yet
     EXPECT_THAT(d_heartbeatCallCount, Eq(0));
     EXPECT_THAT(d_connectionKilledCount, Eq(0));
@@ -161,21 +167,22 @@ TEST_F(HeartbeatManager, NotifyRecieveStopsDisconnect)
 {
     const uint32_t TIMEOUT_SEC = 4;
 
-    rmqamqp::HeartbeatManagerImpl hbManager(d_timerFactory);
-    hbManager.start(TIMEOUT_SEC,
-                    rmqtestutil::CallCount(&d_heartbeatCallCount),
-                    rmqtestutil::CallCount(&d_connectionKilledCount));
+    bsl::shared_ptr<rmqamqp::HeartbeatManagerImpl> hbManager =
+        bsl::make_shared<rmqamqp::HeartbeatManagerImpl>(d_timerFactory);
+    hbManager->start(TIMEOUT_SEC,
+                     rmqtestutil::CallCount(&d_heartbeatCallCount),
+                     rmqtestutil::CallCount(&d_connectionKilledCount));
 
     tick(2);
 
     EXPECT_THAT(d_heartbeatCallCount, Eq(1));
 
-    hbManager.notifyMessageReceived();
+    hbManager->notifyMessageReceived();
     tick(2);
 
     EXPECT_THAT(d_heartbeatCallCount, Eq(2));
 
-    hbManager.notifyMessageReceived();
+    hbManager->notifyMessageReceived();
     tick(2);
 
     EXPECT_THAT(d_heartbeatCallCount, Eq(3));

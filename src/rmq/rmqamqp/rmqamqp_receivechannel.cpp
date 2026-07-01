@@ -16,6 +16,7 @@
 // rmqamqp_receivechannel.cpp   -*-C++-*-
 #include <rmqamqp_receivechannel.h>
 
+#include <rmqamqp_metrics.h>
 #include <rmqamqpt_basicconsume.h>
 #include <rmqamqpt_basicdeliver.h>
 #include <rmqamqpt_basicqos.h>
@@ -29,11 +30,13 @@
 #include <bdlf_bind.h>
 #include <bdlt_currenttime.h>
 #include <bsls_assert.h>
+#include <bsls_systemtime.h>
 
 #include <bsl_algorithm.h>
 #include <bsl_map.h>
 #include <bsl_optional.h>
 #include <bsl_string.h>
+#include <bsl_utility.h>
 #include <bsl_vector.h>
 
 namespace BloombergLP {
@@ -44,11 +47,39 @@ BALL_LOG_SET_NAMESPACE_CATEGORY("RMQAMQP.RECEIVECHANNEL")
 using bdlf::PlaceHolders::_1;
 using bdlf::PlaceHolders::_2;
 using bdlf::PlaceHolders::_3;
+
+/// Publish latency metric if start time is valid (non-zero).
+/// Calculates elapsed time from start time to now and publishes as a
+/// summary metric, then resets the start time to zero.
+void publishLatencyIfTracked(
+    bsls::TimeInterval* startTime,
+    const bsl::string& metricName,
+    rmqp::MetricPublisher* metricPublisher,
+    const bsl::vector<bsl::pair<bsl::string, bsl::string> >& tags)
+{
+    if (startTime->totalSecondsAsDouble() > 0.0) {
+        const bsls::TimeInterval endTime =
+            bsls::SystemTime::nowMonotonicClock();
+        const double latencySeconds =
+            (endTime - *startTime).totalSecondsAsDouble();
+        metricPublisher->publishSummary(metricName, latencySeconds, tags);
+        *startTime = bsls::TimeInterval();
+    }
+}
+
 } // namespace
 
 class ReceiveChannel::Consumer {
   public:
-    enum State { NOT_CONSUMING, STARTING, CONSUMING, CANCELLING, CANCELLED };
+    enum State {
+        NOT_CONSUMING,
+        STARTING,
+        CONSUMING,
+        PAUSING,
+        PAUSED,
+        CANCELLING,
+        CANCELLED,
+    };
     bsl::optional<rmqamqpt::BasicMethod>
     consume(const rmqt::ConsumerConfig& consumerConfig);
     bsl::optional<rmqamqpt::BasicMethod> consumeOk();
@@ -57,7 +88,7 @@ class ReceiveChannel::Consumer {
                  size_t lifetimeId);
 
     /// Signal the server to stop delivering
-    bsl::optional<rmqamqpt::BasicMethod> cancel();
+    bsl::optional<rmqamqpt::BasicMethod> cancel(const bool pause = false);
 
     /// Server acknowledged cancel
     void cancelOk();
@@ -66,11 +97,20 @@ class ReceiveChannel::Consumer {
 
     Consumer(const bsl::shared_ptr<rmqt::Queue>& queue,
              const MessageCallback& onNewMessage,
-             const bsl::string& tag);
+             const bsl::string& tag,
+             const bool channelPausedOnOpen);
 
     bool isStarted() const;
     bool isActive() const;
+    bool isPaused() const;
+    bool isPausing() const;
+    bool isCancelling() const;
+
+    void handleCancelAfterPause();
+    void setPaused();
+
     bool shouldRestart() const;
+    bool canPause() const;
 
     void reset();
 
@@ -86,8 +126,9 @@ class ReceiveChannel::Consumer {
 
 ReceiveChannel::Consumer::Consumer(const bsl::shared_ptr<rmqt::Queue>& queue,
                                    const MessageCallback& onNewMessage,
-                                   const bsl::string& consumerTag)
-: d_state(NOT_CONSUMING)
+                                   const bsl::string& consumerTag,
+                                   const bool channelPausedOnOpen)
+: d_state(channelPausedOnOpen ? PAUSED : NOT_CONSUMING)
 , d_tag(consumerTag)
 , d_queue(queue)
 , d_onNewMessage(onNewMessage)
@@ -114,6 +155,11 @@ bsl::optional<rmqamqpt::BasicMethod> ReceiveChannel::Consumer::consumeOk()
             << "Received ConsumeOk for a cancelled consumer, cancelling";
         method = rmqamqpt::BasicCancel(d_tag);
     }
+    else if (d_state == PAUSING) {
+        // Consumer has been paused since sending Basic.Consume
+        BALL_LOG_INFO << "Received ConsumeOk for a paused consumer, pausing";
+        method = rmqamqpt::BasicCancel(d_tag);
+    }
     else {
         BALL_LOG_ERROR << "Unexpected ConsumeOK, consumer-tag:  " << d_tag
                        << ", state: " << d_state << ", ignoring";
@@ -136,11 +182,47 @@ bool ReceiveChannel::Consumer::isStarted() const
 {
     return d_state != NOT_CONSUMING;
 }
+
 bool ReceiveChannel::Consumer::isActive() const { return d_state == CONSUMING; }
+
+bool ReceiveChannel::Consumer::isPaused() const { return d_state == PAUSED; }
+
+bool ReceiveChannel::Consumer::isPausing() const { return d_state == PAUSING; }
+
+bool ReceiveChannel::Consumer::isCancelling() const
+{
+    return d_state == CANCELLING;
+}
+
+void ReceiveChannel::Consumer::handleCancelAfterPause()
+{
+    switch (d_state) {
+        case PAUSING:
+            BALL_LOG_TRACE
+                << "Transitioning consumer from PAUSING to CANCELLING: "
+                << d_tag;
+            d_state = CANCELLING;
+            break;
+        case PAUSED:
+            BALL_LOG_TRACE
+                << "Transitioning consumer from PAUSED to CANCELLED: " << d_tag;
+            d_state = CANCELLED;
+            break;
+        default:
+            BALL_LOG_WARN << "Cancel not received after pause, ignoring for "
+                          << d_tag << " in state " << d_state;
+            break;
+    }
+}
+
+void ReceiveChannel::Consumer::setPaused() { d_state = PAUSED; }
+
 bool ReceiveChannel::Consumer::shouldRestart() const
 {
     return d_state < CANCELLING;
 }
+
+bool ReceiveChannel::Consumer::canPause() const { return d_state <= CONSUMING; }
 
 void ReceiveChannel::Consumer::process(const rmqt::Message& msg,
                                        const rmqamqpt::BasicDeliver& deliver,
@@ -177,59 +259,80 @@ ReceiveChannel::Consumer::consume(const rmqt::ConsumerConfig& consumerConfig)
 {
     bsl::optional<rmqamqpt::BasicMethod> method;
 
-    if (d_state == NOT_CONSUMING) {
-        BALL_LOG_INFO << "Starting consumer: " << d_tag
-                      << " for queue: " << d_queue->name();
-        d_state = STARTING;
-
-        const bool noLocal = false;
-        const bool noAck   = false;
-        const bool exclusive =
-            consumerConfig.exclusiveFlag() == rmqt::Exclusive::ON;
-        const bool noWait = false;
-
-        method =
-            rmqamqpt::BasicConsume(d_queue->name(),
-                                   d_tag,
-                                   getBasicConsumeArguments(consumerConfig),
-                                   noLocal,
-                                   noAck,
-                                   exclusive,
-                                   noWait);
+    if (d_state != NOT_CONSUMING && d_state != PAUSED) {
+        BALL_LOG_ERROR << "Consume called in state " << d_state << ", ignoring";
+        return method;
     }
-    else {
-        BALL_LOG_ERROR << "Start called in state " << d_state << ", ignoring";
-    }
+
+    BALL_LOG_INFO << (d_state == PAUSED ? "Resuming" : "Starting")
+                  << " consumer: " << d_tag
+                  << " for queue: " << d_queue->name();
+
+    d_state = STARTING;
+
+    const bool noLocal = false;
+    const bool noAck   = false;
+    const bool exclusive =
+        consumerConfig.exclusiveFlag() == rmqt::Exclusive::ON;
+    const bool noWait = false;
+
+    method = rmqamqpt::BasicConsume(d_queue->name(),
+                                    d_tag,
+                                    getBasicConsumeArguments(consumerConfig),
+                                    noLocal,
+                                    noAck,
+                                    exclusive,
+                                    noWait);
 
     return method;
 }
 
-bsl::optional<rmqamqpt::BasicMethod> ReceiveChannel::Consumer::cancel()
+bsl::optional<rmqamqpt::BasicMethod>
+ReceiveChannel::Consumer::cancel(const bool pause)
 {
     bsl::optional<rmqamqpt::BasicMethod> method;
 
-    if (d_state == CONSUMING) {
-        BALL_LOG_INFO << "Cancelling consumer: " << d_tag
-                      << " for queue: " << d_queue->name();
-        method = rmqamqpt::BasicCancel(d_tag);
-    }
-    else {
-        BALL_LOG_WARN
-            << "Cancel called in a state other than CONSUMING. State: "
-            << d_state << ", queue: " << queueName();
+    if (!pause && d_state == PAUSING) {
+        BALL_LOG_WARN << "Cancel called in PAUSING state, queue: "
+                      << queueName();
+        d_state = CANCELLING;
     }
 
-    d_state = CANCELLING;
+    if (d_state != CONSUMING) {
+        BALL_LOG_WARN << (pause ? "Pause" : "Cancel")
+                      << " called in state other than CONSUMING. State: "
+                      << d_state << ", queue: " << queueName();
+
+        // Consumer was cancelled/paused before it was started
+        // It will be cancelled/paused when consumeOk is received
+        d_state = pause ? PAUSING : CANCELLING;
+        return method;
+    }
+
+    BALL_LOG_INFO << (pause ? "Pausing" : "Cancelling")
+                  << " consumer: " << d_tag
+                  << " for queue: " << d_queue->name();
+    method = rmqamqpt::BasicCancel(d_tag);
+
+    d_state = pause ? PAUSING : CANCELLING;
     return method;
 }
 
 void ReceiveChannel::Consumer::cancelOk()
 {
-    if (d_state != CANCELLING) {
-        BALL_LOG_ERROR << "Received CancelOk without sending Cancel consumer: ["
-                       << d_tag << "]";
+    switch (d_state) {
+        case CANCELLING:
+            d_state = CANCELLED;
+            break;
+        case PAUSING:
+            d_state = PAUSED;
+            break;
+        default:
+            BALL_LOG_ERROR
+                << "Received CancelOk without sending Cancel consumer: ["
+                << d_tag << "]";
+            break;
     }
-    d_state = CANCELLED;
 }
 
 ReceiveChannel::Consumer::~Consumer() {}
@@ -244,7 +347,8 @@ ReceiveChannel::ReceiveChannel(
     const bsl::string& vhost,
     const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
     const bsl::shared_ptr<rmqio::Timer>& hungProgressTimer,
-    const HungChannelCallback& connErrorCb)
+    const HungChannelCallback& connErrorCb,
+    const bool channelPausedOnOpen)
 : Channel(topology,
           messageSender,
           retryHandler,
@@ -260,13 +364,26 @@ ReceiveChannel::ReceiveChannel(
 , d_multipleAckHandler(
       bdlf::BindUtil::bind(&ReceiveChannel::sendAck, this, _1, _2),
       bdlf::BindUtil::bind(&ReceiveChannel::sendNack, this, _1, _2, _3))
+, d_consumeFuturePair()
 , d_cancelFuturePair()
 , d_drainFuture()
+, d_channelPausedOnOpen(channelPausedOnOpen)
+, d_pauseStartTime()
+, d_resumeStartTime()
 {
+}
+
+const rmqt::ConsumerConfig& ReceiveChannel::consumerConfig() const
+{
+    return d_consumerConfig;
 }
 
 void ReceiveChannel::onOpen()
 {
+    if (d_channelPausedOnOpen) {
+        BALL_LOG_INFO << "Channel will be opened in paused state";
+    }
+
     BALL_LOG_TRACE << "Setting Prefetch: " << d_consumerConfig.prefetchCount();
     d_hungProgressTimer->reset(
         bsls::TimeInterval(Channel::k_HUNG_CHANNEL_TIMER_SEC));
@@ -297,7 +414,12 @@ void ReceiveChannel::onReset()
     // processFailures() clears d_messageStore;
 
     if (d_consumer) {
-        if (d_consumer->shouldRestart()) {
+        if (d_consumer->isPaused()) {
+            d_channelPausedOnOpen = true;
+            BALL_LOG_TRACE << "On reset, keeping the consumer in paused state "
+                              "so it can be resumed later ";
+        }
+        else if (d_consumer->shouldRestart()) {
             BALL_LOG_TRACE << "Resetting consumer";
             d_consumer->reset();
         }
@@ -305,6 +427,12 @@ void ReceiveChannel::onReset()
             BALL_LOG_WARN << "Clearing Consumer in Cancelling/Cancelled State";
             d_consumer.reset();
         }
+    }
+    if (d_consumeFuturePair) {
+        d_consumeFuturePair->first(
+            rmqt::Result<>("Consume could not be processed by the server, "
+                           "due channel reset"));
+        d_consumeFuturePair.reset();
     }
     if (d_cancelFuturePair) {
         d_cancelFuturePair->first(
@@ -332,8 +460,14 @@ rmqt::Result<> ReceiveChannel::consume(const rmqt::QueueHandle& queue,
 
     BSLS_ASSERT(!d_consumer);
 
-    d_consumer =
-        bsl::make_shared<Consumer>(queuePtr, onNewMessage, consumerTag);
+    d_consumer = bsl::make_shared<Consumer>(
+        queuePtr, onNewMessage, consumerTag, d_channelPausedOnOpen);
+
+    if (d_consumer->isPaused()) {
+        BALL_LOG_INFO << "Consume called on paused channel, consumerTag: "
+                      << consumerTag << ", awaiting resume";
+        return rmqt::Result<>();
+    }
 
     if (state() == READY || state() == AWAITING_REPLY) {
         restartConsumers();
@@ -347,8 +481,61 @@ rmqt::Result<> ReceiveChannel::consume(const rmqt::QueueHandle& queue,
     return rmqt::Result<>();
 }
 
+rmqt::Future<> ReceiveChannel::resume()
+{
+    d_channelPausedOnOpen = false;
+
+    if (d_consumeFuturePair) {
+        BALL_LOG_WARN << "Resume called with a resume already in flight";
+        return d_consumeFuturePair->second;
+    }
+
+    if (!d_consumer) {
+        return rmqt::Future<>(
+            rmqt::Result<>("Resume called with no existing consumer"));
+    }
+
+    if (d_cancelFuturePair) {
+        return rmqt::Future<>(rmqt::Result<>(
+            "Resume called with a " +
+            bsl::string(d_consumer->isPausing() ? "pause" : "cancel") +
+            " already in flight"));
+    }
+
+    if (!d_consumer->isPaused()) {
+        return rmqt::Future<>(
+            rmqt::Result<>("Resume called on unpaused consumer"));
+    }
+
+    if (state() == READY || state() == AWAITING_REPLY) {
+        // Track resume start time and increment counter
+        d_resumeStartTime = bsls::SystemTime::nowMonotonicClock();
+        d_metricPublisher->publishCounter(
+            Metrics::CONSUMER_RESUME_TOTAL, 1.0, getMetricTags());
+
+        d_consumeFuturePair =
+            bslma::ManagedPtrUtil::makeManaged<rmqt::Future<>::Pair>(
+                rmqt::Future<>::make());
+
+        restartConsumers();
+
+        return d_consumeFuturePair->second;
+    }
+
+    BALL_LOG_TRACE << "Resume called before channel ready, consumertag: "
+                   << d_consumer->consumerTag() << " pending";
+
+    return rmqt::Future<>(rmqt::Result<>("Resume called before channel ready"));
+}
+
 ReceiveChannel::~ReceiveChannel()
 {
+    if (d_consumeFuturePair) {
+        d_consumeFuturePair->first(
+            rmqt::Result<>("ReceiveChannel Shut Down Before ConsumeOk "
+                           "Received, consumer not started"));
+        d_consumeFuturePair.reset();
+    }
     if (d_cancelFuturePair) {
         d_cancelFuturePair->first(
             rmqt::Result<>("ReceiveChannel Shut Down Before CancelOk Received, "
@@ -405,31 +592,98 @@ bool ReceiveChannel::consumerIsActive() const
     return d_consumer && d_consumer->isActive();
 }
 
+bool ReceiveChannel::consumerIsPaused() const
+{
+    return d_consumer && d_consumer->isPaused();
+}
+
 rmqt::Future<> ReceiveChannel::cancel()
 {
     if (d_cancelFuturePair) {
-        BALL_LOG_WARN << "Cancel called with a cancel already in "
-                         "flight";
+        if (d_consumer->isPausing()) {
+            BALL_LOG_WARN << "Cancel called with a pause already in "
+                             "flight";
+
+            // If consumer is pausing, we can just turn that into a cancel.
+            // When the pause completes, consumer will be in a cancelled state.
+            // Consumer will be reset by the cancelOk processing.
+            d_consumer->handleCancelAfterPause();
+        }
+        else {
+            BALL_LOG_WARN << "Cancel called with a cancel already in "
+                             "flight";
+        }
         return d_cancelFuturePair->second;
     }
-    if (d_consumer) {
-        if (d_consumer->isStarted()) {
-            d_cancelFuturePair =
-                bslma::ManagedPtrUtil::makeManaged<rmqt::Future<>::Pair>(
-                    rmqt::Future<>::make());
-            bsl::optional<rmqamqpt::BasicMethod> method = d_consumer->cancel();
-            if (method) {
-                writeMessage(Message(rmqamqpt::Method(method.value())),
-                             AWAITING_REPLY);
-            }
-            return d_cancelFuturePair->second;
-        }
-        // Not consuming so we're already done
-        d_consumer.reset();
-        return rmqt::Future<>(rmqt::Result<>());
+
+    if (!d_consumer) {
+        return rmqt::Future<>(
+            rmqt::Result<>("Cancel called with no active consumer"));
     }
-    return rmqt::Future<>(
-        rmqt::Result<>("Cancel called, with no active consumer"));
+
+    if (d_consumer->isPaused()) {
+        // Consumer is already cancelled, just transition to cancelled state
+        d_consumer->handleCancelAfterPause();
+    }
+    else if (d_consumer->isStarted()) {
+        d_cancelFuturePair =
+            bslma::ManagedPtrUtil::makeManaged<rmqt::Future<>::Pair>(
+                rmqt::Future<>::make());
+
+        bsl::optional<rmqamqpt::BasicMethod> method = d_consumer->cancel();
+
+        if (method) {
+            writeMessage(Message(rmqamqpt::Method(method.value())),
+                         AWAITING_REPLY);
+        }
+        return d_cancelFuturePair->second;
+    }
+
+    d_consumer.reset();
+    return rmqt::Future<>(rmqt::Result<>());
+}
+
+rmqt::Future<> ReceiveChannel::pause()
+{
+    d_channelPausedOnOpen = true;
+
+    if (d_cancelFuturePair) {
+        if (d_consumer->isCancelling()) {
+            return rmqt::Future<>(
+                rmqt::Result<>("Pause called with a cancel already in flight"));
+        }
+
+        BALL_LOG_WARN << "Pause called with a pause already in flight";
+        return d_cancelFuturePair->second;
+    }
+
+    if (!d_consumer) {
+        return rmqt::Future<>(
+            rmqt::Result<>("Pause called with no active consumer"));
+    }
+
+    if (d_consumer->canPause()) {
+        // Track pause start time and increment counter
+        d_pauseStartTime = bsls::SystemTime::nowMonotonicClock();
+        d_metricPublisher->publishCounter(
+            Metrics::CONSUMER_PAUSE_TOTAL, 1.0, getMetricTags());
+
+        d_cancelFuturePair =
+            bslma::ManagedPtrUtil::makeManaged<rmqt::Future<>::Pair>(
+                rmqt::Future<>::make());
+
+        const bool pause                            = true;
+        bsl::optional<rmqamqpt::BasicMethod> method = d_consumer->cancel(pause);
+
+        if (method) {
+            writeMessage(Message(rmqamqpt::Method(method.value())),
+                         AWAITING_REPLY);
+        }
+        return d_cancelFuturePair->second;
+    }
+
+    BALL_LOG_DEBUG << "Pause called when consumer is already paused";
+    return rmqt::Future<>(rmqt::Result<>());
 }
 
 rmqt::Future<> ReceiveChannel::drain()
@@ -499,11 +753,24 @@ void ReceiveChannel::processBasicMethod(const rmqamqpt::BasicMethod& basic)
                     writeMessage(Message(rmqamqpt::Method(method.value())),
                                  AWAITING_REPLY);
                 }
+
+                if (d_consumeFuturePair) {
+                    // Publish resume latency
+                    publishLatencyIfTracked(
+                        &d_resumeStartTime,
+                        Metrics::RESUME_OPERATION_LATENCY_SECONDS,
+                        d_metricPublisher.get(),
+                        getMetricTags());
+
+                    d_consumeFuturePair->first(rmqt::Result<>());
+                    d_consumeFuturePair.reset();
+                }
             }
             else {
                 invalidConsumerError(
                     basic.the<rmqamqpt::BasicConsumeOk>().consumerTag());
             }
+
             if (state() != READY) {
                 if (consumerIsActive()) {
                     ready();
@@ -512,12 +779,25 @@ void ReceiveChannel::processBasicMethod(const rmqamqpt::BasicMethod& basic)
         } break;
         case rmqamqpt::BasicQoSOk::METHOD_ID: {
             if (d_consumer) {
-                // we've restarted, we already have a callback so can declare
-                // consumer
-                restartConsumers();
+                if (d_channelPausedOnOpen) {
+                    d_consumer->setPaused();
+                }
+
+                if (d_consumer->isPaused()) {
+                    // we've paused, so cancel the timer and wait for a resume
+                    // and mark the channel ready
+                    d_hungProgressTimer->cancel();
+                    ready();
+                }
+                else {
+                    // we've restarted, we already have a callback so can
+                    // declare consumer
+                    restartConsumers();
+                }
             }
             else {
-                // This is the first connection, we don't have a callback
+                // This is the first connection, or recovery from connection
+                // drop during pause, we don't have a callback
                 // registered so need to wait for the consume() call.
                 ready();
             }
@@ -541,10 +821,33 @@ void ReceiveChannel::processBasicMethod(const rmqamqpt::BasicMethod& basic)
                 d_consumer->consumerTag() ==
                     basic.the<rmqamqpt::BasicCancelOk>().consumerTag()) {
                 d_consumer->cancelOk();
-                BALL_LOG_INFO << "Stopping Consumer: "
-                              << d_consumer->consumerTag();
-                d_consumer.reset();
+
+                if (d_consumer->isPaused()) {
+                    BALL_LOG_INFO << "Pausing Consumer: "
+                                  << d_consumer->consumerTag();
+                }
+                else {
+                    BALL_LOG_INFO << "Stopping Consumer: "
+                                  << d_consumer->consumerTag();
+                    // Reset the consumer if it is not paused
+                    // so it can be restarted with new tag
+                    d_consumer.reset();
+                }
+
+                if (d_consumeFuturePair) {
+                    d_consumeFuturePair->first(
+                        rmqt::Result<>("Consumer cancelled before it could be "
+                                       "started"));
+                    d_consumeFuturePair.reset();
+                }
                 if (d_cancelFuturePair) {
+                    // Publish pause latency
+                    publishLatencyIfTracked(
+                        &d_pauseStartTime,
+                        Metrics::PAUSE_OPERATION_LATENCY_SECONDS,
+                        d_metricPublisher.get(),
+                        getMetricTags());
+
                     d_cancelFuturePair->first(rmqt::Result<>());
                     d_cancelFuturePair.reset();
                 }
@@ -579,7 +882,7 @@ void ReceiveChannel::processMessage(const rmqt::Message& message)
                 d_consumer->consumerTag() == d_nextMessage->consumerTag()) {
 
                 d_metricPublisher->publishCounter(
-                    "received_messages", 1, d_vhostTags);
+                    "received_messages", 1, getMetricTags());
 
                 d_consumer->process(message, *d_nextMessage, lifetimeId());
                 d_nextMessage.reset();
@@ -596,9 +899,11 @@ void ReceiveChannel::restartConsumers()
     if (d_consumer) {
         bsl::optional<rmqamqpt::BasicMethod> method =
             d_consumer->consume(d_consumerConfig);
+
         if (method) {
             d_hungProgressTimer->reset(
                 bsls::TimeInterval(Channel::k_HUNG_CHANNEL_TIMER_SEC));
+
             writeMessage(Message(rmqamqpt::Method(method.value())),
                          AWAITING_REPLY);
         }
@@ -633,7 +938,7 @@ void ReceiveChannel::removeSingleMessageFromStore(uint64_t deliveryTag)
     d_metricPublisher->publishDistribution(
         "acknowledge_latency",
         (bdlt::CurrentTime::utc() - insertTime).totalSecondsAsDouble(),
-        d_vhostTags);
+        getMetricTags());
 }
 
 void ReceiveChannel::removeMultipleMessagesFromStore(uint64_t deliveryTag)
@@ -649,7 +954,7 @@ void ReceiveChannel::removeMultipleMessagesFromStore(uint64_t deliveryTag)
         d_metricPublisher->publishDistribution(
             "acknowledge_latency",
             (bdlt::CurrentTime::utc() - insertTime).totalSecondsAsDouble(),
-            d_vhostTags);
+            getMetricTags());
     }
 }
 
@@ -712,6 +1017,12 @@ void ReceiveChannel::processFailures()
 }
 
 const char* ReceiveChannel::channelType() const { return "Consumer"; }
+
+bsl::vector<bsl::pair<bsl::string, bsl::string> >
+ReceiveChannel::getMetricTags() const
+{
+    return d_vhostTags;
+}
 
 bsl::string ReceiveChannel::channelDebugName() const
 {

@@ -9,6 +9,7 @@ add_library(rmqamqp OBJECT
     rmqamqp_framer.cpp
     rmqamqp_heartbeatmanager.cpp
     rmqamqp_heartbeatmanagerimpl.cpp
+    rmqamqp_hosthealthmonitor.cpp
     rmqamqp_message.cpp
     rmqamqp_messagestore.cpp
     rmqamqp_messagewithroute.cpp

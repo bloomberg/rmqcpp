@@ -15,8 +15,19 @@
 
 #include <rmqamqp_channelfactory.h>
 
+#include <rmqamqp_metrics.h>
+
+#include <bsl_utility.h>
+#include <bsl_vector.h>
+
 namespace BloombergLP {
 namespace rmqamqp {
+
+ChannelFactory::ChannelFactory(
+    const ChannelOnOpenState receiveChannelOnOpenState)
+: d_receiveChannelOnOpenState(receiveChannelOnOpenState)
+{
+}
 
 bsl::shared_ptr<ReceiveChannel> ChannelFactory::createReceiveChannel(
     const rmqt::Topology& topology,
@@ -29,6 +40,25 @@ bsl::shared_ptr<ReceiveChannel> ChannelFactory::createReceiveChannel(
     const bsl::shared_ptr<rmqio::Timer>& hungProgressTimer,
     const Channel::HungChannelCallback& connErrorCb)
 {
+    const bool channelPausedOnOpen =
+        d_receiveChannelOnOpenState == PAUSED ||
+        (consumerConfig.consumeOnlyFromHealthyHost() &&
+         d_receiveChannelOnOpenState == PAUSED_HOST_HEALTH_AWARE);
+
+    // Publish health-aware or health-unaware consumer created counter
+    bsl::vector<bsl::pair<bsl::string, bsl::string> > vhostTags;
+    vhostTags.push_back(
+        bsl::pair<bsl::string, bsl::string>(Metrics::VHOST_TAG, vhost));
+
+    if (consumerConfig.consumeOnlyFromHealthyHost()) {
+        metricPublisher->publishCounter(
+            Metrics::HEALTH_AWARE_CONSUMER_CREATED, 1.0, vhostTags);
+    }
+    else {
+        metricPublisher->publishCounter(
+            Metrics::HEALTH_UNAWARE_CONSUMER_CREATED, 1.0, vhostTags);
+    }
+
     return bsl::make_shared<ReceiveChannel>(topology,
                                             onAsyncWrite,
                                             retryHandler,
@@ -37,7 +67,8 @@ bsl::shared_ptr<ReceiveChannel> ChannelFactory::createReceiveChannel(
                                             vhost,
                                             ackQueue,
                                             hungProgressTimer,
-                                            connErrorCb);
+                                            connErrorCb,
+                                            channelPausedOnOpen);
 }
 
 bsl::shared_ptr<SendChannel> ChannelFactory::createSendChannel(
@@ -58,6 +89,12 @@ bsl::shared_ptr<SendChannel> ChannelFactory::createSendChannel(
                                          vhost,
                                          hungProgressTimer,
                                          connErrorCb);
+}
+
+void ChannelFactory::setReceiveChannelOnOpenState(
+    const ChannelOnOpenState channelOnOpenState)
+{
+    d_receiveChannelOnOpenState = channelOnOpenState;
 }
 
 } // namespace rmqamqp

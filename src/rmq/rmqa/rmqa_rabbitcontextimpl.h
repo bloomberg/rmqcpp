@@ -21,6 +21,7 @@
 #include <rmqa_rabbitcontextoptions.h>
 
 #include <rmqamqp_connection.h>
+#include <rmqamqp_hosthealthmonitor.h>
 #include <rmqio_eventloop.h>
 #include <rmqio_watchdog.h>
 #include <rmqp_connection.h>
@@ -71,11 +72,13 @@ class RabbitContextImpl : public rmqp::RabbitContext {
   private:
     static const int DEFAULT_WATCHDOG_PERIOD = 60;
     bslma::ManagedPtr<rmqio::EventLoop> d_eventLoop;
-    bsl::shared_ptr<rmqio::WatchDog> d_watchDog;
+    bsl::shared_ptr<rmqio::WatchDog> d_connectionWatchDog;
     bdlmt::ThreadPool* d_threadPool;
     bslma::ManagedPtr<bdlmt::ThreadPool> d_hostedThreadPool;
     rmqt::ErrorCallback d_onError;
     bsl::shared_ptr<ConnectionMonitor> d_connectionMonitor;
+    bsl::shared_ptr<rmqp::MetricPublisher> d_metricPublisher;
+    bsl::shared_ptr<rmqamqp::HostHealthMonitor> d_hostHealthMonitor;
     bslma::ManagedPtr<rmqamqp::Connection::Factory> d_connectionFactory;
     rmqt::Tunables d_tunables;
     bsl::shared_ptr<rmqp::ConsumerTracing> d_consumerTracing;

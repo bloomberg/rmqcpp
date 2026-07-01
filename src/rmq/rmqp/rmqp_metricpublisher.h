@@ -39,29 +39,33 @@ class MetricPublisher {
     virtual ~MetricPublisher();
 
     /// Publish a gauge - the most recently observed value of a variable.
-    virtual void publishGauge(
-        const bsl::string& name,
-        double value,
-        const bsl::vector<bsl::pair<bsl::string, bsl::string> >& tags) = 0;
+    virtual void
+    publishGauge(const bsl::string& name,
+                 double value,
+                 const bsl::vector<bsl::pair<bsl::string, bsl::string> >& tags =
+                     bsl::vector<bsl::pair<bsl::string, bsl::string> >()) = 0;
 
     /// Publish an increment to a counter variable.
     virtual void publishCounter(
         const bsl::string& name,
         double value,
-        const bsl::vector<bsl::pair<bsl::string, bsl::string> >& tags) = 0;
+        const bsl::vector<bsl::pair<bsl::string, bsl::string> >& tags =
+            bsl::vector<bsl::pair<bsl::string, bsl::string> >()) = 0;
 
     /// Publish a value for basic summary statistics.
     virtual void publishSummary(
         const bsl::string& name,
         double value,
-        const bsl::vector<bsl::pair<bsl::string, bsl::string> >& tags) = 0;
+        const bsl::vector<bsl::pair<bsl::string, bsl::string> >& tags =
+            bsl::vector<bsl::pair<bsl::string, bsl::string> >()) = 0;
 
     /// Publish a value for distribution statistics. A distribution is similar
     /// to a summary but also includes quantile statistics.
     virtual void publishDistribution(
         const bsl::string& name,
         double value,
-        const bsl::vector<bsl::pair<bsl::string, bsl::string> >& tags) = 0;
+        const bsl::vector<bsl::pair<bsl::string, bsl::string> >& tags =
+            bsl::vector<bsl::pair<bsl::string, bsl::string> >()) = 0;
 };
 
 } // namespace rmqp

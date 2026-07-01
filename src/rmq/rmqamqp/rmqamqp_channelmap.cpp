@@ -114,6 +114,44 @@ void ChannelMap::openAll()
     }
 }
 
+void ChannelMap::pauseReceiveChannels(const bool respectHostHealth)
+{
+    for (ReceiveChannelMap::const_iterator it = d_receiveChannels.cbegin();
+         it != d_receiveChannels.cend();
+         ++it) {
+
+        bsl::shared_ptr<ReceiveChannel> channel = it->second;
+
+        if (respectHostHealth &&
+            !channel->consumerConfig().consumeOnlyFromHealthyHost()) {
+            BALL_LOG_TRACE << "Channel " << it->first
+                           << " is not host-health aware. Skipping pause.";
+        }
+        else {
+            channel->pause();
+        }
+    }
+}
+
+void ChannelMap::resumeReceiveChannels(const bool respectHostHealth)
+{
+    for (ReceiveChannelMap::const_iterator it = d_receiveChannels.cbegin();
+         it != d_receiveChannels.cend();
+         ++it) {
+
+        bsl::shared_ptr<ReceiveChannel> channel = it->second;
+
+        if (respectHostHealth &&
+            !channel->consumerConfig().consumeOnlyFromHealthyHost()) {
+            BALL_LOG_TRACE << "Channel " << it->first
+                           << " is not host-health aware. Skipping resume.";
+        }
+        else {
+            channel->resume();
+        }
+    }
+}
+
 bool ChannelMap::processReceived(uint16_t channelId,
                                  const rmqamqp::Message& message)
 {

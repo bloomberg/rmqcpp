@@ -16,8 +16,8 @@
 #ifndef INCLUDED_RMQTESTUTIL_MOCKCHANNEL_T
 #define INCLUDED_RMQTESTUTIL_MOCKCHANNEL_T
 
-#include <bsl_memory.h>
 #include <rmqamqp_channel.h>
+
 #include <rmqamqp_messagestore.h>
 #include <rmqamqp_receivechannel.h>
 #include <rmqamqp_sendchannel.h>
@@ -32,6 +32,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <bsl_memory.h>
 
 namespace BloombergLP {
 namespace rmqtestutil {
@@ -103,7 +105,8 @@ class MockReceiveChannel : public rmqamqp::ReceiveChannel {
           "blankvhost",
           ackQueue,
           timerFactory->createWithCallback(&noopHungTimerCallback),
-          &noopHungCallback)
+          &noopHungCallback,
+          false)
     , d_timerFactory(timerFactory)
     {
         ON_CALL(*this, consume(testing::_, testing::_, testing::_))
@@ -126,6 +129,8 @@ class MockReceiveChannel : public rmqamqp::ReceiveChannel {
                                 const MessageCallback& onNewMessage,
                                 const bsl::string&));
     MOCK_METHOD0(consumeAckBatchFromQueue, void());
+    MOCK_METHOD0(resume, rmqt::Future<>());
+    MOCK_METHOD0(pause, rmqt::Future<>());
     MOCK_METHOD0(cancel, rmqt::Future<>());
     MOCK_METHOD0(drain, rmqt::Future<>());
     MOCK_CONST_METHOD1(getMessagesOlderThan,
@@ -155,7 +160,8 @@ class MockUpdateReceiveChannel : public rmqamqp::ReceiveChannel {
           "blankvhost",
           ackQueue,
           timerFactory->createWithCallback(&noopHungTimerCallback),
-          &noopHungCallback)
+          &noopHungCallback,
+          false)
     , d_timerFactory(timerFactory)
     {
         ready();

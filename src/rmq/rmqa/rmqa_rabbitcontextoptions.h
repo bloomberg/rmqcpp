@@ -22,6 +22,7 @@
 #include <rmqp_consumertracing.h>
 #include <rmqp_producertracing.h>
 #include <rmqt_fieldvalue.h>
+#include <rmqt_hosthealthconfig.h>
 #include <rmqt_properties.h>
 #include <rmqt_result.h>
 
@@ -141,6 +142,23 @@ class RabbitContextOptions {
     RabbitContextOptions&
     setShuffleConnectionEndpoints(bool shuffleConnectionEndpoints);
 
+    /// \brief Set host health config for connections created by this context to
+    /// ensure that RabbitMQ consumers are connected from healthy hosts.
+    /// When host health config is set, the host health monitor is created and
+    /// consumers with \c consumeOnlyFromHealthyHost enabled (the default) will
+    /// pause message delivery when the host becomes unhealthy and resume when
+    /// the host is deemed healthy again.
+    /// \note By default, \c ConsumerConfig::consumeOnlyFromHealthyHost is true,
+    /// meaning consumers automatically participate in host health monitoring
+    /// when host health config is set at the context level. Consumers can
+    /// opt out by calling \c
+    /// ConsumerConfig::setConsumeOnlyFromHealthyHost(false). If host health
+    /// config is not set, \c consumeOnlyFromHealthyHost has no effect.
+    ///
+    /// \param hostHealthConfig configuration for host health monitoring
+    RabbitContextOptions&
+    setHostHealthConfig(const rmqt::HostHealthConfig& hostHealthConfig);
+
     bdlmt::ThreadPool* threadpool() const { return d_threadpool; }
 
     const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher() const
@@ -182,6 +200,14 @@ class RabbitContextOptions {
         return d_shuffleConnectionEndpoints;
     }
 
+    /// \brief Get the host health config. If not set, host health monitoring is
+    /// disabled. By default, host health monitoring is disabled.
+    /// \return The host health config
+    const bsl::optional<rmqt::HostHealthConfig>& hostHealthConfig() const
+    {
+        return d_hostHealthConfig;
+    }
+
 #ifdef USES_LIBRMQ_EXPERIMENTAL_FEATURES
     RabbitContextOptions& setTunable(const bsl::string& tunable);
 #endif
@@ -198,6 +224,7 @@ class RabbitContextOptions {
     bsl::shared_ptr<rmqp::ConsumerTracing> d_consumerTracing;
     bsl::shared_ptr<rmqp::ProducerTracing> d_producerTracing;
     bsl::optional<bool> d_shuffleConnectionEndpoints;
+    bsl::optional<rmqt::HostHealthConfig> d_hostHealthConfig;
 };
 
 } // namespace rmqa

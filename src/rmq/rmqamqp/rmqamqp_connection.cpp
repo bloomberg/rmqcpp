@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "rmqamqp_channelfactory.h"
 #include <rmqamqp_connection.h>
 
 #include <rmqamqp_framer.h>
@@ -39,7 +40,9 @@
 #include <rmqp_metricpublisher.h>
 #include <rmqt_consumerconfig.h>
 #include <rmqt_fieldvalue.h>
+#include <rmqt_future.h>
 
+#include <ball_log.h>
 #include <bdlf_bind.h>
 #include <bdlf_placeholder.h>
 #include <bdlt_currenttime.h>
@@ -1031,6 +1034,20 @@ bsl::string Connection::connectionDebugName() const
     return d_connectionName + ": " + d_endpoint->formatAddress();
 }
 
+void Connection::pauseReceiveChannels(const bool respectHostHealth)
+{
+    d_channelFactory->setReceiveChannelOnOpenState(
+        respectHostHealth ? ChannelFactory::PAUSED_HOST_HEALTH_AWARE
+                          : ChannelFactory::PAUSED);
+    d_channels.pauseReceiveChannels(respectHostHealth);
+}
+
+void Connection::resumeReceiveChannels(const bool respectHostHealth)
+{
+    d_channelFactory->setReceiveChannelOnOpenState(ChannelFactory::NOT_PAUSED);
+    d_channels.resumeReceiveChannels(respectHostHealth);
+}
+
 Connection::Factory::Factory(
     const bsl::shared_ptr<rmqio::Resolver>& resolver,
     const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
@@ -1038,7 +1055,8 @@ Connection::Factory::Factory(
     const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
     const bsl::shared_ptr<ConnectionMonitor>& connectionMonitor,
     const rmqt::FieldTable& clientProperties,
-    const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold)
+    const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold,
+    const bool isHostHealthMonitoringEnabled)
 : d_errorCb(errorCb)
 , d_clientProperties(clientProperties)
 , d_metricPublisher(metricPublisher)
@@ -1046,6 +1064,7 @@ Connection::Factory::Factory(
 , d_timerFactory(timerFactory)
 , d_connectionMonitor(connectionMonitor)
 , d_connectionErrorThreshold(connectionErrorThreshold)
+, d_isHostHealthMonitoringEnabled(isHostHealthMonitoringEnabled)
 {
 }
 
@@ -1095,7 +1114,15 @@ Connection::Factory::newHeartBeatManager()
 bsl::shared_ptr<rmqamqp::ChannelFactory>
 Connection::Factory::newChannelFactory()
 {
-    return bsl::make_shared<rmqamqp::ChannelFactory>();
+    // Set the initial state of receive channels based on whether host health
+    // monitoring is enabled. This state is later updated when health check has
+    // run successfully.
+    ChannelFactory::ChannelOnOpenState receiveChannelOnOpenState =
+        d_isHostHealthMonitoringEnabled
+            ? ChannelFactory::PAUSED_HOST_HEALTH_AWARE
+            : ChannelFactory::NOT_PAUSED;
+
+    return bsl::make_shared<rmqamqp::ChannelFactory>(receiveChannelOnOpenState);
 }
 
 } // namespace rmqamqp
