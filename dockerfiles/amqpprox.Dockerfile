@@ -9,7 +9,7 @@ RUN sudo apt-get update && sudo apt-get install -y \
     socat \
     && sudo rm -rf /var/lib/apt/lists/*
 
-RUN pip install "cmake>=3.27"
+RUN pip install "cmake>=3.27" "conan>=2"
 
 RUN git clone https://github.com/bloomberg/amqpprox.git /source
 
