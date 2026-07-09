@@ -75,7 +75,11 @@ class TestRmqForcefulReconnect(RmqTest):
         if not self.wait_for_connection():
             pytest.fail("Failed due to no connection being established")
         self.prox.force_close_connections()
-        assert self.timed_expect_true(lambda: self.get_connection_count() == 0)
+        # Allow extra time for the broker to observe the dropped connection
+        # before the client reconnects (matches test_connect_disconnect).
+        assert self.timed_expect_true(
+            lambda: self.get_connection_count() == 0, timeout=60
+        )
         if not self.wait_for_connection():
             pytest.fail("Failed due to client not reconnecting")
 
