@@ -145,7 +145,11 @@ def prox(config, request, vhost):
         def force_close_connections(self) -> int:
             connections: str = self.send_prox_msg("conn print\n")
             for conn in connections.splitlines():
-                match = re.search(r"(\d+): vhost=(\S+)", conn)
+                # amqpprox changed its `conn print` session format (bloomberg/
+                # amqpprox#120): the old "<id>: vhost=<vhost>" became
+                # "id=<id> vhost=<vhost> ...". Match both so force-disconnect
+                # keeps working across amqpprox versions.
+                match = re.search(r"(?:id=)?(\d+):?\s+vhost=(\S+)", conn)
 
                 if match:
                     id = match.group(1)

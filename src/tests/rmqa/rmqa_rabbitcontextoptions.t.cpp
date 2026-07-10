@@ -15,11 +15,17 @@
 
 #include <rmqa_rabbitcontextoptions.h>
 
+#include <rmqt_hosthealthconfig.h>
+
 #include <gtest/gtest.h>
 
 using namespace BloombergLP;
 using namespace rmqa;
 using namespace ::testing;
+
+namespace {
+bool alwaysHealthy() { return true; }
+} // namespace
 
 TEST(RabbitContextOptions, Constructs) { rmqa::RabbitContextOptions t; }
 TEST(RabbitContextOptions, Defaults)
@@ -27,5 +33,23 @@ TEST(RabbitContextOptions, Defaults)
     rmqa::RabbitContextOptions t;
     EXPECT_FALSE(t.metricPublisher());
     EXPECT_FALSE(t.threadpool());
+    EXPECT_FALSE(t.hostHealthConfig().has_value());
     t.errorCallback()("heres an error", -1);
+}
+
+TEST(RabbitContextOptions, SetHostHealthConfig)
+{
+    rmqa::RabbitContextOptions options;
+
+    // Initially not set
+    EXPECT_FALSE(options.hostHealthConfig().has_value());
+
+    // Create a health checker function
+    rmqt::HostHealthConfig config(alwaysHealthy);
+
+    // Set host health config
+    options.setHostHealthConfig(config);
+
+    // Now it should be set
+    EXPECT_TRUE(options.hostHealthConfig().has_value());
 }

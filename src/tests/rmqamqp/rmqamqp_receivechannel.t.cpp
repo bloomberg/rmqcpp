@@ -122,6 +122,7 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
     bsl::shared_ptr<rmqt::ConsumerAckQueue> d_ackQueue;
     bsl::shared_ptr<rmqtestutil::MockMetricPublisher> d_metricPublisher;
     bsl::vector<bsl::pair<bsl::string, bsl::string> > d_vhostTag;
+    bsl::vector<bsl::pair<bsl::string, bsl::string> > d_metricTags;
 
     ReceiveChannelTests()
     : rmqamqp::ChannelTests()
@@ -134,6 +135,8 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
     {
         d_vhostTag.push_back(bsl::pair<bsl::string, bsl::string>(
             rmqamqp::Metrics::VHOST_TAG, TEST_VHOST));
+
+        d_metricTags = d_vhostTag;
     }
 
     void ackOrNackMessage(rmqamqp::ReceiveChannel& rc,
@@ -189,13 +192,13 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
         EXPECT_THAT(rc.state(), Eq(rmqamqp::Channel::READY));
     }
 
-    void qosOkReply(rmqamqp::ReceiveChannel& rc)
+    void receiveBasicQoSOk(rmqamqp::ReceiveChannel& rc)
     {
         rc.processReceived(rmqamqp::Message(
             rmqamqpt::Method(rmqamqpt::BasicMethod(rmqamqpt::BasicQoSOk()))));
     }
 
-    void qosExpectations()
+    void expectBasicQoS()
     {
         EXPECT_CALL(
             d_callback,
@@ -205,13 +208,41 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
             .WillOnce(InvokeArgument<1>()); // qos
     }
 
-    void cancelOkReply(rmqamqp::ReceiveChannel& rc, const bsl::string& tag)
+    void receiveBasicConsumeOk(rmqamqp::ReceiveChannel& rc,
+                               const bsl::string& tag)
+    {
+        rc.processReceived(rmqamqp::Message(rmqamqpt::Method(
+            rmqamqpt::BasicMethod(rmqamqpt::BasicConsumeOk(tag)))));
+    }
+
+    void expectBasicConsume()
+    {
+        EXPECT_CALL(
+            d_callback,
+            onAsyncWrite(Pointee(MethodMsgTypeEq(rmqamqpt::Method(
+                             rmqamqpt::BasicMethod(rmqamqpt::BasicConsume())))),
+                         _))
+            .WillOnce(InvokeArgument<1>()); // consume
+    }
+
+    void notExpectBasicConsume()
+    {
+        EXPECT_CALL(
+            d_callback,
+            onAsyncWrite(Pointee(MethodMsgTypeEq(rmqamqpt::Method(
+                             rmqamqpt::BasicMethod(rmqamqpt::BasicConsume())))),
+                         _))
+            .Times(0);
+    }
+
+    void receiveBasicCancelOk(rmqamqp::ReceiveChannel& rc,
+                              const bsl::string& tag)
     {
         rc.processReceived(rmqamqp::Message(rmqamqpt::Method(
             rmqamqpt::BasicMethod(rmqamqpt::BasicCancelOk(tag)))));
     }
 
-    void cancelExpectations()
+    void expectBasicCancel()
     {
         EXPECT_CALL(
             d_callback,
@@ -221,15 +252,41 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
             .WillOnce(InvokeArgument<1>()); // cancel
     }
 
+    void notExpectBasicCancel()
+    {
+        EXPECT_CALL(
+            d_callback,
+            onAsyncWrite(Pointee(MethodMsgTypeEq(rmqamqpt::Method(
+                             rmqamqpt::BasicMethod(rmqamqpt::BasicCancel())))),
+                         _))
+            .Times(0);
+    }
+
+    void expectChannelClose()
+    {
+        EXPECT_CALL(d_callback,
+                    onAsyncWrite(Pointee(MethodMsgTypeEq(
+                                     rmqamqpt::Method(rmqamqpt::ChannelMethod(
+                                         rmqamqpt::ChannelClose())))),
+                                 _))
+            .WillOnce(InvokeArgument<1>()); // close
+    }
+
+    void receiveBasicCancel(rmqamqp::ReceiveChannel& rc, const bsl::string& tag)
+    {
+        rc.processReceived(rmqamqp::Message(rmqamqpt::Method(
+            rmqamqpt::BasicMethod(rmqamqpt::BasicCancel(tag)))));
+    }
+
     void makeReady(rmqamqp::ReceiveChannel& rc)
     {
         openAndSendTopology(rc);
-        qosExpectations();
+        expectBasicQoS();
         queueDeclareReply(rc);
 
         EXPECT_THAT(rc.state(), Eq(rmqamqp::Channel::AWAITING_REPLY));
 
-        qosOkReply(rc);
+        receiveBasicQoSOk(rc);
     }
 
     void receiveMessage(rmqamqp::ReceiveChannel& rc,
@@ -260,7 +317,8 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
 
     bsl::shared_ptr<ReceiveChannel> makeReceiveChannel(
         size_t prefetchCount                    = 100,
-        bsl::optional<int64_t> consumerPriority = bsl::optional<int64_t>())
+        bsl::optional<int64_t> consumerPriority = bsl::optional<int64_t>(),
+        const bool channelPausedOnOpen          = false)
     {
         rmqt::ConsumerConfig consumerConfig(
             rmqt::ConsumerConfig::generateConsumerTag(), prefetchCount);
@@ -275,7 +333,8 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
             TEST_VHOST,
             d_ackQueue,
             d_timerFactory->createWithCallback(&noopHungTimerCallback),
-            d_connErrorCb);
+            d_connErrorCb,
+            channelPausedOnOpen);
     }
 };
 
@@ -352,7 +411,7 @@ TEST_F(ReceiveChannelTests, HandleReopen)
     EXPECT_TRUE(receiveChannel->consumerIsActive());
 
     openExpectations();
-    qosExpectations();
+    expectBasicQoS();
 
     EXPECT_CALL(
         d_callback,
@@ -368,11 +427,129 @@ TEST_F(ReceiveChannelTests, HandleReopen)
 
     openOkReply(*receiveChannel);
     queueDeclareReply(*receiveChannel);
-    qosOkReply(*receiveChannel);
+    receiveBasicQoSOk(*receiveChannel);
     consumerReply(*receiveChannel);
 
     EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
 }
+
+TEST_F(ReceiveChannelTests, OpenPaused)
+{
+    const bool channelPausedOnOpen = true;
+    bsl::shared_ptr<ReceiveChannel> receiveChannel =
+        makeReceiveChannel(100, 5, channelPausedOnOpen);
+
+    makeReady(*receiveChannel);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    notExpectBasicConsume();
+    receiveChannel->consume(d_queue, d_onNewMessage, d_consumerTag);
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, OpenPausedBeforeResume)
+{
+    const bool channelPausedOnOpen = true;
+    bsl::shared_ptr<ReceiveChannel> receiveChannel =
+        makeReceiveChannel(100, 5, channelPausedOnOpen);
+
+    makeReady(*receiveChannel);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    // Resume
+    notExpectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    EXPECT_FALSE(!!wereResumed.tryResult());
+    EXPECT_THAT(wereResumed.tryResult().error(),
+                Eq("Resume called with no existing consumer"));
+}
+
+TEST_F(ReceiveChannelTests, ReopenPaused)
+{
+    const bool channelPausedOnOpen = true;
+    bsl::shared_ptr<ReceiveChannel> receiveChannel =
+        makeReceiveChannel(100, 5, channelPausedOnOpen);
+
+    makeReady(*receiveChannel);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    openExpectations();
+    expectBasicQoS();
+
+    // Re-open the channel
+    EXPECT_CALL(*d_retryHandler, retry(_)).WillOnce(InvokeArgument<0>());
+    receiveChannel->reset(true);
+
+    openOkReply(*receiveChannel);
+    queueDeclareReply(*receiveChannel);
+    receiveBasicQoSOk(*receiveChannel);
+
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+}
+
+TEST_F(ReceiveChannelTests, ReopenPausedBeforeConsume)
+{
+    const bool channelPausedOnOpen = true;
+    bsl::shared_ptr<ReceiveChannel> receiveChannel =
+        makeReceiveChannel(100, 5, channelPausedOnOpen);
+
+    makeReady(*receiveChannel);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    openExpectations();
+    expectBasicQoS();
+
+    // Re-open the channel
+    EXPECT_CALL(*d_retryHandler, retry(_)).WillOnce(InvokeArgument<0>());
+    receiveChannel->reset(true);
+
+    openOkReply(*receiveChannel);
+    queueDeclareReply(*receiveChannel);
+    receiveBasicQoSOk(*receiveChannel);
+
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    // Consume
+    notExpectBasicConsume();
+    receiveChannel->consume(d_queue, d_onNewMessage, d_consumerTag);
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, ReopenPausedAfterConsume)
+{
+    const bool channelPausedOnOpen = true;
+    bsl::shared_ptr<ReceiveChannel> receiveChannel =
+        makeReceiveChannel(100, 5, channelPausedOnOpen);
+
+    makeReady(*receiveChannel);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    // Consume
+    notExpectBasicConsume();
+    receiveChannel->consume(d_queue, d_onNewMessage, d_consumerTag);
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    openExpectations();
+    expectBasicQoS();
+    notExpectBasicConsume();
+
+    // Re-open the channel
+    EXPECT_CALL(*d_retryHandler, retry(_)).WillOnce(InvokeArgument<0>());
+    receiveChannel->reset(true);
+
+    openOkReply(*receiveChannel);
+    queueDeclareReply(*receiveChannel);
+    receiveBasicQoSOk(*receiveChannel);
+
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+}
+
 TEST_F(ReceiveChannelTests, BadQueueHandleThrows)
 {
     bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
@@ -613,7 +790,7 @@ TEST_F(ReceiveChannelTests, WrongChannelLifetimeId)
     receiveChannel->reset(true);
     openOkReply(*receiveChannel);
     queueDeclareReply(*receiveChannel);
-    qosOkReply(*receiveChannel);
+    receiveBasicQoSOk(*receiveChannel);
     consumerReply(*receiveChannel, "consumer1");
 
     ackMessage(*receiveChannel, id_ack);
@@ -662,7 +839,7 @@ TEST_F(ReceiveChannelTests, AckMsgsHavingDiffLifetimeIdSameDeliveryTag)
     receiveChannel->reset(true);
     openOkReply(*receiveChannel);
     queueDeclareReply(*receiveChannel);
-    qosOkReply(*receiveChannel);
+    receiveBasicQoSOk(*receiveChannel);
     consumerReply(*receiveChannel, "consumer1");
 
     EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
@@ -709,9 +886,8 @@ TEST_F(ReceiveChannelTests, AckMessagePublishesMetric)
 
     ackExpectations(deliveryTag);
 
-    EXPECT_CALL(
-        *d_metricPublisher,
-        publishDistribution(bsl::string("acknowledge_latency"), _, d_vhostTag));
+    EXPECT_CALL(*d_metricPublisher,
+                publishDistribution(bsl::string("acknowledge_latency"), _, _));
 
     ackMessage(*receiveChannel, id_ack);
 }
@@ -723,9 +899,8 @@ TEST_F(ReceiveChannelTests, ReceivedMsgPublishesMetric)
     makeReady(*receiveChannel);
     setupConsumer(*receiveChannel, "consumer1");
 
-    EXPECT_CALL(
-        *d_metricPublisher,
-        publishCounter(bsl::string("received_messages"), 1, d_vhostTag));
+    EXPECT_CALL(*d_metricPublisher,
+                publishCounter(bsl::string("received_messages"), 1, _));
 
     const uint64_t deliveryTag = 40;
     receiveMessage(*receiveChannel, deliveryTag, "consumer1");
@@ -744,13 +919,13 @@ TEST_F(ReceiveChannelTests, Cancel)
     EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
     size_t lifetimeId = receiveChannel->lifetimeId();
 
-    cancelExpectations();
+    expectBasicCancel();
     rmqt::Future<> wereCancelled = receiveChannel->cancel();
 
     EXPECT_THAT(lifetimeId, Eq(receiveChannel->lifetimeId()));
     EXPECT_THAT(!!wereCancelled.tryResult(), Eq(false));
 
-    cancelOkReply(*receiveChannel, "consumer1");
+    receiveBasicCancelOk(*receiveChannel, "consumer1");
 
     EXPECT_THAT(!!wereCancelled.tryResult(), Eq(true));
     EXPECT_THAT(lifetimeId, Eq(receiveChannel->lifetimeId()));
@@ -779,7 +954,7 @@ TEST_F(ReceiveChannelTests, CancelCalled2x)
     EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
     size_t lifetimeId = receiveChannel->lifetimeId();
 
-    cancelExpectations();
+    expectBasicCancel();
     rmqt::Future<> wereCancelled = receiveChannel->cancel();
 
     EXPECT_THAT(lifetimeId, Eq(receiveChannel->lifetimeId()));
@@ -787,7 +962,7 @@ TEST_F(ReceiveChannelTests, CancelCalled2x)
 
     rmqt::Future<> wereCancelled2x = receiveChannel->cancel();
 
-    cancelOkReply(*receiveChannel, "consumer1");
+    receiveBasicCancelOk(*receiveChannel, "consumer1");
 
     EXPECT_THAT(!!wereCancelled.tryResult(), Eq(true));
     EXPECT_THAT(!!wereCancelled2x.tryResult(), Eq(true));
@@ -800,6 +975,191 @@ TEST_F(ReceiveChannelTests, CancelCalled2x)
     ackMessage(*receiveChannel, env);
 
     EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
+}
+
+TEST_F(ReceiveChannelTests, ClientCancelDuringResume)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Start resuming
+    expectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    EXPECT_FALSE(!!wereResumed.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Cancel before resume reply
+    notExpectBasicCancel();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+
+    // Complete resume and expect cancel to be sent afterwards
+    expectBasicCancel();
+    receiveBasicConsumeOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!wereResumed.tryResult());
+
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!wereCancelled.tryResult());
+
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, ServerCancelDuringResume)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Start resuming
+    expectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    EXPECT_FALSE(!!wereResumed.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Server sends Cancel, channel closes, and resets
+    expectChannelClose();
+    receiveBasicCancel(*receiveChannel, d_consumerTag);
+    receiveChannel->reset();
+
+    EXPECT_FALSE(!!wereResumed.tryResult());
+    EXPECT_THAT(wereResumed.tryResult().error(),
+                Eq("Consume could not be processed by the server, "
+                   "due channel reset"));
+
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, ClientCancelDuringPause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Start pausing
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+
+    // Start cancelling before pause reply
+    notExpectBasicCancel();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+    EXPECT_FALSE(!!wereCancelled.tryResult());
+
+    // Get cancel/pause reply - Both have same reply from broker
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+
+    // Consumer gets cancelled
+    EXPECT_TRUE(!!wereCancelled.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, ServerCancelDuringPause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Start pausing
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+
+    // Server sends Cancel, channel closes, and resets
+    expectChannelClose();
+    receiveBasicCancel(*receiveChannel, d_consumerTag);
+    receiveChannel->reset();
+
+    // Pause future fails
+    EXPECT_FALSE(!!werePaused.tryResult());
+    EXPECT_THAT(werePaused.tryResult().error(),
+                Eq("Cancel could not be processed by the server, due channel "
+                   "reset, however consumer is now in a cancelled state"));
+
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, ClientCancelAfterPause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Cancel after pause
+    notExpectBasicCancel();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+    EXPECT_TRUE(!!wereCancelled.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, ServerCancelAfterPause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Server sends Cancel, channel closes, and resets
+    expectChannelClose();
+    receiveBasicCancel(*receiveChannel, d_consumerTag);
+    receiveChannel->reset();
+
+    // Consumer stays paused
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
 }
 
 TEST_F(ReceiveChannelTests, CancelFail)
@@ -827,9 +1187,9 @@ TEST_F(ReceiveChannelTests, DrainRegular)
     EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
     size_t lifetimeId = receiveChannel->lifetimeId();
 
-    cancelExpectations();
+    expectBasicCancel();
     rmqt::Future<> wereCancelled = receiveChannel->cancel();
-    cancelOkReply(*receiveChannel, "consumer1");
+    receiveBasicCancelOk(*receiveChannel, "consumer1");
 
     EXPECT_TRUE(wereCancelled.blockResult());
     EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
@@ -882,7 +1242,7 @@ TEST_F(ReceiveChannelTests, CancelFutureCancelledOnReset)
 
     EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
 
-    cancelExpectations();
+    expectBasicCancel();
     rmqt::Future<> wereCancelled = receiveChannel->cancel();
     EXPECT_THAT(wereCancelled.tryResult().returnCode(), Eq(rmqt::TIMEOUT));
     receiveChannel->reset();
@@ -902,9 +1262,9 @@ TEST_F(ReceiveChannelTests, DrainFutureCancelledOnReset)
 
     EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
 
-    cancelExpectations();
+    expectBasicCancel();
     receiveChannel->cancel();
-    cancelOkReply(*receiveChannel, "consumer1");
+    receiveBasicCancelOk(*receiveChannel, "consumer1");
 
     rmqt::Future<> wereDrained = receiveChannel->drain();
     EXPECT_THAT(wereDrained.tryResult().returnCode(), Eq(rmqt::TIMEOUT));
@@ -925,7 +1285,7 @@ TEST_F(ReceiveChannelTests, CancelFutureCancelledOnDestruct)
 
     EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
 
-    cancelExpectations();
+    expectBasicCancel();
     rmqt::Future<> wereCancelled = receiveChannel->cancel();
     EXPECT_THAT(wereCancelled.tryResult().returnCode(), Eq(rmqt::TIMEOUT));
     receiveChannel->reset();
@@ -945,9 +1305,9 @@ TEST_F(ReceiveChannelTests, DrainFutureCancelledOnDestruct)
 
     EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
 
-    cancelExpectations();
+    expectBasicCancel();
     receiveChannel->cancel();
-    cancelOkReply(*receiveChannel, "consumer1");
+    receiveBasicCancelOk(*receiveChannel, "consumer1");
 
     rmqt::Future<> wereDrained = receiveChannel->drain();
     EXPECT_THAT(wereDrained.tryResult().returnCode(), Eq(rmqt::TIMEOUT));
@@ -990,10 +1350,10 @@ TEST_F(ReceiveChannelTests, CancelConsumerBeforeTopologyConfirmed)
     // Now, after cancel() has been called, we expect consume() not to be called
     // when channel becomes ready
     // The remaining steps of makeReady()
-    qosExpectations();
+    expectBasicQoS();
     queueDeclareReply(*receiveChannel);
     EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::AWAITING_REPLY));
-    qosOkReply(*receiveChannel);
+    receiveBasicQoSOk(*receiveChannel);
 }
 
 TEST_F(ReceiveChannelTests, CancelConsumerBeforeConsumerStarted)
@@ -1034,7 +1394,7 @@ TEST_F(ReceiveChannelTests, CancelConsumerBeforeConsumerStarted)
     receiveChannel->processReceived(rmqamqp::Message(rmqamqpt::Method(
         rmqamqpt::BasicMethod(rmqamqpt::BasicConsumeOk(d_consumerTag)))));
 
-    cancelOkReply(*receiveChannel, d_consumerTag);
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
 
     EXPECT_FALSE(receiveChannel->consumerIsActive());
 }
@@ -1099,6 +1459,453 @@ TEST_F(ReceiveChannelTests, AckBatchesInFlightDuringResetGetLocked)
     EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
 }
 
+TEST_F(ReceiveChannelTests, Pause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    EXPECT_FALSE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, PauseDuringResume)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause before resume
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Resume start
+    expectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+
+    // Start pausing
+    expectBasicCancel();
+    werePaused = receiveChannel->pause();
+    EXPECT_FALSE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Complete resume
+    receiveBasicConsumeOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!wereResumed.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Complete pause
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, PauseDuringConsume)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    // Consume start
+    expectBasicConsume();
+    rmqt::Result<> result =
+        receiveChannel->consume(d_queue, d_onNewMessage, d_consumerTag);
+    EXPECT_TRUE(result);
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+
+    // Start pausing
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    EXPECT_FALSE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Complete consume
+    receiveBasicConsumeOk(*receiveChannel, d_consumerTag);
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Complete pause
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, PauseDuringPause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Start pausing
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    EXPECT_FALSE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Pause again before first pause completes
+    notExpectBasicCancel();
+    rmqt::Future<> werePaused2x = receiveChannel->pause();
+    EXPECT_FALSE(!!werePaused2x.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Complete pause
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_TRUE(!!werePaused2x.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, PauseAfterPause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Pause again
+    notExpectBasicCancel();
+    rmqt::Future<> werePaused2x = receiveChannel->pause();
+    EXPECT_TRUE(!!werePaused2x.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, PauseDuringCancel)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Start cancelling
+    expectBasicCancel();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+
+    // Start pausing before cancel reply
+    notExpectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    EXPECT_FALSE(!!werePaused.tryResult());
+    EXPECT_THAT(werePaused.tryResult().error(),
+                Eq("Pause called with a cancel already in flight"));
+
+    // Complete cancel
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+
+    // Consumer gets cancelled
+    EXPECT_TRUE(!!wereCancelled.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, PauseAfterCancel)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Cancel
+    expectBasicCancel();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!wereCancelled.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Pause after cancel
+    notExpectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    EXPECT_FALSE(!!werePaused.tryResult());
+    EXPECT_THAT(werePaused.tryResult().error(),
+                Eq("Pause called with no active consumer"));
+
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, PausePersistsOnReset)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Disconnect
+    receiveChannel->reset();
+    // Reconnect
+    makeReady(*receiveChannel);
+
+    // Still paused
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, PauseFail)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    rmqt::Result<> result     = werePaused.tryResult();
+    EXPECT_FALSE(result);
+    EXPECT_THAT(result.returnCode(), Ne(rmqt::TIMEOUT));
+}
+
+TEST_F(ReceiveChannelTests, Resume)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause before resume
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Resume
+    expectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    receiveBasicConsumeOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!wereResumed.tryResult());
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, ResumeDuringConsume)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Resume
+    notExpectBasicConsume();
+    rmqt::Future<> wereResumed2x = receiveChannel->resume();
+    EXPECT_FALSE(wereResumed2x.tryResult());
+    EXPECT_THAT(wereResumed2x.tryResult().error(),
+                Eq("Resume called on unpaused consumer"));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+}
+
+TEST_F(ReceiveChannelTests, ResumeDuringResume)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause before resume
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Start resuming
+    expectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    EXPECT_FALSE(!!wereResumed.tryResult());
+
+    // Resume again before first resume completes
+    notExpectBasicConsume();
+    rmqt::Future<> wereResumed2x = receiveChannel->resume();
+    EXPECT_FALSE(wereResumed2x.tryResult());
+
+    // Complete first resume
+    receiveBasicConsumeOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!wereResumed.tryResult());
+    EXPECT_TRUE(!!wereResumed2x.tryResult());
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+}
+
+TEST_F(ReceiveChannelTests, ResumeAfterResume)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause before resume
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Resume
+    expectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    receiveBasicConsumeOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!wereResumed.tryResult());
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Resume again
+    notExpectBasicConsume();
+    rmqt::Future<> wereResumed2x = receiveChannel->resume();
+    EXPECT_FALSE(wereResumed2x.tryResult());
+    EXPECT_THAT(wereResumed2x.tryResult().error(),
+                Eq("Resume called on unpaused consumer"));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+}
+
+TEST_F(ReceiveChannelTests, ResumeBeforePause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Resume
+    notExpectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    EXPECT_FALSE(!!wereResumed.tryResult());
+    EXPECT_THAT(wereResumed.tryResult().error(),
+                Eq("Resume called on unpaused consumer"));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+}
+
+TEST_F(ReceiveChannelTests, ResumeDuringPause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Start pausing
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    EXPECT_FALSE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Start resuming before pause reply
+    notExpectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    EXPECT_FALSE(!!wereResumed.tryResult());
+    EXPECT_THAT(wereResumed.tryResult().error(),
+                Eq("Resume called with a pause already in flight"));
+}
+
+TEST_F(ReceiveChannelTests, ResumeDuringCancel)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Start cancelling
+    expectBasicCancel();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+    EXPECT_FALSE(!!wereCancelled.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Resume before cancel reply
+    notExpectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    EXPECT_FALSE(!!wereResumed.tryResult());
+    EXPECT_THAT(wereResumed.tryResult().error(),
+                Eq("Resume called with a cancel already in flight"));
+}
+
+TEST_F(ReceiveChannelTests, ResumeAfterCancel)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Cancel
+    expectBasicCancel();
+    rmqt::Future<> wereCancelled = receiveChannel->cancel();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!wereCancelled.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_FALSE(receiveChannel->consumerIsPaused());
+
+    // Resume
+    notExpectBasicConsume();
+    rmqt::Future<> wereResumed = receiveChannel->resume();
+    EXPECT_FALSE(!!wereResumed.tryResult());
+    EXPECT_THAT(wereResumed.tryResult().error(),
+                Eq("Resume called with no existing consumer"));
+}
+
 class ReceiveChannelHungTests : public ReceiveChannelTests {};
 
 TEST_F(ReceiveChannelHungTests, HungQoSOk)
@@ -1109,13 +1916,40 @@ TEST_F(ReceiveChannelHungTests, HungQoSOk)
     openAndSendTopology(*rc);
 
     // Expect that when we send the queue declare, we get a QoS message.
-    qosExpectations();
+    expectBasicQoS();
     queueDeclareReply(*rc);
 
     // If the channel is never sent a QoSOk, the hung callback should be called.
     const int HUNG_TIMEOUT_SECONDS = 65;
 
     EXPECT_CALL(d_callback, onHungTimerCallback());
+    d_timerFactory->step_time(bsls::TimeInterval(HUNG_TIMEOUT_SECONDS));
+}
+
+TEST_F(ReceiveChannelTests, NotHungQoSOkOnPause)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel();
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    // Pause
+    expectBasicCancel();
+    rmqt::Future<> werePaused = receiveChannel->pause();
+    receiveBasicCancelOk(*receiveChannel, d_consumerTag);
+    EXPECT_TRUE(!!werePaused.tryResult());
+    EXPECT_FALSE(receiveChannel->consumerIsActive());
+    EXPECT_TRUE(receiveChannel->consumerIsPaused());
+
+    // Reset
+    receiveChannel->reset();
+
+    // Recovery on pause should not trigger hung timer
+    makeReady(*receiveChannel);
+    const int HUNG_TIMEOUT_SECONDS = 65;
+    EXPECT_CALL(d_callback, onHungTimerCallback()).Times(0);
     d_timerFactory->step_time(bsls::TimeInterval(HUNG_TIMEOUT_SECONDS));
 }
 

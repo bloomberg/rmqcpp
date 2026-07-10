@@ -12,6 +12,7 @@ add_library(rmqt OBJECT
     rmqt_exchangetype.cpp
     rmqt_fieldvalue.cpp
     rmqt_future.cpp
+    rmqt_hosthealthconfig.cpp
     rmqt_message.cpp
     rmqt_mutualsecurityparameters.cpp
     rmqt_plaincredentials.cpp

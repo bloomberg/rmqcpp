@@ -67,6 +67,7 @@ RabbitContextOptions::RabbitContextOptions()
 , d_tunables()
 , d_connectionErrorThreshold()
 , d_shuffleConnectionEndpoints()
+, d_hostHealthConfig()
 {
     populateUsefulInformation(&d_clientProperties);
 }
@@ -137,6 +138,13 @@ RabbitContextOptions& RabbitContextOptions::setShuffleConnectionEndpoints(
     bool shuffleConnectionEndpoints)
 {
     d_shuffleConnectionEndpoints = shuffleConnectionEndpoints;
+    return *this;
+}
+
+RabbitContextOptions& RabbitContextOptions::setHostHealthConfig(
+    const rmqt::HostHealthConfig& hostHealthConfig)
+{
+    d_hostHealthConfig = hostHealthConfig;
     return *this;
 }
 

@@ -46,7 +46,10 @@
 #include <bsl_functional.h>
 #include <bsl_memory.h>
 #include <bsl_unordered_map.h>
+#include <bsl_utility.h>
+#include <bsl_vector.h>
 #include <bsls_keyword.h>
+#include <bsls_timeinterval.h>
 
 namespace BloombergLP {
 namespace rmqamqp {
@@ -77,7 +80,10 @@ class ReceiveChannel : public Channel {
         const bsl::string& vhost,
         const bsl::shared_ptr<rmqt::ConsumerAckQueue>& ackQueue,
         const bsl::shared_ptr<rmqio::Timer>& hungProgressTimer,
-        const HungChannelCallback& connErrorCb);
+        const HungChannelCallback& connErrorCb,
+        const bool channelPausedOnOpen);
+
+    const rmqt::ConsumerConfig& consumerConfig() const;
 
     /// validates the queue handle references a queue in the channel topology,
     // starts the consumer (basic.consume) on that queue, with consumer tag
@@ -86,15 +92,27 @@ class ReceiveChannel : public Channel {
                                    const MessageCallback& onNewMessage,
                                    const bsl::string& consumerTag = "");
 
+    /// Resumes the paused consumer on the channel
+    /// returns Future that will resolve when ConsumeOk received from server
+    virtual rmqt::Future<> resume();
+
     virtual ~ReceiveChannel() BSLS_KEYWORD_OVERRIDE;
 
     virtual void consumeAckBatchFromQueue();
 
+    /// Returns true if there is an active consumer for the channel
     virtual bool consumerIsActive() const;
+
+    /// Returns true if the consumer is in paused state
+    virtual bool consumerIsPaused() const;
 
     /// Cancels the active consumer on the channel
     /// returns Future that will resolve when CancelOk received from server
     virtual rmqt::Future<> cancel();
+
+    /// Pauses the active consumer on the channel
+    /// returns Future that will resolve when CancelOk received from server
+    virtual rmqt::Future<> pause();
 
     /// If the channel is in a cancelled state, waits for number of the
     /// messages in the message store to reach 0 before resolving the future,
@@ -146,14 +164,21 @@ class ReceiveChannel : public Channel {
     ReceiveChannel(const ReceiveChannel& copy) BSLS_KEYWORD_DELETED;
     ReceiveChannel& operator=(const ReceiveChannel&) BSLS_KEYWORD_DELETED;
 
+    /// Get tags including vhost, consumer tag, and queue name
+    bsl::vector<bsl::pair<bsl::string, bsl::string> > getMetricTags() const;
+
     rmqt::ConsumerConfig d_consumerConfig;
     bsl::shared_ptr<Consumer> d_consumer;
     bslma::ManagedPtr<rmqamqpt::BasicDeliver> d_nextMessage;
     rmqamqp::MessageStore<rmqt::Message> d_messageStore;
     bsl::shared_ptr<rmqt::ConsumerAckQueue> d_ackQueue;
     MultipleAckHandler d_multipleAckHandler;
+    bslma::ManagedPtr<rmqt::Future<>::Pair> d_consumeFuturePair;
     bslma::ManagedPtr<rmqt::Future<>::Pair> d_cancelFuturePair;
     bslma::ManagedPtr<rmqt::Future<>::Maker> d_drainFuture;
+    bool d_channelPausedOnOpen;
+    bsls::TimeInterval d_pauseStartTime;
+    bsls::TimeInterval d_resumeStartTime;
 };
 
 } // namespace rmqamqp

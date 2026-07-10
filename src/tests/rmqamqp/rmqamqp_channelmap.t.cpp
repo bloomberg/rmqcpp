@@ -15,10 +15,11 @@
 
 #include <rmqamqp_channelmap.h>
 
-#include <rmqtestutil_mockchannel.t.h>
-
 #include <rmqamqp_channel.h>
 #include <rmqamqp_sendchannel.h>
+#include <rmqt_future.h>
+#include <rmqt_result.h>
+#include <rmqtestutil_mockchannel.t.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -191,4 +192,96 @@ TEST(ChannelMap, GetReceiveChannels)
     m[1] = channel;
     map.associateChannel(1, bsl::shared_ptr<rmqamqp::ReceiveChannel>(channel));
     EXPECT_EQ(map.getReceiveChannels(), m);
+}
+
+TEST(ChannelMap, PauseReceiveChannels)
+{
+    rmqamqp::ChannelMap map;
+
+    rmqt::ConsumerConfig consumerConfig;
+    consumerConfig.setConsumeOnlyFromHealthyHost(false);
+
+    rmqt::ConsumerConfig consumerConfigHostHealthAware;
+
+    bsl::shared_ptr<rmqtestutil::MockReceiveChannel> channel =
+        bsl::make_shared<rmqtestutil::MockReceiveChannel>(
+            bsl::make_shared<rmqt::ConsumerAckQueue>(),
+            bsl::make_shared<rmqtestutil::MockRetryHandler>(),
+            bsl::make_shared<rmqtestutil::MockTimerFactory>(),
+            consumerConfig);
+
+    bsl::shared_ptr<rmqtestutil::MockReceiveChannel> channelHostHealthAware =
+        bsl::make_shared<rmqtestutil::MockReceiveChannel>(
+            bsl::make_shared<rmqt::ConsumerAckQueue>(),
+            bsl::make_shared<rmqtestutil::MockRetryHandler>(),
+            bsl::make_shared<rmqtestutil::MockTimerFactory>(),
+            consumerConfigHostHealthAware);
+
+    rmqamqp::ChannelMap::ReceiveChannelMap m;
+    m[1] = channel;
+    m[2] = channelHostHealthAware;
+    map.associateChannel(1, bsl::shared_ptr<rmqamqp::ReceiveChannel>(channel));
+    map.associateChannel(
+        2, bsl::shared_ptr<rmqamqp::ReceiveChannel>(channelHostHealthAware));
+
+    EXPECT_CALL(*channel, pause()).Times(0);
+    EXPECT_CALL(*channelHostHealthAware, pause())
+        .WillOnce(Return(rmqt::Future<>(rmqt::Result<>())));
+
+    bool respectHostHealth = true;
+    map.pauseReceiveChannels(respectHostHealth);
+
+    EXPECT_CALL(*channel, pause())
+        .WillOnce(Return(rmqt::Future<>(rmqt::Result<>())));
+    EXPECT_CALL(*channelHostHealthAware, pause())
+        .WillOnce(Return(rmqt::Future<>(rmqt::Result<>())));
+
+    respectHostHealth = false;
+    map.pauseReceiveChannels(respectHostHealth);
+}
+
+TEST(ChannelMap, ResumeReceiveChannels)
+{
+    rmqamqp::ChannelMap map;
+
+    rmqt::ConsumerConfig consumerConfig;
+    consumerConfig.setConsumeOnlyFromHealthyHost(false);
+
+    rmqt::ConsumerConfig consumerConfigHostHealthAware;
+
+    bsl::shared_ptr<rmqtestutil::MockReceiveChannel> channel =
+        bsl::make_shared<rmqtestutil::MockReceiveChannel>(
+            bsl::make_shared<rmqt::ConsumerAckQueue>(),
+            bsl::make_shared<rmqtestutil::MockRetryHandler>(),
+            bsl::make_shared<rmqtestutil::MockTimerFactory>(),
+            consumerConfig);
+
+    bsl::shared_ptr<rmqtestutil::MockReceiveChannel> channelHostHealthAware =
+        bsl::make_shared<rmqtestutil::MockReceiveChannel>(
+            bsl::make_shared<rmqt::ConsumerAckQueue>(),
+            bsl::make_shared<rmqtestutil::MockRetryHandler>(),
+            bsl::make_shared<rmqtestutil::MockTimerFactory>(),
+            consumerConfigHostHealthAware);
+
+    rmqamqp::ChannelMap::ReceiveChannelMap m;
+    m[1] = channel;
+    m[2] = channelHostHealthAware;
+    map.associateChannel(1, bsl::shared_ptr<rmqamqp::ReceiveChannel>(channel));
+    map.associateChannel(
+        2, bsl::shared_ptr<rmqamqp::ReceiveChannel>(channelHostHealthAware));
+
+    EXPECT_CALL(*channel, resume()).Times(0);
+    EXPECT_CALL(*channelHostHealthAware, resume())
+        .WillOnce(Return(rmqt::Future<>(rmqt::Result<>())));
+
+    bool respectHostHealth = true;
+    map.resumeReceiveChannels(respectHostHealth);
+
+    EXPECT_CALL(*channel, resume())
+        .WillOnce(Return(rmqt::Future<>(rmqt::Result<>())));
+    EXPECT_CALL(*channelHostHealthAware, resume())
+        .WillOnce(Return(rmqt::Future<>(rmqt::Result<>())));
+
+    respectHostHealth = false;
+    map.resumeReceiveChannels(respectHostHealth);
 }

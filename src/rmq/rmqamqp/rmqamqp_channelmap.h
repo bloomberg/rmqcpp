@@ -79,6 +79,16 @@ class ChannelMap {
         return d_receiveChannels;
     }
 
+    // Calls `resume` on receive channels in the receive channel map
+    // if `respectHostHealth` is true, only resumes those channels whose
+    // consumer config has `consumeOnlyFromHealthyHost` set to true
+    void resumeReceiveChannels(const bool respectHostHealth);
+
+    // Calls `pause` on receive channels in the receive channel map
+    // if `respectHostHealth` is true, only pauses those channels whose
+    // consumer config has `consumeOnlyFromHealthyHost` set to true
+    void pauseReceiveChannels(const bool respectHostHealth);
+
   private:
     ChannelPtrMap d_channels;
     SendChannelMap d_sendChannels;

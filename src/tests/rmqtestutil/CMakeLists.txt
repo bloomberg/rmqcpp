@@ -13,7 +13,7 @@ add_library(rmqtestutil
     rmqtestutil_timedmetric.cpp
 )
 
-target_link_libraries(rmqtestutil PUBLIC 
+target_link_libraries(rmqtestutil PUBLIC
     bsl
     bdl
     rmqamqpt

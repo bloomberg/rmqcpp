@@ -30,6 +30,29 @@ class Metrics {
     static const char* NAMESPACE;
     static const char* VHOST_TAG;
     static const char* CHANNELTYPE_TAG;
+
+    // Pause/Resume metrics
+    static const char* CONSUMER_PAUSE_TOTAL;
+    static const char* CONSUMER_RESUME_TOTAL;
+    static const char* PAUSE_OPERATION_LATENCY_SECONDS;
+    static const char* RESUME_OPERATION_LATENCY_SECONDS;
+
+    // Health polling metrics
+    static const char* HEALTH_CHECK_STATUS;
+    static const char* HEALTH_CHECK_TOTAL;
+    static const char* HEALTH_CHECK_FAILURES_TOTAL;
+    static const char* HEALTH_CHECK_CONSECUTIVE_FAILURES;
+    static const char* HEALTH_CHECK_DURATION_MS;
+    static const char* HEALTH_TRIGGERED_PAUSE_TOTAL;
+    static const char* HEALTH_TRIGGERED_RESUME_TOTAL;
+
+    // Host Health awareness metrics
+    static const char* HEALTH_AWARE_VHOST_CREATED;
+    static const char* HEALTH_UNAWARE_VHOST_CREATED;
+    static const char* HEALTH_AWARE_CONSUMER_CREATED;
+    static const char* HEALTH_UNAWARE_CONSUMER_CREATED;
+    static const char* HEALTH_CHECK_BLOCKED_EVENT_LOOP;
+    static const char* HEALTH_AWARE_VHOSTS;
 };
 
 } // namespace rmqamqp

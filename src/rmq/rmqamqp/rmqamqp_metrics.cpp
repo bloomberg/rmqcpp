@@ -20,5 +20,39 @@ namespace rmqamqp {
 
 const char* Metrics::VHOST_TAG       = "rmqVhostName";
 const char* Metrics::CHANNELTYPE_TAG = "rmqChannelType";
+
+// Pause/Resume metrics
+const char* Metrics::CONSUMER_PAUSE_TOTAL  = "consumer_pause_total";
+const char* Metrics::CONSUMER_RESUME_TOTAL = "consumer_resume_total";
+const char* Metrics::PAUSE_OPERATION_LATENCY_SECONDS =
+    "pause_operation_latency_seconds";
+const char* Metrics::RESUME_OPERATION_LATENCY_SECONDS =
+    "resume_operation_latency_seconds";
+
+// Health polling metrics
+const char* Metrics::HEALTH_CHECK_STATUS = "health_check_status";
+const char* Metrics::HEALTH_CHECK_TOTAL  = "health_check_total";
+const char* Metrics::HEALTH_CHECK_FAILURES_TOTAL =
+    "health_check_failures_total";
+const char* Metrics::HEALTH_CHECK_CONSECUTIVE_FAILURES =
+    "health_check_consecutive_failures";
+const char* Metrics::HEALTH_CHECK_DURATION_MS = "health_check_duration_ms";
+const char* Metrics::HEALTH_TRIGGERED_PAUSE_TOTAL =
+    "health_triggered_pause_total";
+const char* Metrics::HEALTH_TRIGGERED_RESUME_TOTAL =
+    "health_triggered_resume_total";
+
+const char* Metrics::HEALTH_CHECK_BLOCKED_EVENT_LOOP =
+    "health_check_blocked_event_loop";
+
+// Host Health awareness metrics
+const char* Metrics::HEALTH_AWARE_VHOST_CREATED = "health_aware_vhost_created";
+const char* Metrics::HEALTH_UNAWARE_VHOST_CREATED =
+    "health_unaware_vhost_created";
+const char* Metrics::HEALTH_AWARE_CONSUMER_CREATED =
+    "health_aware_consumer_created";
+const char* Metrics::HEALTH_UNAWARE_CONSUMER_CREATED =
+    "health_unaware_consumer_created";
+const char* Metrics::HEALTH_AWARE_VHOSTS = "health_aware_vhosts";
 } // namespace rmqamqp
 } // namespace BloombergLP

@@ -17,7 +17,9 @@
 
 #include <rmqtestutil_mockchannel.t.h>
 #include <rmqtestutil_mockeventloop.t.h>
+#include <rmqtestutil_mockmetricpublisher.h>
 #include <rmqtestutil_mockresolver.t.h>
+#include <rmqtestutil_mocktimerfactory.h>
 
 #include <rmqa_topology.h>
 #include <rmqamqp_heartbeatmanagerimpl.h>
@@ -37,8 +39,6 @@
 #include <gtest/gtest.h>
 
 #include <bsl_iostream.h>
-#include <rmqtestutil_mockmetricpublisher.h>
-#include <rmqtestutil_mocktimerfactory.h>
 
 using namespace BloombergLP;
 using namespace rmqamqp;

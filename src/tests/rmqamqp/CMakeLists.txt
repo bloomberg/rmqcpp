@@ -7,6 +7,7 @@ add_executable(rmqamqp_tests
     rmqamqp_contentmaker.t.cpp
     rmqamqp_framer.t.cpp
     rmqamqp_heartbeatmanagerimpl.t.cpp
+    rmqamqp_hosthealthmonitor.t.cpp
     rmqamqp_messagestore.t.cpp
     rmqamqp_multipleackhandler.t.cpp
     rmqamqp_receivechannel.t.cpp

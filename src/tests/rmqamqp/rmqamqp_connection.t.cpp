@@ -340,7 +340,8 @@ class ConnectionFactory : public rmqamqp::Connection::Factory {
                                    metricPublisher,
                                    bsl::make_shared<MockConnectionMonitor>(),
                                    clientProperties,
-                                   bsls::TimeInterval())
+                                   bsls::TimeInterval(),
+                                   false)
     , d_retryHandler(retryHandler)
     , d_hbManager(hbManager)
     , d_channelFactory(channelFactory)

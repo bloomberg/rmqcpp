@@ -25,12 +25,14 @@
 #include <rmqa_vhostimpl.h>
 
 #include <rmqamqp_connection.h>
+#include <rmqamqp_metrics.h>
 #include <rmqio_eventloop.h>
 #include <rmqio_timer.h>
 #include <rmqio_watchdog.h>
 #include <rmqp_connection.h>
 #include <rmqt_endpoint.h>
 #include <rmqt_future.h>
+#include <rmqt_hosthealthconfig.h>
 #include <rmqt_vhostinfo.h>
 
 #include <ball_log.h>
@@ -43,6 +45,7 @@
 
 #include <bsl_sstream.h>
 #include <bsl_string.h>
+#include <bsl_utility.h>
 #include <bsl_vector.h>
 
 namespace BloombergLP {
@@ -70,7 +73,10 @@ void handleErrorCbOnEventLoop(bdlmt::ThreadPool* threadPool,
 
 void startFirstConnection(
     const bsl::weak_ptr<rmqamqp::Connection>& weakConn,
-    const rmqamqp::Connection::ConnectedCallback& callback)
+    const rmqamqp::Connection::ConnectedCallback& callback,
+    const bsl::shared_ptr<rmqamqp::HostHealthMonitor>& hostHealthMonitor,
+    const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
+    const bsl::shared_ptr<rmqt::Endpoint>& endpoint)
 {
     bsl::shared_ptr<rmqamqp::Connection> amqpConn = weakConn.lock();
     if (!amqpConn) {
@@ -79,6 +85,27 @@ void startFirstConnection(
     }
 
     amqpConn->startFirstConnection(callback);
+
+    bsl::vector<bsl::pair<bsl::string, bsl::string> > vhostTags;
+    vhostTags.push_back(bsl::pair<bsl::string, bsl::string>(
+        rmqamqp::Metrics::VHOST_TAG, endpoint->vhost()));
+
+    if (hostHealthMonitor) {
+        BALL_LOG_INFO << "Registering connection '"
+                      << amqpConn->connectionDebugName()
+                      << "' with host health monitor.";
+        hostHealthMonitor->registerConnection(
+            bsl::weak_ptr<rmqamqp::Connection>(amqpConn));
+
+        // Publish health-aware vhost created counter
+        metricPublisher->publishCounter(
+            rmqamqp::Metrics::HEALTH_AWARE_VHOST_CREATED, 1.0, vhostTags);
+    }
+    else {
+        // Publish health-unaware vhost created counter
+        metricPublisher->publishCounter(
+            rmqamqp::Metrics::HEALTH_UNAWARE_VHOST_CREATED, 1.0, vhostTags);
+    }
 }
 
 void initiateConnection(
@@ -142,7 +169,7 @@ RabbitContextImpl::RabbitContextImpl(
     bslma::ManagedPtr<rmqio::EventLoop> eventLoop,
     const rmqa::RabbitContextOptions& options)
 : d_eventLoop(eventLoop)
-, d_watchDog(bsl::make_shared<rmqio::WatchDog>(
+, d_connectionWatchDog(bsl::make_shared<rmqio::WatchDog>(
       bsls::TimeInterval(DEFAULT_WATCHDOG_PERIOD)))
 , d_threadPool(options.threadpool())
 , d_hostedThreadPool()
@@ -153,26 +180,42 @@ RabbitContextImpl::RabbitContextImpl(
                                  bdlf::PlaceHolders::_2))
 , d_connectionMonitor(
       bsl::make_shared<ConnectionMonitor>(options.messageProcessingTimeout()))
+, d_metricPublisher(options.metricPublisher()
+                        ? options.metricPublisher()
+                        : bsl::shared_ptr<rmqp::MetricPublisher>(
+                              bsl::make_shared<NoOpMetricPublisher>()))
+, d_hostHealthMonitor()
 , d_connectionFactory()
 , d_tunables(options.tunables())
 , d_consumerTracing(options.consumerTracing())
 , d_producerTracing(options.producerTracing())
 {
-    bsl::shared_ptr<rmqp::MetricPublisher> metricPublisher =
-        options.metricPublisher();
-    if (!metricPublisher) {
-        metricPublisher = bsl::make_shared<NoOpMetricPublisher>();
+
+    const bool isHostHealthMonitoringEnabled =
+        options.hostHealthConfig().has_value();
+
+    // Host health monitoring enabled
+    if (isHostHealthMonitoringEnabled) {
+        const rmqt::HostHealthConfig& hostHealthConfig =
+            *options.hostHealthConfig();
+
+        d_hostHealthMonitor = bsl::make_shared<rmqamqp::HostHealthMonitor>(
+            hostHealthConfig, d_metricPublisher.get());
+        d_hostHealthMonitor->start(d_eventLoop->timerFactory());
     }
+
     d_connectionFactory =
         bslma::ManagedPtrUtil::makeManaged<rmqamqp::Connection::Factory>(
             d_eventLoop->resolver(
                 options.shuffleConnectionEndpoints().value_or(false)),
             d_eventLoop->timerFactory(),
             d_onError,
-            metricPublisher,
+            d_metricPublisher,
             d_connectionMonitor,
             options.clientProperties(),
-            options.connectionErrorThreshold());
+            options.connectionErrorThreshold(),
+            isHostHealthMonitoringEnabled);
+
     if (!d_threadPool) {
         bslmt::ThreadAttributes attributes;
         attributes.setThreadName(DEFAULT_THREADPOOL_WORKER_NAME);
@@ -188,8 +231,10 @@ RabbitContextImpl::RabbitContextImpl(
     BSLS_REVIEW(d_threadPool->enabled());
 
     d_eventLoop->start();
-    d_watchDog->addTask(bsl::weak_ptr<ConnectionMonitor>(d_connectionMonitor));
-    d_watchDog->start(d_eventLoop->timerFactory());
+
+    d_connectionWatchDog->addTask(
+        bsl::weak_ptr<ConnectionMonitor>(d_connectionMonitor));
+    d_connectionWatchDog->start(d_eventLoop->timerFactory());
 }
 
 RabbitContextImpl::~RabbitContextImpl()
@@ -202,9 +247,11 @@ RabbitContextImpl::~RabbitContextImpl()
 
     d_connectionFactory.reset();
 
+    d_hostHealthMonitor.reset();
+
     d_hostedThreadPool.reset();
 
-    d_watchDog.reset();
+    d_connectionWatchDog.reset();
 
     const bool eventLoopShutdownResult = d_eventLoop->waitForEventLoopExit(60);
 
@@ -370,7 +417,10 @@ rmqt::Future<rmqp::Connection> RabbitContextImpl::createNewConnection(
     d_eventLoop->post(
         bdlf::BindUtil::bind(&startFirstConnection,
                              bsl::weak_ptr<rmqamqp::Connection>(amqpConn),
-                             cb));
+                             cb,
+                             d_hostHealthMonitor,
+                             d_metricPublisher,
+                             endpoint));
 
     return futurePair.second;
 }

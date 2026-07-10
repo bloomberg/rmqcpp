@@ -34,6 +34,7 @@ ConsumerConfig::ConsumerConfig(
 , d_exclusiveFlag(exclusiveFlag)
 , d_consumerPriority(consumerPriority)
 , d_transformers(bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> >())
+, d_consumeOnlyFromHealthyHost(true)
 {
 }
 

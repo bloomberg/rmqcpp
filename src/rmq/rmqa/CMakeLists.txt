@@ -22,7 +22,6 @@ add_library(rmqa OBJECT
     rmqa_vhostimpl.cpp
 )
 
-
 target_link_libraries(rmqa PUBLIC
     bsl
     bdl
