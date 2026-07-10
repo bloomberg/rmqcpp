@@ -118,6 +118,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5c52fe0a8e4f4c1d52570882c643d25f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a5c52fe0a8e4f4c1d52570882c643d25f">setShuffleConnectionEndpoints</a> (bool shuffleConnectionEndpoints)</td></tr>
 <tr class="memdesc:a5c52fe0a8e4f4c1d52570882c643d25f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle endpoints rmq connects to. By default, boost asio (libc) resolves and connects to the node with longest matching subnet prefix causing disproportionately more connections with certain endpoints. Setting this option will shuffle resolver results.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a5c52fe0a8e4f4c1d52570882c643d25f">More...</a><br /></td></tr>
 <tr class="separator:a5c52fe0a8e4f4c1d52570882c643d25f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a157a526e33724febbc75eeba6c12313a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a157a526e33724febbc75eeba6c12313a">setHostHealthConfig</a> (const <a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html">rmqt::HostHealthConfig</a> &amp;<a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a7c27650f920ee9eb11c9429042f5ed84">hostHealthConfig</a>)</td></tr>
+<tr class="memdesc:a157a526e33724febbc75eeba6c12313a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set host health config for connections created by this context to ensure that RabbitMQ consumers are connected from healthy hosts. When host health config is set, the host health monitor is created and consumers with <code>consumeOnlyFromHealthyHost</code> enabled (the default) will pause message delivery when the host becomes unhealthy and resume when the host is deemed healthy again.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a157a526e33724febbc75eeba6c12313a">More...</a><br /></td></tr>
+<tr class="separator:a157a526e33724febbc75eeba6c12313a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a592fa35cf891a39a0ca9ba729087fe7b"><td class="memItemLeft" align="right" valign="top"><a id="a592fa35cf891a39a0ca9ba729087fe7b" name="a592fa35cf891a39a0ca9ba729087fe7b"></a>
 bdlmt::ThreadPool *&#160;</td><td class="memItemRight" valign="bottom"><b>threadpool</b> () const</td></tr>
 <tr class="separator:a592fa35cf891a39a0ca9ba729087fe7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -148,11 +151,42 @@ const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1Produc
 <tr class="memitem:a14778a8b77511972deea386366de74dc"><td class="memItemLeft" align="right" valign="top"><a id="a14778a8b77511972deea386366de74dc" name="a14778a8b77511972deea386366de74dc"></a>
 const bsl::optional&lt; bool &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>shuffleConnectionEndpoints</b> () const</td></tr>
 <tr class="separator:a14778a8b77511972deea386366de74dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c27650f920ee9eb11c9429042f5ed84"><td class="memItemLeft" align="right" valign="top">const bsl::optional&lt; <a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html">rmqt::HostHealthConfig</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a7c27650f920ee9eb11c9429042f5ed84">hostHealthConfig</a> () const</td></tr>
+<tr class="memdesc:a7c27650f920ee9eb11c9429042f5ed84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the host health config. If not set, host health monitoring is disabled. By default, host health monitoring is disabled.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a7c27650f920ee9eb11c9429042f5ed84">More...</a><br /></td></tr>
+<tr class="separator:a7c27650f920ee9eb11c9429042f5ed84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p >Class for passing arguments to <a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContext.html" title="Owns resources shared between multiple RabbitMQ connections.">RabbitContext</a>. </p>
 <p >This class provides passing arguments to <a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContext.html" title="Owns resources shared between multiple RabbitMQ connections.">RabbitContext</a>. It allows specifying the async callback threadpool, metric publisher and error callback. If any of them are not specified, a default value is used. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a7c27650f920ee9eb11c9429042f5ed84" name="a7c27650f920ee9eb11c9429042f5ed84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7c27650f920ee9eb11c9429042f5ed84">&#9670;&nbsp;</a></span>hostHealthConfig()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const bsl::optional&lt; <a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html">rmqt::HostHealthConfig</a> &gt; &amp; BloombergLP::rmqa::RabbitContextOptions::hostHealthConfig </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the host health config. If not set, host health monitoring is disabled. By default, host health monitoring is disabled. </p>
+<dl class="section return"><dt>Returns</dt><dd>The host health config </dd></dl>
+
+</div>
+</div>
 <a id="abdadb8141c464557a04ea19604734fc3" name="abdadb8141c464557a04ea19604734fc3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abdadb8141c464557a04ea19604734fc3">&#9670;&nbsp;</a></span>setClientProperty()</h2>
 
@@ -259,6 +293,33 @@ Library", version_chain="1.0.0 | 2.33.0"). The following properties are reserved
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">errorCallback</td><td>function will be called with error detail, when channel or connection is closed by rabbitmq broker. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a157a526e33724febbc75eeba6c12313a" name="a157a526e33724febbc75eeba6c12313a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a157a526e33724febbc75eeba6c12313a">&#9670;&nbsp;</a></span>setHostHealthConfig()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp; BloombergLP::rmqa::RabbitContextOptions::setHostHealthConfig </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html">rmqt::HostHealthConfig</a> &amp;&#160;</td>
+          <td class="paramname"><em>hostHealthConfig</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set host health config for connections created by this context to ensure that RabbitMQ consumers are connected from healthy hosts. When host health config is set, the host health monitor is created and consumers with <code>consumeOnlyFromHealthyHost</code> enabled (the default) will pause message delivery when the host becomes unhealthy and resume when the host is deemed healthy again. </p>
+<dl class="section note"><dt>Note</dt><dd>By default, <code>ConsumerConfig::consumeOnlyFromHealthyHost</code> is true, meaning consumers automatically participate in host health monitoring when host health config is set at the context level. Consumers can opt out by calling <code>ConsumerConfig::setConsumeOnlyFromHealthyHost(false)</code>. If host health config is not set, <code>consumeOnlyFromHealthyHost</code> has no effect.</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">hostHealthConfig</td><td>configuration for host health monitoring </td></tr>
   </table>
   </dd>
 </dl>
