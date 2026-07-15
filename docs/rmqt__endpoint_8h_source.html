@@ -106,13 +106,19 @@ $(function() {
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    <span class="keyword">virtual</span> bsl::uint16_t port() <span class="keyword">const</span>        = 0;</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    <span class="keyword">virtual</span> bsl::shared_ptr&lt;rmqt::SecurityParameters&gt;</div>
 <div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    securityParameters() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>};</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>} <span class="comment">// namespace rmqt</span></div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>} <span class="comment">// namespace BloombergLP</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno"><a class="line" href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a44908a020fb7667b26236b2f8fa7236b">   51</a></span>    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code hl_function" href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a44908a020fb7667b26236b2f8fa7236b">onConnectSuccess</a>() {}</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno"><a class="line" href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a89584a50067b09bfca258a12fdc24ba4">   69</a></span>    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code hl_function" href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a89584a50067b09bfca258a12fdc24ba4">onConnectFailed</a>() {}</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>};</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>} <span class="comment">// namespace rmqt</span></div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>} <span class="comment">// namespace BloombergLP</span></div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span><span class="preprocessor">#endif</span></div>
 <div class="ttc" id="aclassBloombergLP_1_1rmqt_1_1Endpoint_html"><div class="ttname"><a href="classBloombergLP_1_1rmqt_1_1Endpoint.html">BloombergLP::rmqt::Endpoint</a></div><div class="ttdoc">Base class for AMQP endpoint.</div><div class="ttdef"><b>Definition:</b> rmqt_endpoint.h:30</div></div>
+<div class="ttc" id="aclassBloombergLP_1_1rmqt_1_1Endpoint_html_a44908a020fb7667b26236b2f8fa7236b"><div class="ttname"><a href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a44908a020fb7667b26236b2f8fa7236b">BloombergLP::rmqt::Endpoint::onConnectSuccess</a></div><div class="ttdeci">virtual void onConnectSuccess()</div><div class="ttdoc">Invoked each time an AMQP connection to this endpoint is established (Connection.Open-Ok received)....</div><div class="ttdef"><b>Definition:</b> rmqt_endpoint.h:51</div></div>
+<div class="ttc" id="aclassBloombergLP_1_1rmqt_1_1Endpoint_html_a89584a50067b09bfca258a12fdc24ba4"><div class="ttname"><a href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a89584a50067b09bfca258a12fdc24ba4">BloombergLP::rmqt::Endpoint::onConnectFailed</a></div><div class="ttdeci">virtual void onConnectFailed()</div><div class="ttdoc">Invoked each time the connection to this endpoint is not established and will be retried – either an ...</div><div class="ttdef"><b>Definition:</b> rmqt_endpoint.h:69</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

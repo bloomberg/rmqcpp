@@ -105,6 +105,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a474ababa7a3eb214337a09df3bafa3e9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a474ababa7a3eb214337a09df3bafa3e9">setConnectionErrorThreshold</a> (const bsl::optional&lt; bsls::TimeInterval &gt; &amp;timeout)</td></tr>
 <tr class="memdesc:a474ababa7a3eb214337a09df3bafa3e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set time threshold at which point the error callback is called if there has been no success in establishing an amqp connection to the broker.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a474ababa7a3eb214337a09df3bafa3e9">More...</a><br /></td></tr>
 <tr class="separator:a474ababa7a3eb214337a09df3bafa3e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab70448aa6a6b42c397fec23bd1352b7c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#ab70448aa6a6b42c397fec23bd1352b7c">setConnectionEstablishmentTimeout</a> (const bsl::optional&lt; bsls::TimeInterval &gt; &amp;timeout)</td></tr>
+<tr class="memdesc:ab70448aa6a6b42c397fec23bd1352b7c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the maximum time a single connection-establishment attempt (TCP connect + TLS handshake + AMQP handshake) may take before it is aborted and retried. The library already bounds establishment with a default; this makes that bound configurable.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#ab70448aa6a6b42c397fec23bd1352b7c">More...</a><br /></td></tr>
+<tr class="separator:ab70448aa6a6b42c397fec23bd1352b7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa6a8c6fee9b811b6bc6a1673cd77d0a0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#aa6a8c6fee9b811b6bc6a1673cd77d0a0">setConsumerTracing</a> (const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1ConsumerTracing.html">rmqp::ConsumerTracing</a> &gt; &amp;consumerTracing)</td></tr>
 <tr class="memdesc:aa6a8c6fee9b811b6bc6a1673cd77d0a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">will be called back to create a context which spans for the lifetime of the messageguard <em>before</em> it is passed to its consumer message processor if there has  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#aa6a8c6fee9b811b6bc6a1673cd77d0a0">More...</a><br /></td></tr>
 <tr class="separator:aa6a8c6fee9b811b6bc6a1673cd77d0a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -139,6 +142,9 @@ const bsls::TimeInterval &amp;&#160;</td><td class="memItemRight" valign="bottom
 <tr class="memitem:a735410e324dcd366e13de100f574565d"><td class="memItemLeft" align="right" valign="top"><a id="a735410e324dcd366e13de100f574565d" name="a735410e324dcd366e13de100f574565d"></a>
 const bsl::optional&lt; bsls::TimeInterval &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>connectionErrorThreshold</b> () const</td></tr>
 <tr class="separator:a735410e324dcd366e13de100f574565d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a132b2a4e399bfe0bd363bba254edfd"><td class="memItemLeft" align="right" valign="top"><a id="a3a132b2a4e399bfe0bd363bba254edfd" name="a3a132b2a4e399bfe0bd363bba254edfd"></a>
+const bsl::optional&lt; bsls::TimeInterval &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>connectionEstablishmentTimeout</b> () const</td></tr>
+<tr class="separator:a3a132b2a4e399bfe0bd363bba254edfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ac238382b819e2cca3b516f3042d814"><td class="memItemLeft" align="right" valign="top"><a id="a7ac238382b819e2cca3b516f3042d814" name="a7ac238382b819e2cca3b516f3042d814"></a>
 const rmqt::Tunables &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>tunables</b> () const</td></tr>
 <tr class="separator:a7ac238382b819e2cca3b516f3042d814"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -246,6 +252,33 @@ Library", version_chain="1.0.0 | 2.33.0"). The following properties are reserved
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="ab70448aa6a6b42c397fec23bd1352b7c" name="ab70448aa6a6b42c397fec23bd1352b7c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab70448aa6a6b42c397fec23bd1352b7c">&#9670;&nbsp;</a></span>setConnectionEstablishmentTimeout()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp; BloombergLP::rmqa::RabbitContextOptions::setConnectionEstablishmentTimeout </td>
+          <td>(</td>
+          <td class="paramtype">const bsl::optional&lt; bsls::TimeInterval &gt; &amp;&#160;</td>
+          <td class="paramname"><em>timeout</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the maximum time a single connection-establishment attempt (TCP connect + TLS handshake + AMQP handshake) may take before it is aborted and retried. The library already bounds establishment with a default; this makes that bound configurable. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">timeout</td><td>the establishment timeout, as a <code>bsls::TimeInterval</code> so that any resolution (down to nanoseconds) can be expressed &ndash; e.g. <code>bsls::TimeInterval(5.0)</code> for five seconds, or <code>bsls::TimeInterval(0, 500 * 1000 * 1000)</code> for 500 milliseconds. If not set (<code>bsl::nullopt</code>), the library default is used. This only ever applies to the establishment phase &ndash; it is cancelled once a connection is established &ndash; so it does not affect long-lived connections. Lowering it makes the client give up on a stalled attempt and retry sooner; raising it tolerates slower networks/handshakes. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>The timeout is applied at millisecond granularity: the behavior is undefined unless <code>timeout</code>, when set, is at least one millisecond. A smaller (sub-millisecond) interval rounds down to zero, which would expire the bound immediately and prevent any connection from establishing. </dd></dl>
 
 </div>
 </div>

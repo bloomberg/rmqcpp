@@ -114,6 +114,12 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a9f0a502546a6442e69dbe2f78b5de708"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afeaba5d74b837b4073ea0e8fff9fe184"><td class="memItemLeft" align="right" valign="top">unsigned short&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1SimpleEndpoint.html#afeaba5d74b837b4073ea0e8fff9fe184">port</a> () const</td></tr>
 <tr class="separator:afeaba5d74b837b4073ea0e8fff9fe184"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44908a020fb7667b26236b2f8fa7236b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a44908a020fb7667b26236b2f8fa7236b">onConnectSuccess</a> ()</td></tr>
+<tr class="memdesc:a44908a020fb7667b26236b2f8fa7236b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Invoked each time an AMQP connection to this endpoint is established (Connection.Open-Ok received). Defaults to a no-op; implementations may override it to observe the connection lifecycle, e.g. for monitoring or metrics.  <a href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a44908a020fb7667b26236b2f8fa7236b">More...</a><br /></td></tr>
+<tr class="separator:a44908a020fb7667b26236b2f8fa7236b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89584a50067b09bfca258a12fdc24ba4"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a89584a50067b09bfca258a12fdc24ba4">onConnectFailed</a> ()</td></tr>
+<tr class="memdesc:a89584a50067b09bfca258a12fdc24ba4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Invoked each time the connection to this endpoint is not established and will be retried &ndash; either an establishment attempt failed, or a previously-established connection was lost and will reconnect. Defaults to a no-op; implementations may override it to observe the connection lifecycle, e.g. for monitoring or metrics.  <a href="classBloombergLP_1_1rmqt_1_1Endpoint.html#a89584a50067b09bfca258a12fdc24ba4">More...</a><br /></td></tr>
+<tr class="separator:a89584a50067b09bfca258a12fdc24ba4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -174,6 +180,63 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Implements <a class="el" href="classBloombergLP_1_1rmqt_1_1Endpoint.html">BloombergLP::rmqt::Endpoint</a>.</p>
+
+</div>
+</div>
+<a id="a89584a50067b09bfca258a12fdc24ba4" name="a89584a50067b09bfca258a12fdc24ba4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a89584a50067b09bfca258a12fdc24ba4">&#9670;&nbsp;</a></span>onConnectFailed()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void BloombergLP::rmqt::Endpoint::onConnectFailed </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span><span class="mlabel">inherited</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Invoked each time the connection to this endpoint is not established and will be retried &ndash; either an establishment attempt failed, or a previously-established connection was lost and will reconnect. Defaults to a no-op; implementations may override it to observe the connection lifecycle, e.g. for monitoring or metrics. </p>
+<dl class="section warning"><dt>Warning</dt><dd>Invoked synchronously on the connection's event-loop thread (the same context as the connection's other callbacks). Overrides must be cheap and non-blocking and must not call back into the connection. A single <code><a class="el" href="classBloombergLP_1_1rmqt_1_1Endpoint.html" title="Base class for AMQP endpoint.">Endpoint</a></code> may be shared (via <code>shared_ptr</code>) by more than one connection, and those connections may run on different event-loop threads; an override must therefore synchronise any state it mutates.</dd></dl>
+<dl class="section note"><dt>Note</dt><dd>Only invoked when the connection will be retried. It is not invoked on a terminal failure (e.g. when the connection error threshold is breached and the failure is surfaced to the application). </dd></dl>
+
+</div>
+</div>
+<a id="a44908a020fb7667b26236b2f8fa7236b" name="a44908a020fb7667b26236b2f8fa7236b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a44908a020fb7667b26236b2f8fa7236b">&#9670;&nbsp;</a></span>onConnectSuccess()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void BloombergLP::rmqt::Endpoint::onConnectSuccess </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span><span class="mlabel">inherited</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Invoked each time an AMQP connection to this endpoint is established (Connection.Open-Ok received). Defaults to a no-op; implementations may override it to observe the connection lifecycle, e.g. for monitoring or metrics. </p>
+<dl class="section warning"><dt>Warning</dt><dd>Invoked synchronously on the connection's event-loop thread (the same context as the connection's other callbacks). Overrides must be cheap and non-blocking and must not call back into the connection. A single <code><a class="el" href="classBloombergLP_1_1rmqt_1_1Endpoint.html" title="Base class for AMQP endpoint.">Endpoint</a></code> may be shared (via <code>shared_ptr</code>) by more than one connection, and those connections may run on different event-loop threads; an override must therefore synchronise any state it mutates. </dd></dl>
 
 </div>
 </div>
