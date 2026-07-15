@@ -73,6 +73,7 @@ class MockConnection : public rmqamqp::Connection {
                           endpoint,
                           credentials,
                           clientProperties,
+                          bsl::optional<bsls::TimeInterval>(),
                           "Connection Name")
     , d_ackQueue(bsl::make_shared<rmqt::ConsumerAckQueue>())
     , d_receiveChannel(

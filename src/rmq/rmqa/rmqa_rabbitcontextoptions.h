@@ -113,6 +113,27 @@ class RabbitContextOptions {
     RabbitContextOptions& setConnectionErrorThreshold(
         const bsl::optional<bsls::TimeInterval>& timeout);
 
+    /// \brief Set the maximum time a single connection-establishment attempt
+    /// (TCP connect + TLS handshake + AMQP handshake) may take before it is
+    /// aborted and retried. The library already bounds establishment with a
+    /// default; this makes that bound configurable.
+    /// \param timeout the establishment timeout, as a `bsls::TimeInterval` so
+    /// that any resolution (down to nanoseconds) can be expressed -- e.g.
+    /// `bsls::TimeInterval(5.0)` for five seconds, or
+    /// `bsls::TimeInterval(0, 500 * 1000 * 1000)` for 500 milliseconds. If not
+    /// set (`bsl::nullopt`), the library default is used. This only ever
+    /// applies to the establishment phase -- it is cancelled once a connection
+    /// is established -- so it does not affect long-lived connections. Lowering
+    /// it makes the client give up on a stalled attempt and retry sooner;
+    /// raising it tolerates slower networks/handshakes.
+    /// \note The timeout is applied at millisecond granularity: the behavior
+    /// is undefined unless `timeout`, when set, is at least one millisecond. A
+    /// smaller (sub-millisecond) interval rounds down to zero, which would
+    /// expire the bound immediately and prevent any connection from
+    /// establishing.
+    RabbitContextOptions& setConnectionEstablishmentTimeout(
+        const bsl::optional<bsls::TimeInterval>& timeout);
+
     /// \brief will be called back to create a context which spans for the
     /// lifetime of the messageguard _before_ it is passed to its consumer
     /// message processor if there has
@@ -183,6 +204,12 @@ class RabbitContextOptions {
         return d_connectionErrorThreshold;
     }
 
+    const bsl::optional<bsls::TimeInterval>&
+    connectionEstablishmentTimeout() const
+    {
+        return d_connectionEstablishmentTimeout;
+    }
+
     const rmqt::Tunables& tunables() const { return d_tunables; }
 
     const bsl::shared_ptr<rmqp::ConsumerTracing>& consumerTracing() const
@@ -221,6 +248,7 @@ class RabbitContextOptions {
     bsls::TimeInterval d_messageProcessingTimeout;
     rmqt::Tunables d_tunables;
     bsl::optional<bsls::TimeInterval> d_connectionErrorThreshold;
+    bsl::optional<bsls::TimeInterval> d_connectionEstablishmentTimeout;
     bsl::shared_ptr<rmqp::ConsumerTracing> d_consumerTracing;
     bsl::shared_ptr<rmqp::ProducerTracing> d_producerTracing;
     bsl::optional<bool> d_shuffleConnectionEndpoints;

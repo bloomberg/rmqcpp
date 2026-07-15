@@ -21,9 +21,14 @@
 #include <bdlf_bind.h>
 #include <bdls_osutil.h>
 #include <bdls_processutil.h>
+#include <bsls_assert.h>
+#include <bsls_timeinterval.h>
 
 namespace BloombergLP {
 namespace rmqa {
+
+BALL_LOG_SET_NAMESPACE_CATEGORY("RMQA.RABBITCONTEXTOPTIONS")
+
 namespace {
 
 void populateUsefulInformation(rmqt::FieldTable* propertiesPtr)
@@ -66,6 +71,7 @@ RabbitContextOptions::RabbitContextOptions()
 , d_messageProcessingTimeout(DEFAULT_MESSAGE_PROCESSING_TIMEOUT)
 , d_tunables()
 , d_connectionErrorThreshold()
+, d_connectionEstablishmentTimeout()
 , d_shuffleConnectionEndpoints()
 , d_hostHealthConfig()
 {
@@ -112,6 +118,30 @@ RabbitContextOptions& RabbitContextOptions::setConnectionErrorThreshold(
     const bsl::optional<bsls::TimeInterval>& timeout)
 {
     d_connectionErrorThreshold = timeout;
+    return *this;
+}
+
+RabbitContextOptions& RabbitContextOptions::setConnectionEstablishmentTimeout(
+    const bsl::optional<bsls::TimeInterval>& timeout)
+{
+    // The hung timer applies this at millisecond granularity (it uses
+    // bsls::TimeInterval::totalMilliseconds()), so any value below 1ms --
+    // including a positive sub-millisecond interval -- rounds down to zero and
+    // would expire the bound immediately on every attempt, producing a
+    // connect -> hung -> retry loop that never establishes. Require at least
+    // 1ms rather than merely positive; log as well as assert so the
+    // misconfiguration is diagnosable even in builds where assertions are
+    // compiled out.
+    if (timeout.has_value() && *timeout < bsls::TimeInterval(0, 1000 * 1000)) {
+        BALL_LOG_ERROR << "setConnectionEstablishmentTimeout given "
+                       << (timeout->totalSecondsAsDouble() * 1000.0)
+                       << "ms; values below 1ms round down to zero at the "
+                          "timer's millisecond granularity and prevent any "
+                          "connection from establishing";
+    }
+    BSLS_ASSERT(!timeout.has_value() ||
+                *timeout >= bsls::TimeInterval(0, 1000 * 1000));
+    d_connectionEstablishmentTimeout = timeout;
     return *this;
 }
 

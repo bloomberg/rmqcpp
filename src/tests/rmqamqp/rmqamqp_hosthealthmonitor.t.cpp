@@ -64,6 +64,7 @@ class MockConnection : public rmqamqp::Connection {
                           endpoint,
                           credentials,
                           clientProperties,
+                          bsl::optional<bsls::TimeInterval>(),
                           connectionName)
     {
     }

@@ -36,6 +36,37 @@ class Endpoint {
     virtual bsl::uint16_t port() const        = 0;
     virtual bsl::shared_ptr<rmqt::SecurityParameters>
     securityParameters() const;
+
+    /// \brief Invoked each time an AMQP connection to this endpoint is
+    /// established (Connection.Open-Ok received). Defaults to a no-op;
+    /// implementations may override it to observe the connection lifecycle,
+    /// e.g. for monitoring or metrics.
+    ///
+    /// \warning Invoked synchronously on the connection's event-loop thread
+    /// (the same context as the connection's other callbacks). Overrides must
+    /// be cheap and non-blocking and must not call back into the connection.
+    /// A single `Endpoint` may be shared (via `shared_ptr`) by more than one
+    /// connection, and those connections may run on different event-loop
+    /// threads; an override must therefore synchronise any state it mutates.
+    virtual void onConnectSuccess() {}
+
+    /// \brief Invoked each time the connection to this endpoint is not
+    /// established and will be retried -- either an establishment attempt
+    /// failed, or a previously-established connection was lost and will
+    /// reconnect. Defaults to a no-op; implementations may override it to
+    /// observe the connection lifecycle, e.g. for monitoring or metrics.
+    ///
+    /// \warning Invoked synchronously on the connection's event-loop thread
+    /// (the same context as the connection's other callbacks). Overrides must
+    /// be cheap and non-blocking and must not call back into the connection.
+    /// A single `Endpoint` may be shared (via `shared_ptr`) by more than one
+    /// connection, and those connections may run on different event-loop
+    /// threads; an override must therefore synchronise any state it mutates.
+    ///
+    /// \note Only invoked when the connection will be retried. It is not
+    /// invoked on a terminal failure (e.g. when the connection error threshold
+    /// is breached and the failure is surfaced to the application).
+    virtual void onConnectFailed() {}
 };
 
 } // namespace rmqt

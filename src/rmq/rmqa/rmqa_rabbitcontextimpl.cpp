@@ -214,6 +214,7 @@ RabbitContextImpl::RabbitContextImpl(
             d_connectionMonitor,
             options.clientProperties(),
             options.connectionErrorThreshold(),
+            options.connectionEstablishmentTimeout(),
             isHostHealthMonitoringEnabled);
 
     if (!d_threadPool) {

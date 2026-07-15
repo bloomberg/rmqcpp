@@ -48,6 +48,7 @@
 #include <bdlt_currenttime.h>
 #include <bsl_algorithm.h>
 #include <bsl_cstring.h>
+#include <bsl_exception.h>
 #include <bsl_functional.h>
 #include <bsl_limits.h>
 #include <bsl_memory.h>
@@ -80,7 +81,7 @@ const bsl::uint16_t k_MAX_CHANNEL_NUM = bsl::numeric_limits<uint16_t>::max();
 // k_MAX_HEARTBEAT_TIMEOUT_SEC cannot be zero as the HeartbeatManager does
 // not support this
 const bsl::uint16_t k_MAX_HEARTBEAT_TIMEOUT_SEC = 60;
-const bsl::uint16_t k_HUNG_TIMER_SEC            = 60;
+const bsl::uint16_t k_DEFAULT_HUNG_TIMER_SEC    = 60;
 
 BALL_LOG_SET_NAMESPACE_CATEGORY("RMQAMQP.CONNECTION")
 
@@ -220,6 +221,7 @@ Connection::Connection(
     const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
     const bsl::shared_ptr<rmqt::Credentials>& credentials,
     const rmqt::FieldTable& clientProperties,
+    const bsl::optional<bsls::TimeInterval>& connectionEstablishmentTimeout,
     bsl::string_view name)
 : d_resolver(resolver)
 , d_retryHandler(retryHandler)
@@ -233,8 +235,9 @@ Connection::Connection(
 , d_state(Connection::DISCONNECTED)
 , d_clientProperties(clientProperties)
 , d_channels()
-, d_hungTimer(
-      timerFactory->createWithTimeout(bsls::TimeInterval(k_HUNG_TIMER_SEC)))
+, d_connectionEstablishmentTimeout(connectionEstablishmentTimeout.value_or(
+      bsls::TimeInterval(k_DEFAULT_HUNG_TIMER_SEC)))
+, d_hungTimer(timerFactory->createWithTimeout(d_connectionEstablishmentTimeout))
 , d_timerFactory(timerFactory)
 , d_firstConnectCb()
 , d_closeCb()
@@ -601,8 +604,32 @@ void Connection::socketShutdown(DisconnectType dcType,
     d_state = Connection::DISCONNECTED;
     BALL_LOG_TRACE << "State now set to: " << d_state;
     if (dcType == WILL_RETRY) {
+        // The connection is down and will be retried: either an establishment
+        // attempt failed or an established connection was lost. Schedule the
+        // retry before invoking the observational hook: the hook is a
+        // caller-supplied override, and if it were to throw, the retry must
+        // already have been scheduled so the connection is not left dead.
+        // Ordering is otherwise immaterial -- retry only arms a timer, so the
+        // next initiateConnect() (which reads the endpoint) runs well after
+        // this returns.
         d_retryHandler->retry(
             bdlf::BindUtil::bind(&Connection::retry, weak_from_this()));
+        // The hook is a caller-supplied override; catch any exception so it
+        // cannot propagate into the event loop and terminate the process. The
+        // retry above is already scheduled, so the connection is unaffected.
+        try {
+            d_endpoint->onConnectFailed();
+        }
+        catch (const bsl::exception& e) {
+            BALL_LOG_ERROR << "rmqt::Endpoint::onConnectFailed threw ("
+                           << e.what() << "); ignoring for "
+                           << connectionDebugName();
+        }
+        catch (...) {
+            BALL_LOG_ERROR << "rmqt::Endpoint::onConnectFailed threw a "
+                              "non-standard exception; ignoring for "
+                           << connectionDebugName();
+        }
     }
     else {
         if (d_firstConnectCb) {
@@ -669,6 +696,26 @@ class Connection::ConnectionMethodProcessor {
                 const bool result = true;
                 conn.d_firstConnectCb(result);
                 conn.d_firstConnectCb = ConnectedCallback();
+            }
+
+            // Invoke the observational hook last: it is a caller-supplied
+            // override, so the critical connect path (timer cancel, retry
+            // success, channel open, connect callback) must complete first. By
+            // this point the connection is fully established, and any exception
+            // is caught so it cannot propagate into the event loop and
+            // terminate the process.
+            try {
+                conn.d_endpoint->onConnectSuccess();
+            }
+            catch (const bsl::exception& e) {
+                BALL_LOG_ERROR << "rmqt::Endpoint::onConnectSuccess threw ("
+                               << e.what() << "); ignoring for "
+                               << conn.connectionDebugName();
+            }
+            catch (...) {
+                BALL_LOG_ERROR << "rmqt::Endpoint::onConnectSuccess threw a "
+                                  "non-standard exception; ignoring for "
+                               << conn.connectionDebugName();
             }
         }
     }
@@ -1010,9 +1057,9 @@ void Connection::connectionHung(rmqio::Timer::InterruptReason reason)
         d_metricPublisher->publishCounter(
             "hung_connection_reset", 1, d_vhostTags);
 
-        BALL_LOG_FATAL << "Timed out after " << k_HUNG_TIMER_SEC
-                       << " seconds while connecting: "
-                       << connectionDebugName();
+        BALL_LOG_ERROR << "Timed out after "
+                       << d_connectionEstablishmentTimeout.totalMilliseconds()
+                       << " ms while connecting: " << connectionDebugName();
         closeSocket(WILL_RETRY);
     }
 }
@@ -1056,6 +1103,7 @@ Connection::Factory::Factory(
     const bsl::shared_ptr<ConnectionMonitor>& connectionMonitor,
     const rmqt::FieldTable& clientProperties,
     const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold,
+    const bsl::optional<bsls::TimeInterval>& connectionEstablishmentTimeout,
     const bool isHostHealthMonitoringEnabled)
 : d_errorCb(errorCb)
 , d_clientProperties(clientProperties)
@@ -1064,6 +1112,7 @@ Connection::Factory::Factory(
 , d_timerFactory(timerFactory)
 , d_connectionMonitor(connectionMonitor)
 , d_connectionErrorThreshold(connectionErrorThreshold)
+, d_connectionEstablishmentTimeout(connectionEstablishmentTimeout)
 , d_isHostHealthMonitoringEnabled(isHostHealthMonitoringEnabled)
 {
 }
@@ -1083,6 +1132,7 @@ bsl::shared_ptr<Connection> Connection::Factory::create(
         endpoint,
         credentials,
         generateClientProperties(d_clientProperties, name),
+        d_connectionEstablishmentTimeout,
         name));
 
     d_connectionMonitor->addConnection(bsl::weak_ptr<Connection>(result));
