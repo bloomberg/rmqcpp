@@ -319,6 +319,17 @@ class MockConnectionMonitor : public ConnectionMonitor {
     void addConnection(const bsl::weak_ptr<ChannelContainer>&) {}
 };
 
+class MockEndpoint : public rmqt::SimpleEndpoint {
+  public:
+    MockEndpoint(const bsl::string& address, const bsl::string& vhost)
+    : rmqt::SimpleEndpoint(address, vhost)
+    {
+    }
+
+    MOCK_METHOD0(onConnectSuccess, void());
+    MOCK_METHOD0(onConnectFailed, void());
+};
+
 class ConnectionFactory : public rmqamqp::Connection::Factory {
     const bsl::shared_ptr<rmqio::RetryHandler> d_retryHandler;
     const bsl::shared_ptr<rmqamqp::HeartbeatManager> d_hbManager;
@@ -333,7 +344,9 @@ class ConnectionFactory : public rmqamqp::Connection::Factory {
         const rmqt::FieldTable& clientProperties,
         const bsl::shared_ptr<rmqio::RetryHandler>& retryHandler,
         const bsl::shared_ptr<rmqamqp::HeartbeatManager>& hbManager,
-        const bsl::shared_ptr<rmqamqp::ChannelFactory>& channelFactory)
+        const bsl::shared_ptr<rmqamqp::ChannelFactory>& channelFactory,
+        const bsl::optional<bsls::TimeInterval>& establishmentTimeout =
+            bsl::optional<bsls::TimeInterval>())
     : rmqamqp::Connection::Factory(resolver,
                                    timerFactory,
                                    errorCb,
@@ -341,6 +354,7 @@ class ConnectionFactory : public rmqamqp::Connection::Factory {
                                    bsl::make_shared<MockConnectionMonitor>(),
                                    clientProperties,
                                    bsls::TimeInterval(),
+                                   establishmentTimeout,
                                    false)
     , d_retryHandler(retryHandler)
     , d_hbManager(hbManager)
@@ -1696,5 +1710,209 @@ TEST_F(ConnectionHungTests, HungConnectionSendsMetric)
     }
 
     // 3. Process shutdown
+    d_eventLoop.run();
+}
+
+// Tests for the Endpoint connection-lifecycle hooks (onConnectSuccess /
+// onConnectFailed) and the configurable connection-establishment timeout.
+class ConnectionHookTests : public ConnectionTests {};
+
+TEST_F(ConnectionHookTests, OnConnectSuccessFiresOnHandshake)
+{
+    bsl::shared_ptr<MockEndpoint> endpoint =
+        bsl::make_shared<MockEndpoint>("127.0.0.1", TEST_VHOST);
+    EXPECT_CALL(*endpoint, onConnectSuccess()).Times(1);
+    EXPECT_CALL(*endpoint, onConnectFailed()).Times(0);
+
+    expectFirstHandshakeFrames();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn =
+            d_factory->create(endpoint, d_credentials, "test-connection");
+        conn->startFirstConnection(d_onConnectCb);
+
+        d_eventLoop.run();
+
+        expectShutdownCalls();
+    }
+    d_eventLoop.run();
+}
+
+TEST_F(ConnectionHookTests, OnConnectFailedThenSuccessAcrossReconnect)
+{
+    // Models the sequence where an establishment attempt stalls, the hung
+    // timer fires (onConnectFailed), the connection retries and then succeeds
+    // (onConnectSuccess).
+    bsl::shared_ptr<MockEndpoint> endpoint =
+        bsl::make_shared<MockEndpoint>("127.0.0.1", TEST_VHOST);
+    EXPECT_CALL(*endpoint, onConnectFailed()).Times(AtLeast(1));
+    EXPECT_CALL(*endpoint, onConnectSuccess()).Times(1);
+
+    expectHeaderAndStartFrames();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn =
+            d_factory->create(endpoint, d_credentials, "test-connection");
+        conn->startFirstConnection(d_onConnectCb);
+
+        // 1. Partial handshake (stalls before Tune/Open)
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        resetExpectations(); // retry -> reconnect
+        expectFirstHandshakeFrames();
+
+        // 2. Hung timer fires -> onConnectFailed -> retry -> reconnect succeeds
+        d_timerFactory->step_time(bsls::TimeInterval(120));
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        expectShutdownCalls();
+    }
+    d_eventLoop.run();
+}
+
+TEST_F(ConnectionHookTests, ConfigurableEstablishmentTimeoutIsHonoured)
+{
+    // A short (5s) establishment timeout must fire the hung timer well before
+    // the 60s default -- proving the configured value is threaded through.
+    d_factory = bsl::make_shared<ConnectionFactory>(d_resolver,
+                                                    d_timerFactory,
+                                                    d_errorCallback,
+                                                    d_metricPublisher,
+                                                    d_clientProperties,
+                                                    d_retryHandler,
+                                                    d_heartbeat,
+                                                    d_channelFactory,
+                                                    bsls::TimeInterval(5));
+
+    bsl::shared_ptr<MockEndpoint> endpoint =
+        bsl::make_shared<MockEndpoint>("127.0.0.1", TEST_VHOST);
+    EXPECT_CALL(*endpoint, onConnectFailed()).Times(AtLeast(1));
+    EXPECT_CALL(*endpoint, onConnectSuccess()).Times(1);
+
+    expectHeaderAndStartFrames();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn =
+            d_factory->create(endpoint, d_credentials, "test-connection");
+        conn->startFirstConnection(d_onConnectCb);
+
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        resetExpectations();
+        expectFirstHandshakeFrames();
+
+        // Only 6s elapse -- enough for a 5s timeout, far short of the 60s
+        // default -- yet the hung timer fires and drives the failure hook.
+        d_timerFactory->step_time(bsls::TimeInterval(6));
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        expectShutdownCalls();
+    }
+    d_eventLoop.run();
+}
+
+TEST_F(ConnectionHookTests, HooksFireAcrossServerInitiatedReconnect)
+{
+    // A server-initiated close after a successful connection is a retriable
+    // failure: onConnectFailed fires even though the connection had already
+    // succeeded, and onConnectSuccess fires again on the reconnect. This pins
+    // the symmetric "each establishment / each retriable failure" contract.
+    bsl::shared_ptr<MockEndpoint> endpoint =
+        bsl::make_shared<MockEndpoint>("127.0.0.1", TEST_VHOST);
+    EXPECT_CALL(*endpoint, onConnectSuccess()).Times(2);
+    EXPECT_CALL(*endpoint, onConnectFailed()).Times(1);
+
+    expectFirstHandshakeFrames();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn =
+            d_factory->create(endpoint, d_credentials, "test-connection");
+        conn->startFirstConnection(d_onConnectCb);
+
+        // 1. Establish the connection.
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        expectCloseFrame();
+        expectCloseOkFrame();
+        resetExpectations();
+        expectHandshakeFrames();
+
+        feedNextFrame(); // Queue the server Close frame
+
+        // 2. Server closes -> onConnectFailed -> reconnect -> onConnectSuccess.
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::CONNECTED));
+        expectShutdownCalls();
+    }
+    d_eventLoop.run();
+}
+
+TEST_F(ConnectionHookTests, OnConnectSuccessExceptionIsContained)
+{
+    // A throwing onConnectSuccess override must not escape into the event loop
+    // (which would terminate the process). The connection still establishes --
+    // the hook runs after onConnect(true) -- and the exception is swallowed.
+    bsl::shared_ptr<MockEndpoint> endpoint =
+        bsl::make_shared<MockEndpoint>("127.0.0.1", TEST_VHOST);
+    EXPECT_CALL(*endpoint, onConnectSuccess())
+        .WillOnce(Throw(bsl::runtime_error("boom")));
+    EXPECT_CALL(*endpoint, onConnectFailed()).Times(0);
+
+    expectFirstHandshakeFrames(); // asserts onConnect(true) still fires
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn =
+            d_factory->create(endpoint, d_credentials, "test-connection");
+        conn->startFirstConnection(d_onConnectCb);
+
+        d_eventLoop.run();
+
+        EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::CONNECTED));
+        expectShutdownCalls();
+    }
+    d_eventLoop.run();
+}
+
+TEST_F(ConnectionHookTests, OnConnectFailedExceptionIsContained)
+{
+    // A throwing onConnectFailed override must not escape into the event loop,
+    // and must not prevent the retry (which is scheduled before the hook): the
+    // connection still reconnects and onConnectSuccess fires.
+    bsl::shared_ptr<MockEndpoint> endpoint =
+        bsl::make_shared<MockEndpoint>("127.0.0.1", TEST_VHOST);
+    EXPECT_CALL(*endpoint, onConnectFailed())
+        .WillOnce(Throw(bsl::runtime_error("boom")))
+        .WillRepeatedly(Return());
+    EXPECT_CALL(*endpoint, onConnectSuccess()).Times(1);
+
+    expectHeaderAndStartFrames();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn =
+            d_factory->create(endpoint, d_credentials, "test-connection");
+        conn->startFirstConnection(d_onConnectCb);
+
+        // 1. Partial handshake (stalls before Tune/Open).
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        resetExpectations(); // retry -> reconnect
+        expectFirstHandshakeFrames();
+
+        // 2. Hung timer fires -> onConnectFailed throws (contained) -> retry ->
+        //    reconnect succeeds.
+        d_timerFactory->step_time(bsls::TimeInterval(120));
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        expectShutdownCalls();
+    }
     d_eventLoop.run();
 }

@@ -172,16 +172,18 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
     /// \param endpoint        references the vhost this connection is
     ///                        joining
     /// \param credentials     Credentials used to connect to the broker
-    Connection(const bsl::shared_ptr<rmqio::Resolver>& resolver,
-               const bsl::shared_ptr<rmqio::RetryHandler>& retryHandler,
-               const bsl::shared_ptr<rmqamqp::HeartbeatManager>& hbManager,
-               const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
-               const bsl::shared_ptr<rmqamqp::ChannelFactory>& channelFactory,
-               const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
-               const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
-               const bsl::shared_ptr<rmqt::Credentials>& credentials,
-               const rmqt::FieldTable& clientProperties,
-               bsl::string_view name);
+    Connection(
+        const bsl::shared_ptr<rmqio::Resolver>& resolver,
+        const bsl::shared_ptr<rmqio::RetryHandler>& retryHandler,
+        const bsl::shared_ptr<rmqamqp::HeartbeatManager>& hbManager,
+        const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
+        const bsl::shared_ptr<rmqamqp::ChannelFactory>& channelFactory,
+        const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
+        const bsl::shared_ptr<rmqt::Endpoint>& endpoint,
+        const bsl::shared_ptr<rmqt::Credentials>& credentials,
+        const rmqt::FieldTable& clientProperties,
+        const bsl::optional<bsls::TimeInterval>& connectionEstablishmentTimeout,
+        bsl::string_view name);
 
   private:
     bsl::shared_ptr<rmqio::Resolver> d_resolver;
@@ -199,6 +201,7 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
     State d_state;
     rmqt::FieldTable d_clientProperties;
     ChannelMap d_channels;
+    bsls::TimeInterval d_connectionEstablishmentTimeout;
     bsl::shared_ptr<rmqio::Timer> d_hungTimer;
 
     bsl::shared_ptr<rmqio::TimerFactory> d_timerFactory;
@@ -318,14 +321,16 @@ class Connection::Factory {
   public:
     // CREATORS
 
-    Factory(const bsl::shared_ptr<rmqio::Resolver>& resolver,
-            const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
-            const rmqt::ErrorCallback& errorCb,
-            const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
-            const bsl::shared_ptr<ConnectionMonitor>& connectionMonitor,
-            const rmqt::FieldTable& clientProperties,
-            const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold,
-            const bool isHostHealthMonitoringEnabled);
+    Factory(
+        const bsl::shared_ptr<rmqio::Resolver>& resolver,
+        const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory,
+        const rmqt::ErrorCallback& errorCb,
+        const bsl::shared_ptr<rmqp::MetricPublisher>& metricPublisher,
+        const bsl::shared_ptr<ConnectionMonitor>& connectionMonitor,
+        const rmqt::FieldTable& clientProperties,
+        const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold,
+        const bsl::optional<bsls::TimeInterval>& connectionEstablishmentTimeout,
+        const bool isHostHealthMonitoringEnabled);
 
     virtual ~Factory() {}
 
@@ -350,6 +355,7 @@ class Connection::Factory {
     const bsl::shared_ptr<rmqio::TimerFactory> d_timerFactory;
     const bsl::shared_ptr<ConnectionMonitor> d_connectionMonitor;
     const bsl::optional<bsls::TimeInterval> d_connectionErrorThreshold;
+    const bsl::optional<bsls::TimeInterval> d_connectionEstablishmentTimeout;
     const bool d_isHostHealthMonitoringEnabled;
 }; // class Connection::Factory
 } // namespace rmqamqp
