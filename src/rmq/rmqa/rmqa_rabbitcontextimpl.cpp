@@ -38,6 +38,7 @@
 #include <ball_log.h>
 #include <bdlf_bind.h>
 #include <bdlmt_threadpool.h>
+#include <bsl_variant.h>
 #include <bsls_review.h>
 #include <bsls_timeinterval.h>
 
@@ -191,16 +192,21 @@ RabbitContextImpl::RabbitContextImpl(
 , d_producerTracing(options.producerTracing())
 {
 
-    const bool isHostHealthMonitoringEnabled =
-        options.hostHealthConfig().has_value();
+    // Host health monitoring runs only when a config has been selected. An
+    // explicit opt-out (HostHealthAwarenessOff) and an unset selection both
+    // leave no config, so no monitor is created -- preserving the behaviour
+    // from before an opt-out could be expressed: monitoring ran whenever a
+    // config was attached. get_if returns a pointer into the selection owned by
+    // `options` (which outlives this constructor), or null for the opt-out and
+    // unset alternatives.
+    const rmqt::HostHealthConfig* hostHealthConfig =
+        bsl::get_if<rmqt::HostHealthConfig>(&options.hostHealthSelection());
+    const bool isHostHealthMonitoringEnabled = hostHealthConfig != 0;
 
     // Host health monitoring enabled
     if (isHostHealthMonitoringEnabled) {
-        const rmqt::HostHealthConfig& hostHealthConfig =
-            *options.hostHealthConfig();
-
         d_hostHealthMonitor = bsl::make_shared<rmqamqp::HostHealthMonitor>(
-            hostHealthConfig, d_metricPublisher.get());
+            *hostHealthConfig, d_metricPublisher.get());
         d_hostHealthMonitor->start(d_eventLoop->timerFactory());
     }
 

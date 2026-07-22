@@ -62,18 +62,18 @@ void defaultErrorCallback(const bsl::string& err, int rc)
 } // namespace
 
 RabbitContextOptions::RabbitContextOptions()
-: d_threadpool()
-, d_onError(bdlf::BindUtil::bind(&defaultErrorCallback,
+: d_onError(bdlf::BindUtil::bind(&defaultErrorCallback,
                                  bdlf::PlaceHolders::_1,
                                  bdlf::PlaceHolders::_2))
+, d_hostHealthSelection(HostHealthAwarenessUnset())
+, d_threadpool()
 , d_metricPublisher()
-, d_clientProperties()
 , d_messageProcessingTimeout(DEFAULT_MESSAGE_PROCESSING_TIMEOUT)
-, d_tunables()
 , d_connectionErrorThreshold()
 , d_connectionEstablishmentTimeout()
+, d_clientProperties()
+, d_tunables()
 , d_shuffleConnectionEndpoints()
-, d_hostHealthConfig()
 {
     populateUsefulInformation(&d_clientProperties);
 }
@@ -174,7 +174,15 @@ RabbitContextOptions& RabbitContextOptions::setShuffleConnectionEndpoints(
 RabbitContextOptions& RabbitContextOptions::setHostHealthConfig(
     const rmqt::HostHealthConfig& hostHealthConfig)
 {
-    d_hostHealthConfig = hostHealthConfig;
+    // A config is one alternative of the selection; delegate so the variant
+    // setter remains the single writer of d_hostHealthSelection.
+    return setHostHealthSelection(hostHealthConfig);
+}
+
+RabbitContextOptions& RabbitContextOptions::setHostHealthSelection(
+    const HostHealthSelection& selection)
+{
+    d_hostHealthSelection = selection;
     return *this;
 }
 

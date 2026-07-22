@@ -21,7 +21,9 @@
 #include <bsls_timeinterval.h>
 
 #include <bsl_optional.h>
+#include <bsl_variant.h>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 using namespace BloombergLP;
@@ -30,6 +32,33 @@ using namespace ::testing;
 
 namespace {
 bool alwaysHealthy() { return true; }
+
+// gmock matchers over a RabbitContextOptions' host health selection, so
+// assertions read EXPECT_THAT(options, isOptOut()) / Not(isConfig()) etc. `arg`
+// is the matched RabbitContextOptions.
+
+/// Matches when the selection is an explicit opt-out.
+MATCHER(isOptOut, "holds an explicit host health opt-out")
+{
+    return bsl::holds_alternative<
+        rmqa::RabbitContextOptions::HostHealthAwarenessOff>(
+        arg.hostHealthSelection());
+}
+
+/// Matches when no host health preference is expressed (the default).
+MATCHER(isUnset, "expresses no host health preference")
+{
+    return bsl::holds_alternative<
+        rmqa::RabbitContextOptions::HostHealthAwarenessUnset>(
+        arg.hostHealthSelection());
+}
+
+/// Matches when a host health config is selected (opt-in).
+MATCHER(isConfig, "holds a host health config")
+{
+    return bsl::holds_alternative<rmqt::HostHealthConfig>(
+        arg.hostHealthSelection());
+}
 
 /// `bsls_asserttest`'s `BSLS_ASSERTTEST_ASSERT_{PASS,FAIL}` macros report their
 /// outcome by calling a driver-supplied `ASSERT(bool)` (which its header allows
@@ -43,7 +72,10 @@ TEST(RabbitContextOptions, Defaults)
     rmqa::RabbitContextOptions t;
     EXPECT_FALSE(t.metricPublisher());
     EXPECT_FALSE(t.threadpool());
-    EXPECT_FALSE(t.hostHealthConfig().has_value());
+    EXPECT_THAT(t, Not(isConfig()));
+    // No host health selection is expressed by default: neither a config nor
+    // an explicit opt-out.
+    EXPECT_THAT(t, isUnset());
     t.errorCallback()("heres an error", -1);
 }
 
@@ -52,7 +84,7 @@ TEST(RabbitContextOptions, SetHostHealthConfig)
     rmqa::RabbitContextOptions options;
 
     // Initially not set
-    EXPECT_FALSE(options.hostHealthConfig().has_value());
+    EXPECT_THAT(options, Not(isConfig()));
 
     // Create a health checker function
     rmqt::HostHealthConfig config(alwaysHealthy);
@@ -61,7 +93,55 @@ TEST(RabbitContextOptions, SetHostHealthConfig)
     options.setHostHealthConfig(config);
 
     // Now it should be set
-    EXPECT_TRUE(options.hostHealthConfig().has_value());
+    EXPECT_THAT(options, isConfig());
+}
+
+TEST(RabbitContextOptions, SetHostHealthSelectionOptOut)
+{
+    rmqa::RabbitContextOptions options;
+
+    // Initially no selection is expressed (distinct from an explicit opt-out).
+    EXPECT_THAT(options, Not(isConfig()));
+    EXPECT_THAT(options, isUnset());
+
+    // Explicit opt-out.
+    options.setHostHealthSelection(
+        RabbitContextOptions::HostHealthAwarenessOff());
+    EXPECT_THAT(options, isOptOut());
+    EXPECT_THAT(options, Not(isConfig()));
+}
+
+TEST(RabbitContextOptions, SetHostHealthSelectionConfig)
+{
+    rmqa::RabbitContextOptions options;
+
+    // Selecting a config via the variant setter is equivalent to
+    // setHostHealthConfig: the config is retrievable and it is not an opt-out.
+    options.setHostHealthSelection(rmqt::HostHealthConfig(alwaysHealthy));
+    EXPECT_THAT(options, isConfig());
+    EXPECT_THAT(options, Not(isOptOut()));
+}
+
+TEST(RabbitContextOptions, HostHealthSelectionIsMutuallyExclusive)
+{
+    // A config and an explicit opt-out are two alternatives of a single
+    // selection, so setting one replaces the other -- the contradictory
+    // "config attached AND opted out" state cannot be expressed.
+    rmqa::RabbitContextOptions options;
+
+    // Opt-out then attach a config: the config wins.
+    options.setHostHealthSelection(
+        RabbitContextOptions::HostHealthAwarenessOff());
+    options.setHostHealthConfig(rmqt::HostHealthConfig(alwaysHealthy));
+    EXPECT_THAT(options, isConfig());
+    EXPECT_THAT(options, Not(isOptOut()));
+
+    // Attach a config then opt out: the opt-out wins.
+    options.setHostHealthConfig(rmqt::HostHealthConfig(alwaysHealthy));
+    options.setHostHealthSelection(
+        RabbitContextOptions::HostHealthAwarenessOff());
+    EXPECT_THAT(options, isOptOut());
+    EXPECT_THAT(options, Not(isConfig()));
 }
 
 TEST(RabbitContextOptions, SetConnectionEstablishmentTimeoutAcceptsValid)
