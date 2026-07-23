@@ -31,6 +31,7 @@
 
 #include <bdlmt_threadpool.h>
 #include <bsl_memory.h>
+#include <bsl_variant.h>
 #include <bslma_managedptr.h>
 
 using namespace BloombergLP;
@@ -97,7 +98,44 @@ class RabbitContextImplTests : public Test {
 
 TEST_F(RabbitContextImplTests, ItsAlive)
 {
+    // d_options has a host health config selected, so the monitor is created --
+    // timerFactory() is called three times (monitor start, connection factory,
+    // connection watchdog).
     createExpectations();
+    rmqa::RabbitContextImpl context(getMockEventLoop(), d_options);
+}
+
+TEST_F(RabbitContextImplTests, LegacyUserWithConfigStillMonitors)
+{
+    // Backward-compatibility guarantee: a caller who enabled monitoring before
+    // an explicit opt-out could be expressed did so by attaching a host health
+    // config, and did not opt out. They must keep being monitored -- the
+    // monitor is still created (three timerFactory() calls).
+    ASSERT_TRUE(bsl::holds_alternative<rmqt::HostHealthConfig>(
+        d_options.hostHealthSelection()));
+
+    createExpectations();
+    rmqa::RabbitContextImpl context(getMockEventLoop(), d_options);
+}
+
+TEST_F(RabbitContextImplTests, HostHealthMonitoringOptOutSuppressesMonitor)
+{
+    // Even though d_options had a host health config attached, an explicit
+    // opt-out selection replaces it and prevents the monitor from being
+    // created. The monitor is what makes the third timerFactory() call (its
+    // start()), so without it timerFactory() is called only twice (connection
+    // factory + watchdog).
+    d_options.setHostHealthSelection(
+        rmqa::RabbitContextOptions::HostHealthAwarenessOff());
+    ASSERT_FALSE(bsl::holds_alternative<rmqt::HostHealthConfig>(
+        d_options.hostHealthSelection()));
+
+    EXPECT_CALL(*d_mockEventLoop, resolver(false)).Times(1);
+    EXPECT_CALL(*d_mockEventLoop, timerFactory())
+        .Times(2)
+        .WillRepeatedly(Return(d_mockTimerFactory));
+    EXPECT_CALL(*d_mockEventLoop, waitForEventLoopExit(_)).Times(1);
+
     rmqa::RabbitContextImpl context(getMockEventLoop(), d_options);
 }
 
