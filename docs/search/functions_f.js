@@ -11,13 +11,14 @@ var searchData=
   ['seterrorcallback_8',['setErrorCallback',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a581205fb692b601584eb0aba0e465fab',1,'BloombergLP::rmqa::RabbitContextOptions']]],
   ['setexclusiveflag_9',['setExclusiveFlag',['../classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a04ca800a0dc69030a48f5c3a6133f9b9',1,'BloombergLP::rmqt::ConsumerConfig']]],
   ['sethosthealthconfig_10',['setHostHealthConfig',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a157a526e33724febbc75eeba6c12313a',1,'BloombergLP::rmqa::RabbitContextOptions']]],
-  ['setmaxretriesonfailure_11',['setMaxRetriesOnFailure',['../classBloombergLP_1_1rmqt_1_1HostHealthConfig.html#a72076d75a395dc75caadaac2a57198e9',1,'BloombergLP::rmqt::HostHealthConfig']]],
-  ['setmessageprocessingtimeout_12',['setMessageProcessingTimeout',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a80b89486f2234c48a59d802f54877cae',1,'BloombergLP::rmqa::RabbitContextOptions']]],
-  ['setmetricpublisher_13',['setMetricPublisher',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a96f14934694b3abaebfd05b5894e1076',1,'BloombergLP::rmqa::RabbitContextOptions']]],
-  ['setpollinterval_14',['setPollInterval',['../classBloombergLP_1_1rmqt_1_1HostHealthConfig.html#a12d828652e37a1cf51c07d4fc7332fd5',1,'BloombergLP::rmqt::HostHealthConfig']]],
-  ['setprefetchcount_15',['setPrefetchCount',['../classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a416292d96a20f425184b6545af7b4406',1,'BloombergLP::rmqt::ConsumerConfig']]],
-  ['setproducertracing_16',['setProducerTracing',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a0ff74746b464ec8e9172ff314a5b165b',1,'BloombergLP::rmqa::RabbitContextOptions']]],
-  ['setshuffleconnectionendpoints_17',['setShuffleConnectionEndpoints',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a5c52fe0a8e4f4c1d52570882c643d25f',1,'BloombergLP::rmqa::RabbitContextOptions']]],
-  ['setthreadpool_18',['setThreadpool',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a359f79d0803f8544e1eb319e3a4df6f4',1,'BloombergLP::rmqa::RabbitContextOptions::setThreadpool()'],['../classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a44c43f15145fb5683b333b3b39cfdf2a',1,'BloombergLP::rmqt::ConsumerConfig::setThreadpool()']]],
-  ['simpleendpoint_19',['SimpleEndpoint',['../classBloombergLP_1_1rmqt_1_1SimpleEndpoint.html#a256ecbb7717e00daf83ae11042ec78fd',1,'BloombergLP::rmqt::SimpleEndpoint']]]
+  ['sethosthealthselection_11',['setHostHealthSelection',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#af9282f079c085d3b147df3ec2a301dfe',1,'BloombergLP::rmqa::RabbitContextOptions']]],
+  ['setmaxretriesonfailure_12',['setMaxRetriesOnFailure',['../classBloombergLP_1_1rmqt_1_1HostHealthConfig.html#a72076d75a395dc75caadaac2a57198e9',1,'BloombergLP::rmqt::HostHealthConfig']]],
+  ['setmessageprocessingtimeout_13',['setMessageProcessingTimeout',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a80b89486f2234c48a59d802f54877cae',1,'BloombergLP::rmqa::RabbitContextOptions']]],
+  ['setmetricpublisher_14',['setMetricPublisher',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a96f14934694b3abaebfd05b5894e1076',1,'BloombergLP::rmqa::RabbitContextOptions']]],
+  ['setpollinterval_15',['setPollInterval',['../classBloombergLP_1_1rmqt_1_1HostHealthConfig.html#a12d828652e37a1cf51c07d4fc7332fd5',1,'BloombergLP::rmqt::HostHealthConfig']]],
+  ['setprefetchcount_16',['setPrefetchCount',['../classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a416292d96a20f425184b6545af7b4406',1,'BloombergLP::rmqt::ConsumerConfig']]],
+  ['setproducertracing_17',['setProducerTracing',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a0ff74746b464ec8e9172ff314a5b165b',1,'BloombergLP::rmqa::RabbitContextOptions']]],
+  ['setshuffleconnectionendpoints_18',['setShuffleConnectionEndpoints',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a5c52fe0a8e4f4c1d52570882c643d25f',1,'BloombergLP::rmqa::RabbitContextOptions']]],
+  ['setthreadpool_19',['setThreadpool',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a359f79d0803f8544e1eb319e3a4df6f4',1,'BloombergLP::rmqa::RabbitContextOptions::setThreadpool()'],['../classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a44c43f15145fb5683b333b3b39cfdf2a',1,'BloombergLP::rmqt::ConsumerConfig::setThreadpool()']]],
+  ['simpleendpoint_20',['SimpleEndpoint',['../classBloombergLP_1_1rmqt_1_1SimpleEndpoint.html#a256ecbb7717e00daf83ae11042ec78fd',1,'BloombergLP::rmqt::SimpleEndpoint']]]
 ];

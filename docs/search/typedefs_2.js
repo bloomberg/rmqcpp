@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['pair_0',['Pair',['../classBloombergLP_1_1rmqt_1_1Future.html#a97821f24a990fe9f951506dffd43b6cc',1,'BloombergLP::rmqt::Future']]]
+  ['maker_0',['Maker',['../classBloombergLP_1_1rmqt_1_1Future.html#a24a97890fc327084358b087a952c52a3',1,'BloombergLP::rmqt::Future']]]
 ];

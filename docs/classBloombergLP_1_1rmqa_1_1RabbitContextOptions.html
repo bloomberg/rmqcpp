@@ -67,6 +67,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions-members.html">List of all members</a>  </div>
@@ -79,11 +80,24 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="rmqa__rabbitcontextoptions_8h_source.html">rmqa_rabbitcontextoptions.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessOff.html">HostHealthAwarenessOff</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tag type selecting an explicit opt-out from host health awareness; see <code>setHostHealthSelection</code>. Selecting it is distinct from leaving the host health selection unset (<code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessUnset.html" title="Tag type expressing no host health preference: it neither opts in nor opts out, leaving the choice to...">HostHealthAwarenessUnset</a></code>), which expresses no preference and lets enclosing configuration layers apply their own policy.  <a href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessOff.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessUnset.html">HostHealthAwarenessUnset</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tag type expressing no host health preference: it neither opts in nor opts out, leaving the choice to enclosing configuration layers. This is the alternative held by a default-constructed <code>HostHealthSelection</code> (the default). See <code>setHostHealthSelection</code>.  <a href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessUnset.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:a2d21b90dc1e071a6c8c548ac88ee6e27"><td class="memItemLeft" align="right" valign="top"><a id="a2d21b90dc1e071a6c8c548ac88ee6e27" name="a2d21b90dc1e071a6c8c548ac88ee6e27"></a>
 typedef bsl::set&lt; bsl::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>Tunables</b></td></tr>
 <tr class="separator:a2d21b90dc1e071a6c8c548ac88ee6e27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad39a401930bf198b8c17e7f6b27ae96b"><td class="memItemLeft" align="right" valign="top"><a id="ad39a401930bf198b8c17e7f6b27ae96b" name="ad39a401930bf198b8c17e7f6b27ae96b"></a>
+typedef bsl::variant&lt; <a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessUnset.html">HostHealthAwarenessUnset</a>, <a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html">rmqt::HostHealthConfig</a>, <a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessOff.html">HostHealthAwarenessOff</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>HostHealthSelection</b></td></tr>
+<tr class="memdesc:ad39a401930bf198b8c17e7f6b27ae96b"><td class="mdescLeft">&#160;</td><td class="mdescRight">A caller's host health selection: exactly one of three mutually exclusive alternatives &ndash; <code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessUnset.html" title="Tag type expressing no host health preference: it neither opts in nor opts out, leaving the choice to...">HostHealthAwarenessUnset</a></code> (no preference; the default), <code><a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html" title="Class for passing arguments to HostHealthMonitor.">rmqt::HostHealthConfig</a></code> (opt-in; monitoring runs), or <code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessOff.html" title="Tag type selecting an explicit opt-out from host health awareness; see setHostHealthSelection....">HostHealthAwarenessOff</a></code> (explicit opt-out). A default-constructed selection holds <code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessUnset.html" title="Tag type expressing no host health preference: it neither opts in nor opts out, leaving the choice to...">HostHealthAwarenessUnset</a></code>. See <code>setHostHealthSelection</code>. <br /></td></tr>
+<tr class="separator:ad39a401930bf198b8c17e7f6b27ae96b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -121,9 +135,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5c52fe0a8e4f4c1d52570882c643d25f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a5c52fe0a8e4f4c1d52570882c643d25f">setShuffleConnectionEndpoints</a> (bool shuffleConnectionEndpoints)</td></tr>
 <tr class="memdesc:a5c52fe0a8e4f4c1d52570882c643d25f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle endpoints rmq connects to. By default, boost asio (libc) resolves and connects to the node with longest matching subnet prefix causing disproportionately more connections with certain endpoints. Setting this option will shuffle resolver results.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a5c52fe0a8e4f4c1d52570882c643d25f">More...</a><br /></td></tr>
 <tr class="separator:a5c52fe0a8e4f4c1d52570882c643d25f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a157a526e33724febbc75eeba6c12313a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a157a526e33724febbc75eeba6c12313a">setHostHealthConfig</a> (const <a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html">rmqt::HostHealthConfig</a> &amp;<a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a7c27650f920ee9eb11c9429042f5ed84">hostHealthConfig</a>)</td></tr>
+<tr class="memitem:a157a526e33724febbc75eeba6c12313a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a157a526e33724febbc75eeba6c12313a">setHostHealthConfig</a> (const <a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html">rmqt::HostHealthConfig</a> &amp;hostHealthConfig)</td></tr>
 <tr class="memdesc:a157a526e33724febbc75eeba6c12313a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set host health config for connections created by this context to ensure that RabbitMQ consumers are connected from healthy hosts. When host health config is set, the host health monitor is created and consumers with <code>consumeOnlyFromHealthyHost</code> enabled (the default) will pause message delivery when the host becomes unhealthy and resume when the host is deemed healthy again.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a157a526e33724febbc75eeba6c12313a">More...</a><br /></td></tr>
 <tr class="separator:a157a526e33724febbc75eeba6c12313a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9282f079c085d3b147df3ec2a301dfe"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#af9282f079c085d3b147df3ec2a301dfe">setHostHealthSelection</a> (const <a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#ad39a401930bf198b8c17e7f6b27ae96b">HostHealthSelection</a> &amp;selection)</td></tr>
+<tr class="memdesc:af9282f079c085d3b147df3ec2a301dfe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the caller's host health selection: a <code>HostHealthConfig</code> to opt in (monitoring runs) or <code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessOff.html" title="Tag type selecting an explicit opt-out from host health awareness; see setHostHealthSelection....">HostHealthAwarenessOff</a></code> to explicitly opt out (no monitor is created even if a config could otherwise be attached). The alternatives are mutually exclusive &ndash; this replaces any previously set config or opt-out. Not calling this at all leaves the selection unset (the default), which expresses no preference and lets enclosing configuration layers apply their own policy.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#af9282f079c085d3b147df3ec2a301dfe">More...</a><br /></td></tr>
+<tr class="separator:af9282f079c085d3b147df3ec2a301dfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a592fa35cf891a39a0ca9ba729087fe7b"><td class="memItemLeft" align="right" valign="top"><a id="a592fa35cf891a39a0ca9ba729087fe7b" name="a592fa35cf891a39a0ca9ba729087fe7b"></a>
 bdlmt::ThreadPool *&#160;</td><td class="memItemRight" valign="bottom"><b>threadpool</b> () const</td></tr>
 <tr class="separator:a592fa35cf891a39a0ca9ba729087fe7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -157,16 +174,16 @@ const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1Produc
 <tr class="memitem:a14778a8b77511972deea386366de74dc"><td class="memItemLeft" align="right" valign="top"><a id="a14778a8b77511972deea386366de74dc" name="a14778a8b77511972deea386366de74dc"></a>
 const bsl::optional&lt; bool &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>shuffleConnectionEndpoints</b> () const</td></tr>
 <tr class="separator:a14778a8b77511972deea386366de74dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c27650f920ee9eb11c9429042f5ed84"><td class="memItemLeft" align="right" valign="top">const bsl::optional&lt; <a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html">rmqt::HostHealthConfig</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a7c27650f920ee9eb11c9429042f5ed84">hostHealthConfig</a> () const</td></tr>
-<tr class="memdesc:a7c27650f920ee9eb11c9429042f5ed84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the host health config. If not set, host health monitoring is disabled. By default, host health monitoring is disabled.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a7c27650f920ee9eb11c9429042f5ed84">More...</a><br /></td></tr>
-<tr class="separator:a7c27650f920ee9eb11c9429042f5ed84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a482c1ecc99ac4886b24caf382933e90b"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#ad39a401930bf198b8c17e7f6b27ae96b">HostHealthSelection</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a482c1ecc99ac4886b24caf382933e90b">hostHealthSelection</a> () const</td></tr>
+<tr class="memdesc:a482c1ecc99ac4886b24caf382933e90b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the caller's host health selection. The returned variant holds <code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessUnset.html" title="Tag type expressing no host health preference: it neither opts in nor opts out, leaving the choice to...">HostHealthAwarenessUnset</a></code> when no preference has been expressed (the default), a <code><a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html" title="Class for passing arguments to HostHealthMonitor.">rmqt::HostHealthConfig</a></code> when opted in (via <code>setHostHealthSelection</code> or <code>setHostHealthConfig</code>), or a <code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessOff.html" title="Tag type selecting an explicit opt-out from host health awareness; see setHostHealthSelection....">HostHealthAwarenessOff</a></code> when explicitly opted out.  <a href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a482c1ecc99ac4886b24caf382933e90b">More...</a><br /></td></tr>
+<tr class="separator:a482c1ecc99ac4886b24caf382933e90b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p >Class for passing arguments to <a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContext.html" title="Owns resources shared between multiple RabbitMQ connections.">RabbitContext</a>. </p>
 <p >This class provides passing arguments to <a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContext.html" title="Owns resources shared between multiple RabbitMQ connections.">RabbitContext</a>. It allows specifying the async callback threadpool, metric publisher and error callback. If any of them are not specified, a default value is used. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="a7c27650f920ee9eb11c9429042f5ed84" name="a7c27650f920ee9eb11c9429042f5ed84"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7c27650f920ee9eb11c9429042f5ed84">&#9670;&nbsp;</a></span>hostHealthConfig()</h2>
+<a id="a482c1ecc99ac4886b24caf382933e90b" name="a482c1ecc99ac4886b24caf382933e90b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a482c1ecc99ac4886b24caf382933e90b">&#9670;&nbsp;</a></span>hostHealthSelection()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -175,7 +192,7 @@ const bsl::optional&lt; bool &gt; &amp;&#160;</td><td class="memItemRight" valig
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const bsl::optional&lt; <a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html">rmqt::HostHealthConfig</a> &gt; &amp; BloombergLP::rmqa::RabbitContextOptions::hostHealthConfig </td>
+          <td class="memname">const <a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#ad39a401930bf198b8c17e7f6b27ae96b">HostHealthSelection</a> &amp; BloombergLP::rmqa::RabbitContextOptions::hostHealthSelection </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -188,8 +205,8 @@ const bsl::optional&lt; bool &gt; &amp;&#160;</td><td class="memItemRight" valig
 </table>
 </div><div class="memdoc">
 
-<p>Get the host health config. If not set, host health monitoring is disabled. By default, host health monitoring is disabled. </p>
-<dl class="section return"><dt>Returns</dt><dd>The host health config </dd></dl>
+<p>Get the caller's host health selection. The returned variant holds <code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessUnset.html" title="Tag type expressing no host health preference: it neither opts in nor opts out, leaving the choice to...">HostHealthAwarenessUnset</a></code> when no preference has been expressed (the default), a <code><a class="el" href="classBloombergLP_1_1rmqt_1_1HostHealthConfig.html" title="Class for passing arguments to HostHealthMonitor.">rmqt::HostHealthConfig</a></code> when opted in (via <code>setHostHealthSelection</code> or <code>setHostHealthConfig</code>), or a <code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessOff.html" title="Tag type selecting an explicit opt-out from host health awareness; see setHostHealthSelection....">HostHealthAwarenessOff</a></code> when explicitly opted out. </p>
+<dl class="section return"><dt>Returns</dt><dd>The host health selection </dd></dl>
 
 </div>
 </div>
@@ -352,7 +369,34 @@ Library", version_chain="1.0.0 | 2.33.0"). The following properties are reserved
 <dl class="section note"><dt>Note</dt><dd>By default, <code>ConsumerConfig::consumeOnlyFromHealthyHost</code> is true, meaning consumers automatically participate in host health monitoring when host health config is set at the context level. Consumers can opt out by calling <code>ConsumerConfig::setConsumeOnlyFromHealthyHost(false)</code>. If host health config is not set, <code>consumeOnlyFromHealthyHost</code> has no effect.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">hostHealthConfig</td><td>configuration for host health monitoring </td></tr>
+    <tr><td class="paramname">hostHealthConfig</td><td>configuration for host health monitoring</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section note"><dt>Note</dt><dd>This is a convenience equivalent to <code>setHostHealthSelection</code> with a <code>HostHealthConfig:</code> selecting a config is what causes the monitor to run, and it replaces any prior opt-out selection. Leaving the selection unset (the default) expresses no preference. </dd></dl>
+
+</div>
+</div>
+<a id="af9282f079c085d3b147df3ec2a301dfe" name="af9282f079c085d3b147df3ec2a301dfe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af9282f079c085d3b147df3ec2a301dfe">&#9670;&nbsp;</a></span>setHostHealthSelection()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html">RabbitContextOptions</a> &amp; BloombergLP::rmqa::RabbitContextOptions::setHostHealthSelection </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#ad39a401930bf198b8c17e7f6b27ae96b">HostHealthSelection</a> &amp;&#160;</td>
+          <td class="paramname"><em>selection</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the caller's host health selection: a <code>HostHealthConfig</code> to opt in (monitoring runs) or <code><a class="el" href="structBloombergLP_1_1rmqa_1_1RabbitContextOptions_1_1HostHealthAwarenessOff.html" title="Tag type selecting an explicit opt-out from host health awareness; see setHostHealthSelection....">HostHealthAwarenessOff</a></code> to explicitly opt out (no monitor is created even if a config could otherwise be attached). The alternatives are mutually exclusive &ndash; this replaces any previously set config or opt-out. Not calling this at all leaves the selection unset (the default), which expresses no preference and lets enclosing configuration layers apply their own policy. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">selection</td><td>the host health selection </td></tr>
   </table>
   </dd>
 </dl>
