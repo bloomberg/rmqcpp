@@ -36,6 +36,8 @@ class VHostInfo {
     VHostInfo(const bsl::shared_ptr<rmqt::Endpoint> endpoint,
               const bsl::shared_ptr<rmqt::Credentials> credentials);
 
+    virtual ~VHostInfo();
+
     virtual bsl::shared_ptr<rmqt::Endpoint> endpoint() const;
     virtual bsl::shared_ptr<rmqt::Credentials> credentials() const;
 

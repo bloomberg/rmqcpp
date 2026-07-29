@@ -28,6 +28,8 @@ VHostInfo::VHostInfo(const bsl::shared_ptr<rmqt::Endpoint> endpoint,
 {
 }
 
+VHostInfo::~VHostInfo() {}
+
 bsl::shared_ptr<rmqt::Endpoint> VHostInfo::endpoint() const
 {
     return d_endpoint;
