@@ -39,6 +39,12 @@ namespace rmqamqp {
 /// complete promptly, as it will delay AMQP heartbeats and message delivery
 /// for all connections by its execution time every \c pollInterval seconds.
 /// Each check schedules the next one via a timer (self-rescheduling pattern).
+///
+/// One monitor exists per context: the checker runs once per \c pollInterval
+/// regardless of connection or consumer count. The latest result is cached and
+/// applied to every registered connection (and to connections registering
+/// between checks, see \c registerConnection). Defaults to unhealthy until the
+/// first check.
 class HostHealthMonitor
 : public bsl::enable_shared_from_this<HostHealthMonitor> {
   public:
@@ -64,16 +70,17 @@ class HostHealthMonitor
 
     ~HostHealthMonitor();
 
-    /// Start the health monitoring timer. The first health check will fire
-    /// after one poll interval.
+    /// Start the health monitoring timer. The first health check fires
+    /// immediately (on the event loop); subsequent checks run every
+    /// \c pollInterval seconds.
     void start(const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory);
 
     /// Stop the health monitoring timer.
     void stop();
 
-    /// Register a connection to be notified about host health changes.
-    /// When the host becomes unhealthy, the connection's receive channels
-    /// will be paused. When the host recovers, they will be resumed.
+    /// Register a connection to be paused/resumed as host health changes.
+    /// At registration the connection is brought into the current known state
+    /// immediately: resumed if the host is known healthy, paused otherwise.
     void
     registerConnection(const bsl::weak_ptr<rmqamqp::Connection>& connection);
 
@@ -91,6 +98,7 @@ class HostHealthMonitor
     rmqt::HostHealthConfig d_hostHealthConfig;
     bsl::list<bsl::weak_ptr<rmqamqp::Connection> > d_connections;
     unsigned int d_currentTries;
+    HostHealth d_lastKnownHealth;
     bsl::shared_ptr<rmqio::Timer> d_timer;
     rmqp::MetricPublisher* d_metricPublisher;
 };

@@ -236,6 +236,18 @@ TEST_F(HostHealthMonitorTests, HealthyHostResumesConnections)
     stepOnePollInterval();
 }
 
+TEST_F(HostHealthMonitorTests, FirstCheckFiresImmediately)
+{
+    d_configurableHealthChecker.d_nextResult = true;
+
+    EXPECT_CALL(*d_connection, resumeReceiveChannels(true)).Times(1);
+    EXPECT_CALL(*d_connection, pauseReceiveChannels(_)).Times(0);
+
+    // The first health check is scheduled with a zero delay, so advancing the
+    // clock by zero (rather than a full poll interval) is enough to fire it.
+    d_timerFactory->step_time(bsls::TimeInterval(0));
+}
+
 TEST_F(HostHealthMonitorTests, UnhealthyHostPausesConnections)
 {
     d_configurableHealthChecker.d_nextResult = false;
@@ -244,6 +256,63 @@ TEST_F(HostHealthMonitorTests, UnhealthyHostPausesConnections)
     EXPECT_CALL(*d_connection, resumeReceiveChannels(_)).Times(0);
 
     stepOnePollInterval();
+}
+
+TEST_F(HostHealthMonitorTests, RegisterOnUnhealthyHostPausesImmediately)
+{
+    // Drive one check that marks the host UNHEALTHY.
+    d_configurableHealthChecker.d_nextResult = false;
+
+    EXPECT_CALL(*d_connection, pauseReceiveChannels(true)).Times(1);
+    stepAndClear();
+
+    // A connection that registers now (while the host is known-unhealthy) must
+    // be paused immediately, without waiting for the next health check.
+    bsl::shared_ptr<MockConnection> lateConn = makeConnection("late-unhealthy");
+
+    EXPECT_CALL(*lateConn, pauseReceiveChannels(true)).Times(1);
+    EXPECT_CALL(*lateConn, resumeReceiveChannels(_)).Times(0);
+
+    d_monitor->registerConnection(bsl::weak_ptr<rmqamqp::Connection>(lateConn));
+}
+
+TEST_F(HostHealthMonitorTests, RegisterOnHealthyHostResumesImmediately)
+{
+    // Drive one check that marks the host HEALTHY.
+    d_configurableHealthChecker.d_nextResult = true;
+
+    EXPECT_CALL(*d_connection, resumeReceiveChannels(true)).Times(1);
+    stepAndClear();
+
+    // A connection registering while the host is known healthy is resumed
+    // immediately, so consumers created on it start consuming without waiting
+    // for the next health check.
+    bsl::shared_ptr<MockConnection> lateConn = makeConnection("late-healthy");
+
+    EXPECT_CALL(*lateConn, resumeReceiveChannels(true)).Times(1);
+    EXPECT_CALL(*lateConn, pauseReceiveChannels(_)).Times(0);
+
+    d_monitor->registerConnection(bsl::weak_ptr<rmqamqp::Connection>(lateConn));
+}
+
+TEST_F(HostHealthMonitorTests, RegisterBeforeFirstCheckPausesImmediately)
+{
+    // Before the first health check completes, the host health is unknown. The
+    // monitor defaults to UNHEALTHY (fail-safe), so a connection registering in
+    // that window is paused immediately rather than being allowed to consume
+    // from a host whose health has not yet been confirmed.
+    bsl::shared_ptr<HostHealthMonitor> monitor =
+        bsl::make_shared<HostHealthMonitor>(d_config, d_metricPublisher.get());
+    monitor->start(d_timerFactory);
+
+    EXPECT_CALL(*d_metricPublisher, publishGauge(_, _, _)).Times(AtLeast(0));
+
+    bsl::shared_ptr<MockConnection> earlyConn = makeConnection("early");
+
+    EXPECT_CALL(*earlyConn, pauseReceiveChannels(true)).Times(1);
+    EXPECT_CALL(*earlyConn, resumeReceiveChannels(_)).Times(0);
+
+    monitor->registerConnection(bsl::weak_ptr<rmqamqp::Connection>(earlyConn));
 }
 
 TEST_F(HostHealthMonitorTests, ExpiredConnectionIsRemovedAndNotUsed)
