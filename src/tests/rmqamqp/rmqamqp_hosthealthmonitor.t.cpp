@@ -243,8 +243,7 @@ TEST_F(HostHealthMonitorTests, FirstCheckFiresImmediately)
     EXPECT_CALL(*d_connection, resumeReceiveChannels(true)).Times(1);
     EXPECT_CALL(*d_connection, pauseReceiveChannels(_)).Times(0);
 
-    // The first health check is scheduled with a zero delay, so advancing the
-    // clock by zero (rather than a full poll interval) is enough to fire it.
+    // First check is scheduled with zero delay, so stepping by zero fires it.
     d_timerFactory->step_time(bsls::TimeInterval(0));
 }
 
@@ -266,8 +265,6 @@ TEST_F(HostHealthMonitorTests, RegisterOnUnhealthyHostPausesImmediately)
     EXPECT_CALL(*d_connection, pauseReceiveChannels(true)).Times(1);
     stepAndClear();
 
-    // A connection that registers now (while the host is known-unhealthy) must
-    // be paused immediately, without waiting for the next health check.
     bsl::shared_ptr<MockConnection> lateConn = makeConnection("late-unhealthy");
 
     EXPECT_CALL(*lateConn, pauseReceiveChannels(true)).Times(1);
@@ -284,9 +281,6 @@ TEST_F(HostHealthMonitorTests, RegisterOnHealthyHostResumesImmediately)
     EXPECT_CALL(*d_connection, resumeReceiveChannels(true)).Times(1);
     stepAndClear();
 
-    // A connection registering while the host is known healthy is resumed
-    // immediately, so consumers created on it start consuming without waiting
-    // for the next health check.
     bsl::shared_ptr<MockConnection> lateConn = makeConnection("late-healthy");
 
     EXPECT_CALL(*lateConn, resumeReceiveChannels(true)).Times(1);
@@ -297,10 +291,8 @@ TEST_F(HostHealthMonitorTests, RegisterOnHealthyHostResumesImmediately)
 
 TEST_F(HostHealthMonitorTests, RegisterBeforeFirstCheckPausesImmediately)
 {
-    // Before the first health check completes, the host health is unknown. The
-    // monitor defaults to UNHEALTHY (fail-safe), so a connection registering in
-    // that window is paused immediately rather than being allowed to consume
-    // from a host whose health has not yet been confirmed.
+    // No check has run yet, so the monitor's fail-safe default (UNHEALTHY)
+    // applies.
     bsl::shared_ptr<HostHealthMonitor> monitor =
         bsl::make_shared<HostHealthMonitor>(d_config, d_metricPublisher.get());
     monitor->start(d_timerFactory);

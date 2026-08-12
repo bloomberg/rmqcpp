@@ -35,6 +35,17 @@ BALL_LOG_SET_NAMESPACE_CATEGORY("RMQAMQP.HOSTHEALTHMONITOR")
 
 const bool RESPECT_HOST_HEALTH = true;
 
+void syncReceiveChannelsToHostHealth(rmqamqp::Connection& connection,
+                                     HostHealthMonitor::HostHealth health)
+{
+    if (health == HostHealthMonitor::HEALTHY) {
+        connection.resumeReceiveChannels(RESPECT_HOST_HEALTH);
+    }
+    else if (health == HostHealthMonitor::UNHEALTHY) {
+        connection.pauseReceiveChannels(RESPECT_HOST_HEALTH);
+    }
+}
+
 } // namespace
 
 HostHealthMonitor::HostHealthMonitor(
@@ -42,9 +53,9 @@ HostHealthMonitor::HostHealthMonitor(
     rmqp::MetricPublisher* metricPublisher)
 : d_hostHealthConfig(hostHealthConfig)
 , d_currentTries(0)
-// Fail-safe: unhealthy until the first check completes, so connections
-// registering beforehand start paused rather than consuming blind.
-, d_lastKnownHealth(UNHEALTHY)
+// Fail-safe: assume unhealthy until the first check, so connections that
+// register beforehand start paused.
+, d_latestHealthCheckResult(UNHEALTHY)
 , d_timer()
 , d_metricPublisher(metricPublisher)
 {
@@ -68,8 +79,8 @@ void HostHealthMonitor::start(
         bdlf::BindUtil::bind(&HostHealthMonitor::handleTimerFired,
                              weak_from_this(),
                              bdlf::PlaceHolders::_1));
-    // Fire the first check immediately instead of after a full poll interval;
-    // checkHealth() reschedules subsequent checks at pollInterval.
+    // Fire the first check immediately; checkHealth() then reschedules at
+    // pollInterval.
     d_timer->reset(bsls::TimeInterval(0));
 }
 
@@ -89,21 +100,16 @@ void HostHealthMonitor::registerConnection(
     d_metricPublisher->publishGauge(Metrics::HEALTH_AWARE_VHOSTS,
                                     static_cast<double>(d_connections.size()));
 
-    // Apply the current known health now (rather than waiting for the next
-    // poll) so consumers created on this connection open paused when unhealthy
-    // and active when healthy.
+    // Bring the connection into the current known state now, rather than
+    // waiting for the next poll.
     bsl::shared_ptr<rmqamqp::Connection> connection = conn.lock();
     if (connection) {
-        if (d_lastKnownHealth == UNHEALTHY) {
-            BALL_LOG_INFO << "healthState=UNHEALTHY action=pause "
-                             "reason=newly-registered-connection";
-            connection->pauseReceiveChannels(RESPECT_HOST_HEALTH);
-        }
-        else {
-            BALL_LOG_INFO << "healthState=HEALTHY action=resume "
-                             "reason=newly-registered-connection";
-            connection->resumeReceiveChannels(RESPECT_HOST_HEALTH);
-        }
+        BALL_LOG_INFO << "healthState=" << d_latestHealthCheckResult
+                      << " action="
+                      << (d_latestHealthCheckResult == HEALTHY ? "resume"
+                                                               : "pause")
+                      << " reason=newly-registered-connection";
+        syncReceiveChannelsToHostHealth(*connection, d_latestHealthCheckResult);
     }
 }
 
@@ -213,14 +219,14 @@ void HostHealthMonitor::processHealthResult(HostHealth result)
 {
     d_currentTries = 0;
 
-    if (result != d_lastKnownHealth) {
+    if (result != d_latestHealthCheckResult) {
         BALL_LOG_INFO << "event=health-state-changed previousHealthState="
-                      << d_lastKnownHealth << " healthState=" << result;
+                      << d_latestHealthCheckResult << " healthState=" << result;
     }
 
-    // Cache for registerConnection; only HEALTHY/UNHEALTHY reach here (RETRY
-    // returns early), so the last known state is retained across retries.
-    d_lastKnownHealth = result;
+    // Cache for registerConnection. RETRY returns early, so this only ever
+    // holds HEALTHY or UNHEALTHY.
+    d_latestHealthCheckResult = result;
 
     BALL_LOG_DEBUG << "healthState=" << result
                    << " action=" << (result == HEALTHY ? "resume" : "pause")
@@ -258,12 +264,7 @@ void HostHealthMonitor::processHealthResult(HostHealth result)
             continue;
         }
 
-        if (result == HEALTHY) {
-            connection->resumeReceiveChannels(RESPECT_HOST_HEALTH);
-        }
-        else {
-            connection->pauseReceiveChannels(RESPECT_HOST_HEALTH);
-        }
+        syncReceiveChannelsToHostHealth(*connection, result);
 
         ++conn;
     }

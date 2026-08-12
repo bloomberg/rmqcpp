@@ -98,7 +98,7 @@ class HostHealthMonitor
     rmqt::HostHealthConfig d_hostHealthConfig;
     bsl::list<bsl::weak_ptr<rmqamqp::Connection> > d_connections;
     unsigned int d_currentTries;
-    HostHealth d_lastKnownHealth;
+    HostHealth d_latestHealthCheckResult;
     bsl::shared_ptr<rmqio::Timer> d_timer;
     rmqp::MetricPublisher* d_metricPublisher;
 };

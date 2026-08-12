@@ -24,9 +24,6 @@ RUN apt-get update && apt-get install -y \
     zip \
     && rm -rf /var/lib/apt/lists/*
 
-# Debian stable ships CMake 3.31, but current vcpkg port scripts call
-# string(JSON ... STRING_ENCODE), which was added in CMake 4.3. Install a
-# modern CMake from PyPI (arch-independent) so vcpkg dependency builds succeed.
 RUN pip3 install --break-system-packages --no-cache-dir "cmake>=4.3,<5"
 
 ENV VCPKG_FORCE_SYSTEM_BINARIES=1
