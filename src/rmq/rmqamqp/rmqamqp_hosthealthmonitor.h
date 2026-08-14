@@ -70,9 +70,9 @@ class HostHealthMonitor
 
     ~HostHealthMonitor();
 
-    /// Start the health monitoring timer. The first health check fires
-    /// immediately (on the event loop); subsequent checks run every
-    /// \c pollInterval seconds.
+/// Start the health monitoring timer. The first health check is scheduled
+/// immediately on the event loop. Subsequent checks run every
+/// \c pollInterval seconds.
     void start(const bsl::shared_ptr<rmqio::TimerFactory>& timerFactory);
 
     /// Stop the health monitoring timer.
