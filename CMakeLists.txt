@@ -6,7 +6,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(ENABLE_COMPRESSION "Enable zstd compression support" ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
-enable_testing()
+
+option(rmqcpp_ENABLE_TESTING "Enable testing" ON)
+if(rmqcpp_ENABLE_TESTING)
+    enable_testing()
+endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
