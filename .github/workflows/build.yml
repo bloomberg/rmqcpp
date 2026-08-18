@@ -7,6 +7,9 @@ on:
   pull_request:
     branches:
       - main
+  schedule:
+    - cron: "22 2 * * *"
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -26,7 +29,7 @@ jobs:
   Documentation:
     name: Doxygenize
     #Only run for push to main
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
       contents: write # Needed to push to gh-pages
