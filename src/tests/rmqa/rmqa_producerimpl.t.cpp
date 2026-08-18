@@ -867,6 +867,53 @@ TEST_P(TracingProducerImplTests, SendConfirmCallsTracing)
     d_threadPool.drain();
 }
 
+TEST_P(TracingProducerImplTests, SendWithMandatoryFlagConfirmCallsTracing)
+{
+    // Regression: the send() overload accepting an explicit mandatory flag must
+    // also create a tracing context and tag the message, just like the
+    // four-argument send(). Previously TracingProducerImpl only overrode the
+    // four-argument send(), so publishing with an explicit mandatory flag
+    // silently bypassed tracing.
+
+    // GIVEN
+    bsl::shared_ptr<MockProducerTracing::MockContext> tracingContext(
+        bsl::make_shared<MockProducerTracing::MockContext>());
+    rmqt::Properties specialProperties = d_message.properties();
+    specialProperties.headers          = bsl::make_shared<rmqt::FieldTable>();
+    specialProperties.headers->insert(
+        bsl::make_pair(bsl::string("special"), bsl::string("property")));
+
+    bsl::shared_ptr<rmqa::ProducerImpl> producer(d_factory->create(
+        1, d_exchange, d_mockSendChannel, d_threadPool, d_eventLoop));
+
+    // The tagged message must be published, and the caller-supplied mandatory
+    // flag must be forwarded unchanged to the channel.
+    EXPECT_CALL(*d_mockSendChannel,
+                publishMessage(MessagePropertiesMatch(specialProperties),
+                               bsl::string("routingKey"),
+                               rmqt::Mandatory::DISCARD_UNROUTABLE));
+    EXPECT_CALL(
+        *d_tracing,
+        createAndTag(
+            _, bsl::string("routingKey"), bsl::string("test-exchange"), _))
+        .WillOnce(
+            DoAll(SetArgPointee<0>(specialProperties), Return(tracingContext)));
+    // WHEN
+    producer->send(d_message,
+                   "routingKey",
+                   rmqt::Mandatory::DISCARD_UNROUTABLE,
+                   d_callback,
+                   d_timeout);
+
+    const rmqt::ConfirmResponse confirmResponse(rmqt::ConfirmResponse::ACK);
+
+    EXPECT_CALL(*tracingContext, response(confirmResponse)).WillOnce(Return());
+
+    d_injectConfirm(d_message, d_exchange->name(), confirmResponse);
+
+    d_threadPool.drain();
+}
+
 RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         ProducerImplTests,
                         Values(PRODUCER, TRACING_PRODUCER),

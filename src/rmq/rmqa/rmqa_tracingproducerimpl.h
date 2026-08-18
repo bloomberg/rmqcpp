@@ -64,6 +64,12 @@ class TracingProducerImpl : public ProducerImpl {
                     const rmqp::Producer::ConfirmationCallback& confirmCallback,
                     const bsls::TimeInterval& timeout) BSLS_KEYWORD_OVERRIDE;
 
+    SendStatus send(const rmqt::Message& message,
+                    const bsl::string& routingKey,
+                    rmqt::Mandatory::Value mandatoryFlag,
+                    const rmqp::Producer::ConfirmationCallback& confirmCallback,
+                    const bsls::TimeInterval& timeout) BSLS_KEYWORD_OVERRIDE;
+
     SendStatus
     trySend(const rmqt::Message& message,
             const bsl::string& routingKey,
