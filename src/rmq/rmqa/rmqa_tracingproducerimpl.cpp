@@ -105,6 +105,33 @@ rmqp::Producer::SendStatus TracingProducerImpl::send(
                               timeout);
 }
 
+rmqp::Producer::SendStatus TracingProducerImpl::send(
+    const rmqt::Message& message,
+    const bsl::string& routingKey,
+    rmqt::Mandatory::Value mandatoryFlag,
+    const rmqp::Producer::ConfirmationCallback& confirmCallback,
+    const bsls::TimeInterval& timeout)
+{
+    rmqt::Message newMessage(message);
+    // ideally we'd have move semantics on the message to avoid
+    // copying the metadata note that this is not a deep copy of
+    // the message payload
+    bsl::shared_ptr<rmqp::ProducerTracing::Context> context =
+        d_tracing->createAndTag(
+            &(newMessage.properties()), routingKey, d_exchangeName, d_endpoint);
+
+    return ProducerImpl::send(newMessage,
+                              routingKey,
+                              mandatoryFlag,
+                              bdlf::BindUtil::bind(&callbackAndContext,
+                                                   confirmCallback,
+                                                   context,
+                                                   bdlf::PlaceHolders::_1,
+                                                   bdlf::PlaceHolders::_2,
+                                                   bdlf::PlaceHolders::_3),
+                              timeout);
+}
+
 rmqp::Producer::SendStatus TracingProducerImpl::trySend(
     const rmqt::Message& message,
     const bsl::string& routingKey,
