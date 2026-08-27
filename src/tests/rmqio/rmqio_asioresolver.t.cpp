@@ -20,6 +20,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <openssl/x509.h>
+
 #include <bsl_cstdio.h>
 #include <bsl_memory.h>
 #include <bsl_vector.h>
@@ -48,12 +50,105 @@ class ResolverTests : public Test {
     };
 };
 
+class StoreContextGuard {
+  public:
+    StoreContextGuard()
+    : d_ctx(X509_STORE_CTX_new())
+    {
+    }
+
+    ~StoreContextGuard()
+    {
+        if (d_ctx) {
+            X509_STORE_CTX_free(d_ctx);
+        }
+    }
+
+    X509_STORE_CTX* get() { return d_ctx; }
+
+  private:
+    StoreContextGuard(const StoreContextGuard&);
+    StoreContextGuard& operator=(const StoreContextGuard&);
+
+    X509_STORE_CTX* d_ctx;
+};
+
+class CertificateGuard {
+  public:
+    CertificateGuard()
+    : d_cert(X509_new())
+    {
+    }
+
+    ~CertificateGuard()
+    {
+        if (d_cert) {
+            X509_free(d_cert);
+        }
+    }
+
+    X509* get() { return d_cert; }
+
+  private:
+    CertificateGuard(const CertificateGuard&);
+    CertificateGuard& operator=(const CertificateGuard&);
+
+    X509* d_cert;
+};
+
 } // namespace
 
 TEST_F(ResolverTests, Breathing)
 {
     AsioEventLoop loop;
     bsl::shared_ptr<AsioResolver> resolver(AsioResolver::create(loop, false));
+}
+
+TEST_F(ResolverTests, LogCertVerificationFailureNullCurrentCert)
+{
+    StoreContextGuard storeCtx;
+    ASSERT_THAT(storeCtx.get(), NotNull());
+    ASSERT_THAT(X509_STORE_CTX_init(storeCtx.get(), 0, 0, 0), Eq(1));
+    ASSERT_THAT(X509_STORE_CTX_get_current_cert(storeCtx.get()), IsNull());
+
+    boost::asio::ssl::verify_context ctx(storeCtx.get());
+
+    EXPECT_FALSE(AsioResolver::logCertVerificationFailure(false, ctx));
+}
+
+TEST_F(ResolverTests, LogCertVerificationFailureNullStoreContext)
+{
+    boost::asio::ssl::verify_context ctx(0);
+
+    EXPECT_FALSE(AsioResolver::logCertVerificationFailure(false, ctx));
+}
+
+TEST_F(ResolverTests, LogCertVerificationFailureWithSubject)
+{
+    StoreContextGuard storeCtx;
+    ASSERT_THAT(storeCtx.get(), NotNull());
+    ASSERT_THAT(X509_STORE_CTX_init(storeCtx.get(), 0, 0, 0), Eq(1));
+
+    CertificateGuard cert;
+    ASSERT_THAT(cert.get(), NotNull());
+    ASSERT_THAT(X509_get_subject_name(cert.get()), NotNull());
+
+    X509_STORE_CTX_set_current_cert(storeCtx.get(), cert.get());
+
+    boost::asio::ssl::verify_context ctx(storeCtx.get());
+
+    EXPECT_FALSE(AsioResolver::logCertVerificationFailure(false, ctx));
+}
+
+TEST_F(ResolverTests, LogCertVerificationPreverifiedPassesThrough)
+{
+    StoreContextGuard storeCtx;
+    ASSERT_THAT(storeCtx.get(), NotNull());
+    ASSERT_THAT(X509_STORE_CTX_init(storeCtx.get(), 0, 0, 0), Eq(1));
+
+    boost::asio::ssl::verify_context ctx(storeCtx.get());
+
+    EXPECT_TRUE(AsioResolver::logCertVerificationFailure(true, ctx));
 }
 
 TEST_F(ResolverTests, badresolve)
