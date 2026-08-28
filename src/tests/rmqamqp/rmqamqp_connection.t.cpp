@@ -38,11 +38,14 @@
 #include <rmqt_simpleendpoint.h>
 
 #include <ball_log.h>
+#include <ball_loggermanager.h>
+#include <ball_streamobserver.h>
 #include <bdlf_bind.h>
 #include <bsl_functional.h>
 #include <bsl_iostream.h>
 #include <bsl_limits.h>
 #include <bsl_memory.h>
+#include <bsl_sstream.h>
 #include <bsl_stdexcept.h>
 #include <bsl_utility.h>
 #include <bsl_vector.h>
@@ -691,6 +694,31 @@ TEST_F(ConnectionTests, Handshake)
 
     // 1. Handshake
     d_eventLoop.run();
+
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+    expectShutdownCalls();
+}
+
+TEST_F(ConnectionTests, HandshakeDoesNotLogCredentials)
+{
+    bsl::ostringstream logStream;
+    bsl::shared_ptr<ball::StreamObserver> observer =
+        bsl::make_shared<ball::StreamObserver>(&logStream);
+    ball::LoggerManager::singleton().registerObserver(observer,
+                                                      "credentialcapture");
+
+    expectFirstHandshakeFrames();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    // 1. Handshake
+    d_eventLoop.run();
+
+    ball::LoggerManager::singleton().deregisterObserver("credentialcapture");
+
+    const bsl::string logged = logStream.str();
+    EXPECT_THAT(logged, HasSubstr("response:<REDACTED>"));
+    EXPECT_THAT(logged, Not(HasSubstr(bsl::string("\0guest\0guest", 12))));
 
     EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
     expectShutdownCalls();

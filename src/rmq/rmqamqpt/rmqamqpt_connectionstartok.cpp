@@ -63,9 +63,10 @@ void ConnectionStartOk::encode(Writer& output, const ConnectionStartOk& startOk)
 bsl::ostream& operator<<(bsl::ostream& os,
                          const ConnectionStartOk& startOkMethod)
 {
+    // response is opaque SASL data that may carry credentials.
+    // Redact it.
     os << "Connection StartOk = [properties:" << startOkMethod.properties()
-       << ", mechanism:" << startOkMethod.mechanism()
-       << ", response:" << startOkMethod.response()
+       << ", mechanism:" << startOkMethod.mechanism() << ", response:<REDACTED>"
        << ", locale:" << startOkMethod.locale() << "]";
     return os;
 }
