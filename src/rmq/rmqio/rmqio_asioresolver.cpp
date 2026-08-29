@@ -101,23 +101,6 @@ void logTlsConnectionAlert(const SSL* s, int where, int ret)
     }
 }
 
-bool logCertVerificationFailure(bool preverified,
-                                boost::asio::ssl::verify_context& ctx)
-{
-    if (!preverified) {
-        char subject_name[256];
-        X509* cert = X509_STORE_CTX_get_current_cert(ctx.native_handle());
-        X509_NAME_oneline(X509_get_subject_name(cert),
-                          subject_name,
-                          sizeof(subject_name) - 1);
-
-        BALL_LOG_ERROR << "Certificate verification failed: [" << subject_name
-                       << "]: ";
-    }
-
-    return preverified;
-}
-
 bsl::string augmentTlsError(const boost::system::error_code& ec)
 {
     bsl::string err = ec.message();
@@ -263,7 +246,7 @@ createSecureContext(const bsl::shared_ptr<rmqt::SecurityParameters>& params)
     }
     SSL_CTX_set_info_callback(result->native_handle(), &logTlsConnectionAlert);
 
-    result->set_verify_callback(&logCertVerificationFailure);
+    result->set_verify_callback(&AsioResolver::logCertVerificationFailure);
 
     if (fail) {
         result.reset();
@@ -483,6 +466,43 @@ void AsioResolver::handleConnect(
                        << " " << error.message();
         onFail(Resolver::ERROR_CONNECT);
     }
+}
+
+bool AsioResolver::logCertVerificationFailure(
+    bool preverified,
+    boost::asio::ssl::verify_context& ctx)
+{
+    if (preverified) {
+        return preverified;
+    }
+
+    X509_STORE_CTX* storeCtx = ctx.native_handle();
+
+    if (!storeCtx) {
+        BALL_LOG_ERROR << "Certificate verification failed: no verification "
+                          "context available";
+        return preverified;
+    }
+
+    const int errorCode  = X509_STORE_CTX_get_error(storeCtx);
+    const int errorDepth = X509_STORE_CTX_get_error_depth(storeCtx);
+
+    X509* cert         = X509_STORE_CTX_get_current_cert(storeCtx);
+    X509_NAME* subject = cert ? X509_get_subject_name(cert) : 0;
+
+    char subjectName[256] = "unavailable";
+
+    if (subject) {
+        X509_NAME_oneline(subject, subjectName, sizeof(subjectName));
+    }
+
+    BALL_LOG_ERROR << "Certificate verification failed: subjectName="
+                   << subjectName << " errorCode=" << errorCode
+                   << " errorString="
+                   << X509_verify_cert_error_string(errorCode)
+                   << " depth=" << errorDepth;
+
+    return preverified;
 }
 
 void AsioResolver::shuffleResolverResults(
