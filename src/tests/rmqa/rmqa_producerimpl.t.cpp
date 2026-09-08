@@ -17,7 +17,7 @@
 
 #include <rmqp_producertracing.h>
 
-#include <rmqa_tracingproducerimpl.h>
+#include <rmqa_tracingtagger.h>
 
 #include <rmqtestutil_mockchannel.t.h>
 #include <rmqtestutil_mockeventloop.t.h>
@@ -166,11 +166,14 @@ class ProducerImplTests : public TestWithParam<ProducerType> {
     bsl::shared_ptr<rmqa::ProducerImpl::Factory> paramPicker(ProducerType pt)
     {
         switch (pt) {
-            case TRACING_PRODUCER:
-                return bsl::make_shared<rmqa::TracingProducerImpl::Factory>(
-                    bsl::make_shared<rmqt::SimpleEndpoint>("example-hostname",
-                                                           "example-vhost"),
-                    d_tracing);
+            case TRACING_PRODUCER: {
+                bsl::shared_ptr<rmqp::ProducerTagger> tagger(
+                    new rmqa::TracingTagger(
+                        bsl::make_shared<rmqt::SimpleEndpoint>(
+                            "example-hostname", "example-vhost"),
+                        d_tracing));
+                return bsl::make_shared<rmqa::ProducerImpl::Factory>(tagger);
+            }
             default:
                 return bsl::make_shared<rmqa::ProducerImpl::Factory>();
         }
@@ -823,7 +826,7 @@ TEST_P(ProducerImplMaxOutstandingTests, SendFromConfirmCallbackDoesNotDeadlock)
     d_threadPool.drain();
 }
 
-class TracingProducerImplTests : public ProducerImplMaxOutstandingTests {
+class TracingTaggerTests : public ProducerImplMaxOutstandingTests {
   public:
 };
 
@@ -832,7 +835,7 @@ MATCHER_P(MessagePropertiesMatch, expected, "")
     return arg.properties() == expected;
 }
 
-TEST_P(TracingProducerImplTests, SendConfirmCallsTracing)
+TEST_P(TracingTaggerTests, SendConfirmCallsTracing)
 {
     // GIVEN
     bsl::shared_ptr<MockProducerTracing::MockContext> tracingContext(
@@ -867,13 +870,12 @@ TEST_P(TracingProducerImplTests, SendConfirmCallsTracing)
     d_threadPool.drain();
 }
 
-TEST_P(TracingProducerImplTests, SendWithMandatoryFlagConfirmCallsTracing)
+TEST_P(TracingTaggerTests, SendWithMandatoryFlagConfirmCallsTracing)
 {
-    // Regression: the send() overload accepting an explicit mandatory flag must
-    // also create a tracing context and tag the message, just like the
-    // four-argument send(). Previously TracingProducerImpl only overrode the
-    // four-argument send(), so publishing with an explicit mandatory flag
-    // silently bypassed tracing.
+    // Regression. Tracing used to be a ProducerImpl subclass overriding each
+    // send() separately, and this overload was missed, so publishing with an
+    // explicit mandatory flag silently bypassed tracing. The tagger is reached
+    // from one place now, but keep the coverage.
 
     // GIVEN
     bsl::shared_ptr<MockProducerTracing::MockContext> tracingContext(
@@ -936,6 +938,6 @@ RMQTESTUTIL_TESTSUITE_P(AllMembers,
                         ProducerImplTests::PrintParamName());
 
 RMQTESTUTIL_TESTSUITE_P(AllMembers,
-                        TracingProducerImplTests,
+                        TracingTaggerTests,
                         Values(TRACING_PRODUCER),
                         ProducerImplTests::PrintParamName());
