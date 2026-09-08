@@ -115,6 +115,17 @@ struct Properties {
     /// creating application id
     bdlb::NullableValue<bsl::string> appId;
 
+    Properties();
+
+    /// Copy `original`, giving the copy its own header table rather than
+    /// sharing `original`'s, which a member-wise copy of the shared pointer
+    /// would do.
+    Properties(const Properties& original);
+
+    ~Properties();
+
+    Properties& operator=(const Properties& rhs);
+
     bsl::ostream&
     print(bsl::ostream& stream, int level, int spacesPerLevel) const;
 };

@@ -150,9 +150,9 @@ class ProducerImpl : public rmqp::Producer {
         const bdlb::Guid& guid,
         const rmqp::Producer::ConfirmationCallback& confirmCallback);
 
-    /// Return a copy of `message`, having offered it to the tagger. On return
-    /// `*callback` is the callback to publish with, wrapped by the tagger if
-    /// it asked to be.
+    /// Return a copy of `message` which owns its header table, having offered
+    /// it to the tagger. On return `*callback` is the callback to publish
+    /// with, wrapped by the tagger if it asked to be.
     ///
     /// Must be called on the sending thread and before any wait on the
     /// outstanding confirm limit, as `rmqp::ProducerTagger` requires.

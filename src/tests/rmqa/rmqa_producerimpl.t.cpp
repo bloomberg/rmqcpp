@@ -87,6 +87,25 @@ class MockConfirmCallback : public ConfirmCallback {
                       const rmqt::ConfirmResponse& confirmResponse));
 };
 
+const char k_INJECTED_KEY[]   = "injected-header";
+const char k_INJECTED_VALUE[] = "injected-value";
+
+/// Stands in for a tracing implementation which injects a header in place, as
+/// the real hooks do.
+bsl::shared_ptr<rmqp::ProducerTracing::Context>
+tagWithHeader(rmqt::Properties* properties,
+              const bsl::string&,
+              const bsl::string&,
+              const bsl::shared_ptr<const rmqt::Endpoint>&)
+{
+    if (!properties->headers) {
+        properties->headers = bsl::make_shared<rmqt::FieldTable>();
+    }
+    (*properties->headers)[k_INJECTED_KEY] = bsl::string(k_INJECTED_VALUE);
+
+    return bsl::make_shared<MockProducerTracing::MockContext>();
+}
+
 MATCHER_P(ExchangeHandleNameEq, expected, "")
 {
     bsl::shared_ptr<rmqt::Exchange> exch = arg.lock();
@@ -246,6 +265,43 @@ TEST_P(ProducerImplTests, PublishNotMandatory)
                    d_timeout);
 
     d_threadPool.drain();
+}
+
+TEST_P(ProducerImplTests, SendDoesNotShareHeaderTableWithCaller)
+{
+    // send is asynchronous, so the message handed to the channel must not
+    // share a header table with the one the caller still owns
+
+    bsl::shared_ptr<rmqt::FieldTable> callerHeaders(
+        bsl::make_shared<rmqt::FieldTable>());
+    callerHeaders->insert(
+        bsl::make_pair(bsl::string("appheader"), bsl::string("before")));
+
+    rmqt::Message message(bsl::make_shared<bsl::vector<uint8_t> >(5));
+    message.properties().headers = callerHeaders;
+
+    EXPECT_CALL(*d_mockSendChannel, setCallback(_));
+    bsl::shared_ptr<rmqa::ProducerImpl> producer(d_factory->create(
+        1, d_exchange, d_mockSendChannel, d_threadPool, d_eventLoop));
+
+    rmqt::Message published;
+    EXPECT_CALL(*d_mockSendChannel,
+                publishMessage(_, bsl::string("routingKey"), _))
+        .WillOnce(SaveArg<0>(&published));
+
+    producer->send(message, "routingKey", d_callback, d_timeout);
+    d_threadPool.drain();
+
+    // the caller carries on using the table it owns, as it is entitled to
+    (*callerHeaders)["appheader"] = bsl::string("after");
+    callerHeaders->insert(
+        bsl::make_pair(bsl::string("extra"), bsl::string("value")));
+
+    ASSERT_TRUE(published.headers());
+    EXPECT_THAT(published.headers().get(), Ne(callerHeaders.get()));
+    EXPECT_THAT(published.headers()->size(), Eq(1u));
+    EXPECT_TRUE(published.headers()->find("appheader")->second ==
+                rmqt::FieldValue(bsl::string("before")));
 }
 
 TEST_P(ProducerImplTests, DuplicateMessagesReturnDuplicate)
@@ -914,6 +970,41 @@ TEST_P(TracingTaggerTests, SendWithMandatoryFlagConfirmCallsTracing)
     d_injectConfirm(d_message, d_exchange->name(), confirmResponse);
 
     d_threadPool.drain();
+}
+
+TEST_P(TracingTaggerTests, TracingDoesNotMutateCallerHeaders)
+{
+    // tracing hooks inject into the headers in place, so they must be handed
+    // a table the library owns rather than the caller's
+
+    bsl::shared_ptr<rmqt::FieldTable> callerHeaders(
+        bsl::make_shared<rmqt::FieldTable>());
+    callerHeaders->insert(
+        bsl::make_pair(bsl::string("appheader"), bsl::string("value")));
+
+    rmqt::Message message(bsl::make_shared<bsl::vector<uint8_t> >(5));
+    message.properties().headers = callerHeaders;
+
+    bsl::shared_ptr<rmqa::ProducerImpl> producer(d_factory->create(
+        1, d_exchange, d_mockSendChannel, d_threadPool, d_eventLoop));
+
+    rmqt::Message published;
+    EXPECT_CALL(*d_mockSendChannel,
+                publishMessage(_, bsl::string("routingKey"), _))
+        .WillOnce(SaveArg<0>(&published));
+    // Invoke() is required, the gmock on some of our platforms has no
+    // implicit conversion from a function pointer to an Action
+    EXPECT_CALL(*d_tracing, createAndTag(_, _, _, _))
+        .WillOnce(Invoke(&tagWithHeader));
+
+    producer->send(message, "routingKey", d_callback, d_timeout);
+    d_threadPool.drain();
+
+    ASSERT_TRUE(published.headers());
+    EXPECT_THAT(published.headers()->count(k_INJECTED_KEY), Eq(1u));
+
+    EXPECT_THAT(callerHeaders->count(k_INJECTED_KEY), Eq(0u));
+    EXPECT_THAT(callerHeaders->size(), Eq(1u));
 }
 
 RMQTESTUTIL_TESTSUITE_P(AllMembers,
