@@ -80,7 +80,6 @@ Inheritance diagram for BloombergLP::rmqa::ProducerImpl:</div>
 <div class="center"><img src="classBloombergLP_1_1rmqa_1_1ProducerImpl__inherit__graph.png" border="0" usemap="#aBloombergLP_1_1rmqa_1_1ProducerImpl_inherit__map" alt="Inheritance graph"/></div>
 <map name="aBloombergLP_1_1rmqa_1_1ProducerImpl_inherit__map" id="aBloombergLP_1_1rmqa_1_1ProducerImpl_inherit__map">
 <area shape="rect" title=" " alt="" coords="5,95,148,136"/>
-<area shape="rect" href="classBloombergLP_1_1rmqa_1_1TracingProducerImpl.html" title=" " alt="" coords="5,184,148,225"/>
 <area shape="rect" href="classBloombergLP_1_1rmqp_1_1Producer.html" title="RabbitMQ Producer API for publishing to a specific Exchange." alt="" coords="5,5,148,47"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
@@ -123,9 +122,9 @@ typedef bsl::unordered_map&lt; bdlb::Guid, <a class="el" href="classBloombergLP_
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a333bffc2689a836c904090c19e87004f"><td class="memItemLeft" align="right" valign="top"><a id="a333bffc2689a836c904090c19e87004f" name="a333bffc2689a836c904090c19e87004f"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ProducerImpl</b> (uint16_t maxOutstandingConfirms, const bsl::shared_ptr&lt; rmqamqp::SendChannel &gt; &amp;channel, bdlmt::ThreadPool &amp;threadPool, rmqio::EventLoop &amp;eventLoop)</td></tr>
-<tr class="separator:a333bffc2689a836c904090c19e87004f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5fe52bc30434b5af72921e1a3b6f172"><td class="memItemLeft" align="right" valign="top"><a id="ae5fe52bc30434b5af72921e1a3b6f172" name="ae5fe52bc30434b5af72921e1a3b6f172"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ProducerImpl</b> (uint16_t maxOutstandingConfirms, const bsl::shared_ptr&lt; rmqamqp::SendChannel &gt; &amp;channel, bdlmt::ThreadPool &amp;threadPool, rmqio::EventLoop &amp;eventLoop, const bsl::string &amp;exchangeName=bsl::string(), const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1ProducerTagger.html">rmqp::ProducerTagger</a> &gt; &amp;tagger=bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1ProducerTagger.html">rmqp::ProducerTagger</a> &gt;())</td></tr>
+<tr class="separator:ae5fe52bc30434b5af72921e1a3b6f172"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a59b38f3039342430034fd665734d3f14"><td class="memItemLeft" align="right" valign="top"><a id="a59b38f3039342430034fd665734d3f14" name="a59b38f3039342430034fd665734d3f14"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>addTransformer</b> (const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1MessageTransformer.html">rmqp::MessageTransformer</a> &gt; &amp;transformer) BSLS_KEYWORD_OVERRIDE</td></tr>
 <tr class="separator:a59b38f3039342430034fd665734d3f14"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -276,8 +275,6 @@ TIMEOUT Returned if a message couldn't be enqueued within the timeout time. </dd
 
 <p>Implements <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a03981c82096a257ebe27728eeb8870b6">BloombergLP::rmqp::Producer</a>.</p>
 
-<p>Reimplemented in <a class="el" href="classBloombergLP_1_1rmqa_1_1TracingProducerImpl.html#a7af0e09c9d65fdb7378fe129f1d44e4a">BloombergLP::rmqa::TracingProducerImpl</a>.</p>
-
 </div>
 </div>
 <a id="a63ff185cf5ee3b230d3479128819718e" name="a63ff185cf5ee3b230d3479128819718e"></a>
@@ -352,8 +349,6 @@ TIMEOUT Returned if a message couldn't be enqueued within the timeout time. </dd
 
 <p>Implements <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a8d3ebadf7fb3d4d83cb701976860d373">BloombergLP::rmqp::Producer</a>.</p>
 
-<p>Reimplemented in <a class="el" href="classBloombergLP_1_1rmqa_1_1TracingProducerImpl.html#a942ff459732dfd65ecb3467402c59dec">BloombergLP::rmqa::TracingProducerImpl</a>.</p>
-
 </div>
 </div>
 <a id="a7119b6a36fbf3d2d5ece026dcf9ecb0d" name="a7119b6a36fbf3d2d5ece026dcf9ecb0d"></a>
@@ -413,8 +408,6 @@ DUPLICATE Returned if a message with the same GUID has already been sent and is 
 INFLIGHT_LIMIT Returned if the unconfirmed message limit has been reached. </dd></dl>
 
 <p>Implements <a class="el" href="classBloombergLP_1_1rmqp_1_1Producer.html#a9f32435017734398940f9f7e1efe7703">BloombergLP::rmqp::Producer</a>.</p>
-
-<p>Reimplemented in <a class="el" href="classBloombergLP_1_1rmqa_1_1TracingProducerImpl.html#a5d3fee3a7d5d851b9da58c491671450f">BloombergLP::rmqa::TracingProducerImpl</a>.</p>
 
 </div>
 </div>

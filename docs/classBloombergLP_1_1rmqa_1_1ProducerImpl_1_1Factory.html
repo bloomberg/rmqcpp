@@ -72,22 +72,47 @@ $(function() {
   <div class="headertitle"><div class="title">BloombergLP::rmqa::ProducerImpl::Factory Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="dynheader">
-Inheritance diagram for BloombergLP::rmqa::ProducerImpl::Factory:</div>
-<div class="dyncontent">
-<div class="center"><img src="classBloombergLP_1_1rmqa_1_1ProducerImpl_1_1Factory__inherit__graph.png" border="0" usemap="#aBloombergLP_1_1rmqa_1_1ProducerImpl_1_1Factory_inherit__map" alt="Inheritance graph"/></div>
-<map name="aBloombergLP_1_1rmqa_1_1ProducerImpl_1_1Factory_inherit__map" id="aBloombergLP_1_1rmqa_1_1ProducerImpl_1_1Factory_inherit__map">
-<area shape="rect" title=" " alt="" coords="5,5,153,47"/>
-<area shape="rect" href="classBloombergLP_1_1rmqa_1_1TracingProducerImpl_1_1Factory.html" title=" " alt="" coords="8,95,151,151"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:af7f0d2ecc9999dcbf7156c08ca1bf5f2"><td class="memItemLeft" align="right" valign="top"><a id="af7f0d2ecc9999dcbf7156c08ca1bf5f2" name="af7f0d2ecc9999dcbf7156c08ca1bf5f2"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>Factory</b> ()</td></tr>
+<tr class="memdesc:af7f0d2ecc9999dcbf7156c08ca1bf5f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create producers with no tagging hook. <br /></td></tr>
+<tr class="separator:af7f0d2ecc9999dcbf7156c08ca1bf5f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af4a8c181722a2a76a26330d95e406c52"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqa_1_1ProducerImpl_1_1Factory.html#af4a8c181722a2a76a26330d95e406c52">Factory</a> (const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1ProducerTagger.html">rmqp::ProducerTagger</a> &gt; &amp;tagger)</td></tr>
+<tr class="separator:af4a8c181722a2a76a26330d95e406c52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae106214dc78ba769b2c80f38b854f94b"><td class="memItemLeft" align="right" valign="top"><a id="ae106214dc78ba769b2c80f38b854f94b" name="ae106214dc78ba769b2c80f38b854f94b"></a>
 virtual bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqa_1_1ProducerImpl.html">ProducerImpl</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create</b> (uint16_t maxOutstandingConfirms, const rmqt::ExchangeHandle &amp;exchange, const bsl::shared_ptr&lt; rmqamqp::SendChannel &gt; &amp;channel, bdlmt::ThreadPool &amp;threadPool, rmqio::EventLoop &amp;eventLoop) const</td></tr>
 <tr class="separator:ae106214dc78ba769b2c80f38b854f94b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="af4a8c181722a2a76a26330d95e406c52" name="af4a8c181722a2a76a26330d95e406c52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af4a8c181722a2a76a26330d95e406c52">&#9670;&nbsp;</a></span>Factory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">BloombergLP::rmqa::ProducerImpl::Factory::Factory </td>
+          <td>(</td>
+          <td class="paramtype">const bsl::shared_ptr&lt; <a class="el" href="classBloombergLP_1_1rmqp_1_1ProducerTagger.html">rmqp::ProducerTagger</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>tagger</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">explicit</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p >Create producers which invoke <code>tagger</code> on each outgoing message. The tagger is shared by every producer this factory creates. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>src/rmq/rmqa/<a class="el" href="rmqa__producerimpl_8h_source.html">rmqa_producerimpl.h</a></li>
 <li>src/rmq/rmqa/rmqa_producerimpl.cpp</li>

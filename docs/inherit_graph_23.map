@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classBloombergLP_1_1rmqp_1_1ProducerTracing.html" title="An interface for ProducerTracing class." alt="" coords="5,5,148,47"/>
+<area shape="rect" id="node1" href="$classBloombergLP_1_1rmqp_1_1ProducerTagger.html" title="A hook invoked by a producer once per send, to modify the message about to be published and to wrap i..." alt="" coords="5,5,148,47"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqa_1_1TracingTagger.html" title="Adapts a configured rmqp::ProducerTracing onto the producer&#39;s tagging hook, opening a tracing context..." alt="" coords="196,5,339,47"/>
 </map>

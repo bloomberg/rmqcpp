@@ -1,0 +1,4 @@
+<map id="BloombergLP::rmqa::TracingTagger" name="BloombergLP::rmqa::TracingTagger">
+<area shape="rect" id="node1" title="Adapts a configured rmqp::ProducerTracing onto the producer&#39;s tagging hook, opening a tracing context..." alt="" coords="5,95,148,136"/>
+<area shape="rect" id="node2" href="$classBloombergLP_1_1rmqp_1_1ProducerTagger.html" title="A hook invoked by a producer once per send, to modify the message about to be published and to wrap i..." alt="" coords="5,5,148,47"/>
+</map>

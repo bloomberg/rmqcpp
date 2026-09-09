@@ -81,6 +81,11 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a7bb9de1a844dfa62d399238cc9aa9095"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBloombergLP_1_1rmqt_1_1Properties.html#a7bb9de1a844dfa62d399238cc9aa9095">Properties</a> (const <a class="el" href="structBloombergLP_1_1rmqt_1_1Properties.html">Properties</a> &amp;original)</td></tr>
+<tr class="separator:a7bb9de1a844dfa62d399238cc9aa9095"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f3a08944787b4193aff8e721b01c073"><td class="memItemLeft" align="right" valign="top"><a id="a9f3a08944787b4193aff8e721b01c073" name="a9f3a08944787b4193aff8e721b01c073"></a>
+<a class="el" href="structBloombergLP_1_1rmqt_1_1Properties.html">Properties</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (const <a class="el" href="structBloombergLP_1_1rmqt_1_1Properties.html">Properties</a> &amp;rhs)</td></tr>
+<tr class="separator:a9f3a08944787b4193aff8e721b01c073"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:addfddd56c0ae6aa3518f3b5d53894af9"><td class="memItemLeft" align="right" valign="top"><a id="addfddd56c0ae6aa3518f3b5d53894af9" name="addfddd56c0ae6aa3518f3b5d53894af9"></a>
 bsl::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>print</b> (bsl::ostream &amp;stream, int level, int spacesPerLevel) const</td></tr>
 <tr class="separator:addfddd56c0ae6aa3518f3b5d53894af9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,7 +147,27 @@ bdlb::NullableValue&lt; bsl::string &gt;&#160;</td><td class="memItemRight" vali
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p ><a class="el" href="structBloombergLP_1_1rmqt_1_1Properties.html" title="Properties is an minimal abstraction of the properties one can set on a message.">Properties</a> is an minimal abstraction of the properties one can set on a message. </p>
 <p >currently this is 1:1 with AMQP BasicProperties </p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a7bb9de1a844dfa62d399238cc9aa9095" name="a7bb9de1a844dfa62d399238cc9aa9095"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7bb9de1a844dfa62d399238cc9aa9095">&#9670;&nbsp;</a></span>Properties()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">BloombergLP::rmqt::Properties::Properties </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structBloombergLP_1_1rmqt_1_1Properties.html">Properties</a> &amp;&#160;</td>
+          <td class="paramname"><em>original</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Copy <code>original</code>, giving the copy its own header table rather than sharing <code>original</code>'s, which a member-wise copy of the shared pointer would do. </p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
 <a id="a5ec3030196dd9b321057abd257b6ce96" name="a5ec3030196dd9b321057abd257b6ce96"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5ec3030196dd9b321057abd257b6ce96">&#9670;&nbsp;</a></span>replyTo</h2>
 
