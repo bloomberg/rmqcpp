@@ -197,7 +197,8 @@ TEST(Methods_BasicProperties, Headers)
     basicProps.setProperties(properties);
 
     EXPECT_THAT(basicProps.propertyFlags(), Eq(0x2000));
-    EXPECT_THAT(basicProps.headers(), Eq(table));
+    ASSERT_TRUE(basicProps.headers());
+    EXPECT_THAT(*basicProps.headers().value(), Eq(*table));
 
     EXPECT_FALSE(basicProps.contentType());
     EXPECT_FALSE(basicProps.contentEncoding());

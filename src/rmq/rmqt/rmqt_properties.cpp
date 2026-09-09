@@ -28,7 +28,70 @@ bool headersEquality(const bsl::shared_ptr<rmqt::FieldTable>& lhs,
 {
     return (lhs == rhs) || ((lhs && rhs) && (*lhs == *rhs));
 }
+
+bsl::shared_ptr<rmqt::FieldTable>
+clonedHeaders(const bsl::shared_ptr<rmqt::FieldTable>& headers)
+{
+    return headers ? bsl::make_shared<rmqt::FieldTable>(*headers) : headers;
+}
 } // namespace
+
+Properties::Properties()
+: contentType()
+, contentEncoding()
+, headers()
+, deliveryMode()
+, priority()
+, correlationId()
+, replyTo()
+, expiration()
+, messageId()
+, timestamp()
+, type()
+, userId()
+, appId()
+{
+}
+
+Properties::Properties(const Properties& original)
+: contentType(original.contentType)
+, contentEncoding(original.contentEncoding)
+, headers(clonedHeaders(original.headers))
+, deliveryMode(original.deliveryMode)
+, priority(original.priority)
+, correlationId(original.correlationId)
+, replyTo(original.replyTo)
+, expiration(original.expiration)
+, messageId(original.messageId)
+, timestamp(original.timestamp)
+, type(original.type)
+, userId(original.userId)
+, appId(original.appId)
+{
+}
+
+Properties::~Properties() {}
+
+Properties& Properties::operator=(const Properties& rhs)
+{
+    if (this != &rhs) {
+        contentType     = rhs.contentType;
+        contentEncoding = rhs.contentEncoding;
+        headers         = clonedHeaders(rhs.headers);
+        deliveryMode    = rhs.deliveryMode;
+        priority        = rhs.priority;
+        correlationId   = rhs.correlationId;
+        replyTo         = rhs.replyTo;
+        expiration      = rhs.expiration;
+        messageId       = rhs.messageId;
+        timestamp       = rhs.timestamp;
+        type            = rhs.type;
+        userId          = rhs.userId;
+        appId           = rhs.appId;
+    }
+
+    return *this;
+}
 
 bsl::ostream& Properties::print(bsl::ostream& stream,
                                 BSLA_MAYBE_UNUSED int level,

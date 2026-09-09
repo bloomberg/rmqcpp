@@ -117,29 +117,55 @@ void handleConfirmOnEventLoop(
     }
 }
 
+bsl::string extractExchangeName(const rmqt::ExchangeHandle& exchangeHandle)
+{
+    bsl::shared_ptr<rmqt::Exchange> exchange(exchangeHandle.lock());
+    return exchange ? exchange->name() : "<expired exchange>";
+}
+
 } // namespace
+
+ProducerImpl::Factory::Factory()
+: d_tagger()
+{
+}
+
+ProducerImpl::Factory::Factory(
+    const bsl::shared_ptr<rmqp::ProducerTagger>& tagger)
+: d_tagger(tagger)
+{
+}
 
 ProducerImpl::Factory::~Factory() {}
 
 bsl::shared_ptr<ProducerImpl> ProducerImpl::Factory::create(
     uint16_t maxOutstandingConfirms,
-    const rmqt::ExchangeHandle&,
+    const rmqt::ExchangeHandle& exchange,
     const bsl::shared_ptr<rmqamqp::SendChannel>& channel,
     bdlmt::ThreadPool& threadPool,
     rmqio::EventLoop& eventLoop) const
 {
-    return bsl::shared_ptr<ProducerImpl>(new ProducerImpl(
-        maxOutstandingConfirms, channel, threadPool, eventLoop));
+    return bsl::shared_ptr<ProducerImpl>(
+        new ProducerImpl(maxOutstandingConfirms,
+                         channel,
+                         threadPool,
+                         eventLoop,
+                         extractExchangeName(exchange),
+                         d_tagger));
 }
 
 ProducerImpl::ProducerImpl(uint16_t maxOutstandingConfirms,
                            const bsl::shared_ptr<rmqamqp::SendChannel>& channel,
                            bdlmt::ThreadPool& threadPool,
-                           rmqio::EventLoop& eventLoop)
+                           rmqio::EventLoop& eventLoop,
+                           const bsl::string& exchangeName,
+                           const bsl::shared_ptr<rmqp::ProducerTagger>& tagger)
 : d_eventLoop(eventLoop)
 , d_channel(channel)
 , d_sharedState(bsl::shared_ptr<SharedState>(
       new SharedState(true, threadPool, maxOutstandingConfirms)))
+, d_exchangeName(exchangeName)
+, d_tagger(tagger)
 {
     using namespace bdlf::PlaceHolders;
     channel->setCallback(bdlf::BindUtil::bind(
@@ -176,6 +202,21 @@ bool ProducerImpl::registerUniqueCallback(
     }
 
     return true;
+}
+
+rmqt::Message ProducerImpl::prepareMessageForSending(
+    rmqp::Producer::ConfirmationCallback* callback,
+    const rmqt::Message& message,
+    const bsl::string& routingKey)
+{
+    rmqt::Message taggedMessage(message);
+
+    if (d_tagger) {
+        *callback = d_tagger->tagMessage(
+            &taggedMessage.properties(), routingKey, d_exchangeName, *callback);
+    }
+
+    return taggedMessage;
 }
 
 void ProducerImpl::addTransformer(
@@ -261,9 +302,13 @@ rmqp::Producer::SendStatus ProducerImpl::sendImpl(
     const rmqp::Producer::ConfirmationCallback& confirmCallback,
     const bsls::TimeInterval& timeout)
 {
+    rmqp::Producer::ConfirmationCallback callback(confirmCallback);
+    const rmqt::Message taggedMessage =
+        prepareMessageForSending(&callback, message, routingKey);
+
     BALL_LOG_TRACE
         << "Waiting on send(exchange) outstanding message limit for message "
-        << message;
+        << taggedMessage;
 
     if (timeout.totalNanoseconds()) {
         if (d_sharedState->outstandingMessagesCap.timedWait(
@@ -275,7 +320,7 @@ rmqp::Producer::SendStatus ProducerImpl::sendImpl(
         d_sharedState->outstandingMessagesCap.wait();
     }
 
-    return doSend(message, routingKey, mandatoryFlag, confirmCallback);
+    return doSend(taggedMessage, routingKey, mandatoryFlag, callback);
 }
 
 rmqp::Producer::SendStatus ProducerImpl::trySend(
@@ -283,11 +328,15 @@ rmqp::Producer::SendStatus ProducerImpl::trySend(
     const bsl::string& routingKey,
     const rmqp::Producer::ConfirmationCallback& confirmCallback)
 {
+    rmqp::Producer::ConfirmationCallback callback(confirmCallback);
+    const rmqt::Message taggedMessage =
+        prepareMessageForSending(&callback, message, routingKey);
+
     if (!d_sharedState->outstandingMessagesCap.tryWait()) {
-        return doSend(message,
+        return doSend(taggedMessage,
                       routingKey,
                       rmqt::Mandatory::RETURN_UNROUTABLE,
-                      confirmCallback);
+                      callback);
     }
     else {
         BALL_LOG_TRACE << "Unconfirmed message limit already reached";

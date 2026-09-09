@@ -20,7 +20,7 @@
 #include <rmqa_noopmetricpublisher.h>
 #include <rmqa_producerimpl.h>
 #include <rmqa_tracingconsumerimpl.h>
-#include <rmqa_tracingproducerimpl.h>
+#include <rmqa_tracingtagger.h>
 #include <rmqa_vhost.h>
 #include <rmqa_vhostimpl.h>
 
@@ -404,8 +404,9 @@ rmqt::Future<rmqp::Connection> RabbitContextImpl::createNewConnection(
 
     bsl::shared_ptr<ProducerImpl::Factory> producerFactory(
         d_producerTracing
-            ? bsl::shared_ptr<ProducerImpl::Factory>(
-                  new TracingProducerImpl::Factory(endpoint, d_producerTracing))
+            ? bsl::make_shared<ProducerImpl::Factory>(
+                  bsl::shared_ptr<rmqp::ProducerTagger>(
+                      new TracingTagger(endpoint, d_producerTracing)))
             : bsl::make_shared<ProducerImpl::Factory>());
 
     rmqamqp::Connection::ConnectedCallback cb =
