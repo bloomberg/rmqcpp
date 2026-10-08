@@ -134,6 +134,23 @@ void handleTLSHandshake(boost::system::error_code error,
     }
 }
 
+class CertificateVerifier {
+  public:
+    explicit CertificateVerifier(const bsl::string& host)
+    : d_host(host)
+    {
+    }
+
+    bool operator()(bool preverified,
+                    boost::asio::ssl::verify_context& ctx) const
+    {
+        return AsioResolver::verifyCertificate(d_host, preverified, ctx);
+    }
+
+  private:
+    bsl::string d_host;
+};
+
 void startTLSHandshake(
     const bsl::string& host,
     boost::system::error_code error,
@@ -147,6 +164,33 @@ void startTLSHandshake(
                       << endpoint->endpoint().address() << ":"
                       << endpoint->endpoint().port()
                       << ", starting TLS Handshake";
+
+        boost::system::error_code verifyError;
+        socketWrapper->socket().set_verify_callback(CertificateVerifier(host),
+                                                    verifyError);
+        if (verifyError) {
+            BALL_LOG_ERROR << "Error setting host name verification for ["
+                           << host << "]: " << augmentTlsError(verifyError);
+            onFail(Resolver::ERROR_HANDSHAKE);
+            return; // RETURN
+        }
+
+        // The host resolved to reach this point, so anything which doesn't
+        // parse as an IP address is a DNS name
+        boost::system::error_code parseError;
+        boost::asio::ip::make_address(host.c_str(), parseError);
+        const bool hostIsDnsName = static_cast<bool>(parseError);
+
+        // Only DNS names are sent as SNI, so the broker can select the
+        // matching certificate. RFC 6066 forbids IP literals here
+        if (hostIsDnsName &&
+            !SSL_set_tlsext_host_name(socketWrapper->socket().native_handle(),
+                                      host.c_str())) {
+            BALL_LOG_ERROR << "Error setting TLS SNI host name for [" << host
+                           << "]";
+            onFail(Resolver::ERROR_HANDSHAKE);
+            return; // RETURN
+        }
 
         socketWrapper->socket().async_handshake(
             boost::asio::ssl::stream_base::client,
@@ -503,6 +547,27 @@ bool AsioResolver::logCertVerificationFailure(
                    << " depth=" << errorDepth;
 
     return preverified;
+}
+
+bool AsioResolver::verifyCertificate(const bsl::string& host,
+                                     bool preverified,
+                                     boost::asio::ssl::verify_context& ctx)
+{
+    if (!logCertVerificationFailure(preverified, ctx)) {
+        return false;
+    }
+
+    const boost::asio::ssl::host_name_verification hostNameVerifier(
+        host.c_str());
+
+    if (!hostNameVerifier(preverified, ctx)) {
+        BALL_LOG_ERROR << "Certificate verification failed: certificate "
+                          "identity does not match host name: "
+                       << host;
+        return false;
+    }
+
+    return true;
 }
 
 void AsioResolver::shuffleResolverResults(
