@@ -44,16 +44,9 @@ bool ConnectionTuneOk::decode(ConnectionTuneOk* tuneOk,
 {
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (sizeof(tuneOk->d_channelMax) + sizeof(tuneOk->d_frameMax) +
-            sizeof(tuneOk->d_heartbeatInterval) >
-        buffer.available()) {
-        return false;
-    }
-
-    tuneOk->d_channelMax        = buffer.copy<bdlb::BigEndianUint16>();
-    tuneOk->d_frameMax          = buffer.copy<bdlb::BigEndianUint32>();
-    tuneOk->d_heartbeatInterval = buffer.copy<bdlb::BigEndianUint16>();
-    return true;
+    return buffer.copy<bdlb::BigEndianUint16>(&tuneOk->d_channelMax) &&
+           buffer.copy<bdlb::BigEndianUint32>(&tuneOk->d_frameMax) &&
+           buffer.copy<bdlb::BigEndianUint16>(&tuneOk->d_heartbeatInterval);
 }
 void ConnectionTuneOk::encode(Writer& output, const ConnectionTuneOk& tuneOk)
 {

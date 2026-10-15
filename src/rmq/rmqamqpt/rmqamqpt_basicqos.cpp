@@ -26,7 +26,8 @@ namespace rmqamqpt {
 
 namespace {
 BALL_LOG_SET_NAMESPACE_CATEGORY("RMQAMQPT.BASICQOS")
-}
+const uint8_t BITMASK_BIT_GLOBAL = (1 << 0);
+} // namespace
 
 BasicQoS::BasicQoS(bsl::uint16_t prefetchCount,
                    bsl::uint32_t prefetchSize,
@@ -50,18 +51,16 @@ bool BasicQoS::decode(BasicQoS* qos,
 {
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (sizeof(qos->d_prefetchSize) + sizeof(qos->d_prefetchCount) +
-            sizeof(qos->d_global) >
-        buffer.available()) {
-        BALL_LOG_ERROR
-            << "Not enough data to decode ConnectionTune frame: available "
-            << buffer.available();
+    uint8_t bitmask = 0;
+    if (!buffer.copy<bdlb::BigEndianUint32>(&qos->d_prefetchSize) ||
+        !buffer.copy<bdlb::BigEndianUint16>(&qos->d_prefetchCount) ||
+        !buffer.copy<uint8_t>(&bitmask)) {
+        BALL_LOG_ERROR << "Not enough data to decode BasicQoS frame: available "
+                       << buffer.available();
         return false;
     }
 
-    qos->d_prefetchSize  = buffer.copy<bdlb::BigEndianUint32>();
-    qos->d_prefetchCount = buffer.copy<bdlb::BigEndianUint16>();
-    qos->d_global        = buffer.copy<bool>();
+    qos->d_global = bitmask & BITMASK_BIT_GLOBAL;
     return true;
 }
 

@@ -22,6 +22,9 @@
 
 namespace BloombergLP {
 namespace rmqamqpt {
+namespace {
+const uint8_t BITMASK_BIT_NOWAIT = (1 << 0);
+} // namespace
 
 BasicCancel::BasicCancel(const bsl::string& consumerTag, bool noWait)
 : d_consumerTag(consumerTag)
@@ -42,11 +45,12 @@ bool BasicCancel::decode(BasicCancel* cancel,
     if (!Types::decodeShortString(&cancel->d_consumerTag, &buffer)) {
         return false;
     }
-    if (buffer.available() < sizeof(bool)) {
+    uint8_t bitmask = 0;
+    if (!buffer.copy<uint8_t>(&bitmask)) {
         return false;
     }
-    cancel->d_noWait = buffer.copy<bool>();
 
+    cancel->d_noWait = bitmask & BITMASK_BIT_NOWAIT;
     return true;
 }
 

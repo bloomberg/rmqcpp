@@ -53,21 +53,22 @@ bool BasicPublish::decode(BasicPublish* publish,
                           bsl::size_t dataLength)
 {
     rmqamqpt::Buffer buffer(data, dataLength);
-    if (sizeof(int16_t) > buffer.available()) {
+
+    int16_t reserved1 = 0;
+    if (!buffer.copy<bdlb::BigEndianInt16>(&reserved1)) {
         return false;
     }
-    buffer.copy<bdlb::BigEndianInt16>();
     if (!Types::decodeShortString(&publish->d_exchangeName, &buffer)) {
         return false;
     }
     if (!Types::decodeShortString(&publish->d_routingKey, &buffer)) {
         return false;
     }
-    if (sizeof(uint8_t) > buffer.available()) {
+
+    uint8_t theByte = 0;
+    if (!buffer.copy<uint8_t>(&theByte)) {
         return false;
     }
-
-    const uint8_t theByte = buffer.copy<uint8_t>();
 
     publish->d_mandatory = theByte & MASK_BIT_0;
     publish->d_immediate = theByte & MASK_BIT_1;

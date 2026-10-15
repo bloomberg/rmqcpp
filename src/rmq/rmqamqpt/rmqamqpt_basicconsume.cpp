@@ -67,22 +67,21 @@ bool BasicConsume::decode(BasicConsume* consume,
 {
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    // uint16_t reserved1;
-    if (sizeof(uint16_t /* reserved1 */) > buffer.available()) {
+    uint16_t reserved1 = 0;
+    if (!buffer.copy<bdlb::BigEndianUint16>(&reserved1)) {
         return false;
     }
-    /*reserved1 = */ buffer.copy<bdlb::BigEndianUint16>();
     if (!Types::decodeShortString(&consume->d_queue, &buffer)) {
         return false;
     }
     if (!Types::decodeShortString(&consume->d_consumerTag, &buffer)) {
         return false;
     }
-    if (sizeof(uint8_t) > buffer.available()) {
+
+    uint8_t theByte = 0;
+    if (!buffer.copy<uint8_t>(&theByte)) {
         return false;
     }
-
-    const uint8_t theByte = buffer.copy<uint8_t>();
 
     consume->d_noLocal   = theByte & MASK_BIT_0;
     consume->d_noAck     = theByte & MASK_BIT_1;

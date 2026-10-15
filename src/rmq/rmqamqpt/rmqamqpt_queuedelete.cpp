@@ -62,12 +62,12 @@ bool QueueDelete::decode(QueueDelete* queueDelete,
     }
     buffer.skip(sizeof(uint16_t));
 
+    uint8_t bitmask = 0;
     if (!Types::decodeShortString(&queueDelete->d_name, &buffer) ||
-        buffer.available() < sizeof(uint8_t)) {
+        !buffer.copy<uint8_t>(&bitmask)) {
         return false;
     }
 
-    uint8_t bitmask         = buffer.copy<uint8_t>();
     queueDelete->d_ifUnused = bitmask & BITMASK_BIT_0;
     queueDelete->d_ifEmpty  = bitmask & BITMASK_BIT_1;
     queueDelete->d_noWait   = bitmask & BITMASK_BIT_2;

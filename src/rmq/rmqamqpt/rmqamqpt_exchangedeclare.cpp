@@ -85,14 +85,11 @@ bool ExchangeDeclare::decode(ExchangeDeclare* declare,
         return false;
     }
 
-    if (buffer.available() <
-        sizeof(declare->d_passive) + sizeof(declare->d_durable) +
-            sizeof(declare->d_autoDelete) + sizeof(declare->d_internal) +
-            sizeof(declare->d_noWait)) {
+    uint8_t bitmask = 0;
+    if (!buffer.copy<uint8_t>(&bitmask)) {
         return false;
     }
 
-    uint8_t bitmask       = buffer.copy<uint8_t>();
     declare->d_passive    = bitmask & BITMASK_BIT_PASSIVE;
     declare->d_durable    = bitmask & BITMASK_BIT_DURABLE;
     declare->d_autoDelete = bitmask & BITMASK_BIT_AUTODELETE;

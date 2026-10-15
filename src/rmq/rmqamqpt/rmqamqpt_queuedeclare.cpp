@@ -73,15 +73,12 @@ bool QueueDeclare::decode(QueueDeclare* declare,
     }
     buffer.skip(sizeof(uint16_t));
 
+    uint8_t bitmask = 0;
     if (!Types::decodeShortString(&declare->d_name, &buffer) ||
-        buffer.available() <
-            sizeof(declare->d_passive) + sizeof(declare->d_durable) +
-                sizeof(declare->d_exclusive) + sizeof(declare->d_autoDelete) +
-                sizeof(declare->d_noWait)) {
+        !buffer.copy<uint8_t>(&bitmask)) {
         return false;
     }
 
-    uint8_t bitmask       = buffer.copy<uint8_t>();
     declare->d_passive    = bitmask & BITMASK_BIT_0;
     declare->d_durable    = bitmask & BITMASK_BIT_1;
     declare->d_exclusive  = bitmask & BITMASK_BIT_2;

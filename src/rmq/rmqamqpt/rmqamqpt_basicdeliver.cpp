@@ -26,7 +26,8 @@ namespace rmqamqpt {
 
 namespace {
 BALL_LOG_SET_NAMESPACE_CATEGORY("RMQAMQPT.BASICDELIVER")
-}
+const uint8_t BITMASK_BIT_REDELIVERED = (1 << 0);
+} // namespace
 
 BasicDeliver::BasicDeliver(const bsl::string& consumerTag,
                            uint64_t deliveryTag,
@@ -60,15 +61,16 @@ bool BasicDeliver::decode(BasicDeliver* deliver,
         return false;
     }
 
-    if (sizeof(deliver->d_deliveryTag) + sizeof(deliver->d_redelivered) >
-        buffer.available()) {
+    uint8_t bitmask = 0;
+    if (!buffer.copy<bdlb::BigEndianUint64>(&deliver->d_deliveryTag) ||
+        !buffer.copy<uint8_t>(&bitmask)) {
         BALL_LOG_ERROR
             << "Not enough data to decode BasicDeliver frame: available "
             << buffer.available();
         return false;
     }
-    deliver->d_deliveryTag = buffer.copy<bdlb::BigEndianUint64>();
-    deliver->d_redelivered = buffer.copy<bool>();
+
+    deliver->d_redelivered = bitmask & BITMASK_BIT_REDELIVERED;
 
     if (!Types::decodeShortString(&deliver->d_exchange, &buffer)) {
         return false;

@@ -22,6 +22,8 @@
 #include <rmqamqpt_constants.h>
 #include <rmqamqpt_frame.h>
 
+#include <bsl_cstddef.h>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -54,4 +56,18 @@ TEST(ChannelFlow, FlowEncodeDecode)
 
     EXPECT_TRUE(cm.is<rmqamqpt::ChannelFlow>());
     EXPECT_EQ(cm.the<rmqamqpt::ChannelFlow>().activeFlow(), 1);
+}
+
+TEST(Methods_ChannelFlow, ActiveIsReadFromBitZeroOnly)
+{
+    const uint8_t cases[][2] = {{0x00, 0}, {0x01, 1}, {0x02, 0}, {0xFF, 1}};
+
+    for (bsl::size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        const uint8_t data[] = {cases[i][0]};
+
+        rmqamqpt::ChannelFlow flow;
+        EXPECT_TRUE(rmqamqpt::ChannelFlow::decode(&flow, data, sizeof(data)));
+        EXPECT_EQ(static_cast<int>(flow.activeFlow()), cases[i][1])
+            << "octet: " << static_cast<int>(cases[i][0]);
+    }
 }

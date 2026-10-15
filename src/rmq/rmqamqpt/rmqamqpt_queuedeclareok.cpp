@@ -46,16 +46,9 @@ bool QueueDeclareOk::decode(QueueDeclareOk* declareOk,
 
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (!Types::decodeShortString(&declareOk->d_name, &buffer) ||
-        buffer.available() < sizeof(declareOk->d_messageCount) +
-                                 sizeof(declareOk->d_consumerCount)) {
-        return false;
-    }
-
-    declareOk->d_messageCount  = buffer.copy<bdlb::BigEndianUint32>();
-    declareOk->d_consumerCount = buffer.copy<bdlb::BigEndianUint32>();
-
-    return true;
+    return Types::decodeShortString(&declareOk->d_name, &buffer) &&
+           buffer.copy<bdlb::BigEndianUint32>(&declareOk->d_messageCount) &&
+           buffer.copy<bdlb::BigEndianUint32>(&declareOk->d_consumerCount);
 }
 
 void QueueDeclareOk::encode(Writer& output, const QueueDeclareOk& declareOk)
