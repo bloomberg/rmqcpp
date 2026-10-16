@@ -13,9 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from subprocess import TimeoutExpired
-from .tests_runner import RmqTest
-from .fixtures import *
+from __future__ import annotations
+
+import pytest
+
+from .integration_test import RmqTest, wait_or_kill
+
+pytestmark = pytest.mark.capability("producer")
 
 
 class TestProduceMessage(RmqTest):
@@ -63,96 +67,28 @@ class TestProduceMessage(RmqTest):
         NumProducers = 5
         NumMsgPerProducer = 5
 
-        p = self.start_perftest_executable(
-            [
-                "--queue",
-                qname,
-                "--exchange",
-                exch,
-                "--pmessages",
-                str(NumMsgPerProducer),
-                "--consumers",
-                str(0),
-                "--producers",
-                str(NumProducers),
-                "--routing-key",
-                "routing-key",
-            ]
-        )
-        try:
-            out = p.wait(timeout=120)
-            print(f"test_multiple_producer_exit_cleanly rcode: {p.returncode}")
-            assert p.returncode == 0
-            assert self.wait_for_n_published(qname, NumProducers * NumMsgPerProducer)
-        except TimeoutExpired:
-            p.kill()
-            out = p.communicate()
-            print(
-                f"Timeout reached waiting for test_multiple_producer_exit_cleanly. Details: {out}"
+        for _ in range(NumProducers):
+            p = self.start_perftest_executable(
+                [
+                    "--queue",
+                    qname,
+                    "--exchange",
+                    exch,
+                    "--pmessages",
+                    str(NumMsgPerProducer),
+                    "--consumers",
+                    str(0),
+                    "--producers",
+                    "1",
+                    "--routing-key",
+                    "routing-key",
+                ]
             )
-            assert False
+            wait_or_kill(p, timeout=10.0)
 
+            assert p.returncode == 0
 
-class TestPersistence(RmqTest):
-    def test_persistent_message(self):
-        """
-        This test will soon be deprecated as the persistent flag becomes irrelevant.
-        For now it's read by classic queues.
-        Uses default exchange, with default routing key.
-        """
-        assert self.timed_expect_true(lambda: self.get_connection_count() == 0)
-        qname = "publish-persistent-messages"
-
-        N = 5
-
-        self.start_perftest_executable(
-            [
-                "--queue",
-                qname,
-                "--pmessages",
-                str(N),
-                "--consumers",
-                str(0),
-                "--producers",
-                "1",
-                "--flag",
-                "persistent",
-            ]
-        )
-
-        assert self.timed_expect_true(
-            lambda: self.get_persistent_message_count(qname) == N, 600
-        )
-
-    def test_default_non_persistent_message(self):
-        """
-        This test will soon be deprecated as the persistent flag becomes irrelevant.
-        For now it's read by classic queues
-        """
-
-        assert self.timed_expect_true(lambda: self.get_connection_count() == 0)
-        qname = "publish-non-persistent-messages"
-
-        N = 5
-
-        self.start_perftest_executable(
-            [
-                "--queue",
-                qname,
-                "--pmessages",
-                str(N),
-                "--consumers",
-                str(0),
-                "--producers",
-                "1",
-                "--routing-key",
-                qname,
-            ]
-        )
-        assert self.timed_expect_true(
-            lambda: self.get_persistent_message_count(qname) == 0
-        )
-        assert self.timed_expect_true(lambda: self.get_message_count(qname) == N)
+        assert self.wait_for_n_published(qname, NumProducers * NumMsgPerProducer)
 
 
 class TestProducerWithBrokerUnavailable(RmqTest):

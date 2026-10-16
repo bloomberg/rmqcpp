@@ -63,16 +63,14 @@ class ConsumerCallback {
 
     void operator()(rmqp::MessageGuard& guard)
     {
-        if (d_limitCount) {
-            if (*d_remainingCount <= 0) {
-                *d_finished = true;
-                return;
-            }
-            else {
-                *d_remainingCount -= 1;
-            }
+        if (d_limitCount && *d_remainingCount == 0) {
+            *d_finished = true;
+            return;
         }
         guard.ack();
+        if (d_limitCount && --*d_remainingCount == 0) {
+            *d_finished = true;
+        }
     }
 
   private:
