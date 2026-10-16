@@ -45,5 +45,7 @@ const bsl::size_t Constants::FLOAT_OCTETS   = 4;
 const bsl::size_t Constants::DOUBLE_OCTETS  = 8;
 const bsl::size_t Constants::DECIMAL_OCTETS = 5;
 
+const bsl::uint32_t Constants::FRAME_MIN_SIZE = 4096;
+
 } // namespace rmqamqpt
 } // namespace BloombergLP

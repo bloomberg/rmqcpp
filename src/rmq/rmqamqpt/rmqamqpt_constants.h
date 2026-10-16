@@ -142,6 +142,9 @@ class Constants {
     static const bsl::size_t FLOAT_OCTETS;
     static const bsl::size_t DOUBLE_OCTETS;
     static const bsl::size_t DECIMAL_OCTETS;
+
+    /// The smallest frame-max a peer is permitted to negotiate
+    static const bsl::uint32_t FRAME_MIN_SIZE;
 };
 
 } // namespace rmqamqpt

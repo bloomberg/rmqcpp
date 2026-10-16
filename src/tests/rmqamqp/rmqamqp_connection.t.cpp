@@ -68,6 +68,15 @@ const char* TEST_VHOST = "vhostname";
 
 void noOpOnError(const bsl::string&, int) {}
 
+void recordError(bsl::string* outText,
+                 int* outCode,
+                 const bsl::string& text,
+                 int code)
+{
+    *outText = text;
+    *outCode = code;
+}
+
 void noopCloseHandler() {}
 
 void gracefulCloseHandler(bool& invoked) { invoked = true; }
@@ -207,15 +216,21 @@ class MockConnection : public rmqio::Connection {
 
 class MockHeartbeatManager : public rmqamqp::HeartbeatManager {
   public:
-    MockHeartbeatManager() {}
+    MockHeartbeatManager()
+    : d_startCount(0)
+    {
+    }
 
     void start(uint32_t,
                const HeartbeatCallback& sendHeartbeat,
                const ConnectionDeathCallback& onConnectionDeath)
     {
+        ++d_startCount;
         d_sendHeartbeat  = sendHeartbeat;
         d_killConnection = onConnectionDeath;
     }
+
+    int d_startCount;
 
     MOCK_METHOD0(stop, void());
     MOCK_METHOD0(notifyMessageSent, void());
@@ -1579,6 +1594,75 @@ TEST_F(TuneParamNegotiationTests, ServerSendsHighValueNegotiateToOurValue)
 
     // 2. Process shutdown
     d_eventLoop.run();
+}
+
+TEST_F(TuneParamNegotiationTests,
+       ServerSendsFrameMaxBelowMinimumFailsConnection)
+{
+    // AMQP 0-9-1 does not permit a frame-max below FRAME_MIN_SIZE. 4095 is
+    // the largest value that must still be rejected.
+    const uint32_t rejected = 4095;
+
+    expectHeaderAndStartFrames();
+
+    {
+        ConnectionTune tuneMethod(2048, rejected, 5);
+        Frame tuneFrame;
+        Framer::makeMethodFrame(
+            &tuneFrame, 0, Method(ConnectionMethod(tuneMethod)));
+        d_replayFrame.pushInbound(bsl::make_shared<SerializedFrame>(tuneFrame));
+    }
+
+    {
+        ConnectionClose closeMethod(
+            Constants::NOT_ALLOWED,
+            "Negotiated frame-max 4095 is below the minimum of 4096",
+            Constants::CONNECTION,
+            Constants::CONNECTION_TUNE);
+        Frame closeFrame;
+        Framer::makeMethodFrame(
+            &closeFrame, 0, Method(ConnectionMethod(closeMethod)));
+        d_replayFrame.pushOutbound(
+            bsl::make_shared<SerializedFrame>(closeFrame));
+
+        expectCloseOkFrame(false); // from the server
+    }
+
+    // capture what the application is told, rather than only that it is told
+    bsl::string errorText;
+    int errorCode = 0;
+    const rmqt::ErrorCallback recorder =
+        bdlf::BindUtil::bind(&recordError, &errorText, &errorCode, _1, _2);
+
+    EXPECT_CALL(*d_retryHandler, errorCallback())
+        .Times(1)
+        .WillOnce(ReturnRef(recorder));
+
+    resetExpectations();
+    expectFirstHandshakeFrames();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+        // 1. Reject the tune, disconnect, reconnect successfully
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+        expectShutdownCalls();
+    }
+
+    // 2. Process shutdown
+    d_eventLoop.run();
+
+    // The rejected tune was not applied before it was rejected: the only
+    // heartbeat start belongs to the reconnect that followed.
+    EXPECT_THAT(d_heartbeat->d_startCount, Eq(1));
+
+    // The application is told why, rather than only seeing a silent retry
+    EXPECT_THAT(errorCode, Eq(Constants::NOT_ALLOWED));
+    EXPECT_THAT(errorText, HasSubstr("frame-max 4095"));
+    EXPECT_THAT(errorText, HasSubstr("minimum of 4096"));
 }
 
 TEST_F(TuneParamNegotiationTests, ServerSendsLowValueNegotiateToTheirValue)
