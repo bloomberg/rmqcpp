@@ -50,8 +50,16 @@ class Framer {
 
     Framer();
 
-    /// Updates the maximum frame size used when encoding Content frames.
-    void setMaxFrameSize(bsl::size_t maxSize);
+    /// Update the maximum frame size used when encoding Content frames.
+    ///
+    /// Return false, leaving the previous size in place, when `maxSize` is
+    /// at or below `rmqamqpt::Frame::frameOverhead()`: the content body
+    /// size is `maxSize` minus that overhead, which would be zero or would
+    /// underflow. The retained size may exceed what the peer asked for, so
+    /// a caller must not ignore a false return. Connection negotiation
+    /// enforces the stricter `rmqamqpt::Constants::FRAME_MIN_SIZE`, so a
+    /// caller which has negotiated cannot be refused.
+    bool setMaxFrameSize(bsl::size_t maxSize);
 
     /// Statefully constructs rmqamqp::Message objects from incoming frames
     /// Incoming Messages spread across frames are de-multiplexed by channel

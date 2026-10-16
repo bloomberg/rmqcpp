@@ -222,7 +222,11 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
 
     // ConnectionMethods
     void sendConnectionStartOk();
-    void sendConnectionTuneOk(const rmqamqpt::ConnectionTune& tuneMethod);
+    /// Negotiate the tune parameters and reply with Connection.Tune-ok.
+    /// \return false if the negotiated frame-max is unusable, in which case
+    ///         no Tune-ok was sent and a Connection.Close has been issued
+    ///         instead.
+    bool sendConnectionTuneOk(const rmqamqpt::ConnectionTune& tuneMethod);
     void sendConnectionOpen();
     void sendConnectionCloseOk();
 

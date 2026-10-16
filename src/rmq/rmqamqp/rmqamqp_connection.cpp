@@ -55,6 +55,7 @@
 #include <bsl_string.h>
 #include <bsl_utility.h>
 #include <bsl_vector.h>
+#include <bsls_assert.h>
 
 namespace BloombergLP {
 namespace rmqamqp {
@@ -426,7 +427,7 @@ void Connection::sendConnectionStartOk()
                    << startOkMethod;
 }
 
-void Connection::sendConnectionTuneOk(
+bool Connection::sendConnectionTuneOk(
     const rmqamqpt::ConnectionTune& tuneMethod)
 {
     bsl::uint16_t negotiatedChannelMax;
@@ -442,8 +443,36 @@ void Connection::sendConnectionTuneOk(
         static_cast<uint32_t>(rmqamqpt::Frame::getMaxFrameSize()),
         k_MAX_HEARTBEAT_TIMEOUT_SEC);
 
+    if (negotiatedMaxFrameSize < rmqamqpt::Constants::FRAME_MIN_SIZE) {
+        const bsl::string error =
+            "Negotiated frame-max " + bsl::to_string(negotiatedMaxFrameSize) +
+            " is below the minimum of " +
+            bsl::to_string(rmqamqpt::Constants::FRAME_MIN_SIZE);
+
+        BALL_LOG_ERROR << error << ": " << connectionDebugName();
+
+        connectionException(rmqamqpt::Constants::NOT_ALLOWED,
+                            error,
+                            rmqamqpt::ConnectionMethod::CLASS_ID,
+                            rmqamqpt::ConnectionTune::METHOD_ID);
+
+        // Retrying cannot succeed while the broker proposes the same value,
+        // so tell the application rather than only looping. Reported after
+        // the close so a throwing callback cannot stop it being sent.
+        d_retryHandler->errorCallback()("Connection=" + d_connectionName + " " +
+                                            error,
+                                        rmqamqpt::Constants::NOT_ALLOWED);
+
+        return false;
+    }
+
     startHeartbeatManager(negotiatedHeartbeatTimeout);
-    d_framer.setMaxFrameSize(negotiatedMaxFrameSize);
+    // Guaranteed by the FRAME_MIN_SIZE check above, which is stricter than
+    // the framer's own minimum.
+    const bool frameSizeAccepted =
+        d_framer.setMaxFrameSize(negotiatedMaxFrameSize);
+    (void)frameSizeAccepted;
+    BSLS_ASSERT(frameSizeAccepted);
 
     rmqamqpt::ConnectionTuneOk tuneOkMethod(negotiatedChannelMax,
                                             negotiatedMaxFrameSize,
@@ -458,6 +487,7 @@ void Connection::sendConnectionTuneOk(
                                                CONNECTION_TUNEOK_SENT));
     BALL_LOG_TRACE << "Connection Tune-ok method sent to server: "
                    << tuneOkMethod;
+    return true;
 }
 
 void Connection::sendConnectionOpen()
@@ -667,8 +697,9 @@ class Connection::ConnectionMethodProcessor {
         if (expectedState(tune, Connection::CONNECTION_STARTOK_SENT)) {
             conn.d_state = CONNECTION_TUNE_RECEIVED;
             BALL_LOG_TRACE << "State now set to: " << conn.d_state;
-            conn.sendConnectionTuneOk(tune);
-            conn.sendConnectionOpen();
+            if (conn.sendConnectionTuneOk(tune)) {
+                conn.sendConnectionOpen();
+            }
         }
     }
 
