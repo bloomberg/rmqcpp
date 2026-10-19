@@ -25,7 +25,7 @@ full: init build
 full-test: full unit integration
 
 integration: 
-	RMQ_USER=guest RMQ_PWD=guest RMQ_USER_MGMT="guest" RMQ_PWD_MGMT="guest" RMQ_PORT="5672" RMQ_TLS_PORT="5671" \
+	RMQ_USER=guest RMQ_PWD=guest RMQ_USER_MGMT="guest" RMQ_PWD_MGMT="guest" RMQ_PORT="5672" RMQ_TLS_PORT="5671" RMQ_PROXY_CONTROL_PORT="5700" \
 	cmake --build $(BUILD_FOLDER) -t test_integration 
 
 clean:

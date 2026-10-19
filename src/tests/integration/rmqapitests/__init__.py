@@ -17,8 +17,4 @@ limitations under the License.
 This integration test module runs various scenarios to ensure the proper behavior of a reliable RabbitMQ client.
 
 Tests require the presence of a RabbitMQ broker.
-
-Upon import tests will run using an executable defined by the environment variable 'RMQ_EXE'.
-See fixtures.TestConfig for other evn var arguments.
-
 """

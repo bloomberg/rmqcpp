@@ -13,16 +13,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
+from dataclasses import replace
+
 import pytest
-from ..rmqapitests.fixtures import *
-from ..rmqapitests.tests_runner import RmqTest
+from ..rmqapitests.integration_test import RmqTest
 from time import sleep
+
+pytestmark = pytest.mark.capability("queue-delete")
 
 
 # TODO: This test cannot be supported by rmqapitests
 # perfTest can tare down queues when the tests are over by declaring them as auto-delete
 # but cannot test deleting a specific queue (because its a performance tester, not a functionality tester)
 class TestQueueDelete(RmqTest):
+    def start_rmqperftest(self, parameters):
+        config = self.config
+        self.config = replace(config, exe=os.environ["RMQ_ALT_EXE"])
+        try:
+            return self.start_perftest_executable(parameters)
+        finally:
+            self.config = config
+
     def test_delete_queue(self):
         assert self.timed_expect_true(lambda: self.get_connection_count() == 0)
         queue = "test_delete_queue"
@@ -65,7 +77,7 @@ class TestQueueDelete(RmqTest):
         assert self.timed_expect_true(lambda: self.get_queue_info(queue) is not None)
 
         # attach a consumer
-        consumer = self.start_perftest_executable(
+        consumer = self.start_rmqperftest(
             [
                 "--auto-delete",
                 "false",
@@ -77,8 +89,7 @@ class TestQueueDelete(RmqTest):
                 "0",
                 "--flag",
                 "persistent",
-            ],
-            alt_exe=True
+            ]
         )
 
         assert self.timed_expect_true(
