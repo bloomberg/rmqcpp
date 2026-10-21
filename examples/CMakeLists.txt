@@ -1,4 +1,6 @@
-add_subdirectory(rmqperftest)
+if(rmqcpp_ENABLE_TESTING)
+    add_subdirectory(rmqperftest)
+endif()
 
 if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "SunPro") AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "XL"))
     # The examples don't need to work on these platforms
