@@ -23,7 +23,6 @@ from .session import Drop, Session, SocketAction, Write
 HOST = "127.0.0.1"
 EPHEMERAL_PORT = 0
 READ_BYTES = 64 * 1024
-MILLIS = 1_000.0
 
 
 @dataclass(slots=True)
@@ -109,7 +108,7 @@ class AmqpServer:
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
         loop = asyncio.get_running_loop()
-        idle = self.session.config.idle_millis / MILLIS
+        idle = self.session.config.idle_millis / 1_000.0
         deadline = loop.time() + idle
 
         while True:

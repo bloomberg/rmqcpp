@@ -127,7 +127,7 @@ def consumer_properties(
         partial(check_consumer_recovers_within, messages=consumer.messages),
         partial(
             check_expected_requeue,
-            requeue=False,  # TODO could try to vary this via perftest
+            requeue=True,  # TODO could try to vary this via perftest
         ),
         partial(
             check_declarations_before_work,

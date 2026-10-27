@@ -71,9 +71,9 @@ def check_expected_requeue(
             case (
                 pb.TRANSCRIPT_EVENT_METHOD_INGRESS,
                 (pb.BasicNack() | pb.BasicReject()) as method,
-            ) if method.requeue == requeue:
+            ) if method.requeue != requeue:
                 return PropertyViolation(
-                    f"Dismissed delivery without requeuing: {format_line_name(line)}",
+                    f"{format_line_name(line)} with requeue={method.requeue}",
                     line.index,
                 )
 
