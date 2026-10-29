@@ -1,0 +1,562 @@
+// Copyright 2026 Bloomberg Finance L.P.
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package amqp_imposter.control.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message Void {}
+
+message StringList {
+  repeated string items = 1;
+}
+
+message AmqpValue {
+  oneof value {
+    bool boolean = 1;
+    int64 long = 2;
+    string string = 3;
+    bytes bytes = 4;
+    string decimal = 5;
+    google.protobuf.Timestamp timestamp = 6;
+    Void void = 7;
+    AmqpTable table = 8;
+    AmqpArray array = 9;
+  }
+}
+
+message AmqpTable {
+  map<string, AmqpValue> entries = 1;
+}
+
+message AmqpArray {
+  repeated AmqpValue items = 1;
+}
+
+message MessageProperties {
+  optional string content_type = 1;
+  optional string content_encoding = 2;
+  optional AmqpTable headers = 3;
+  optional uint32 delivery_mode = 4;
+  optional uint32 priority = 5;
+  optional string correlation_id = 6;
+  optional string reply_to = 7;
+  optional string expiration = 8;
+  optional string message_id = 9;
+  optional uint64 timestamp = 10;
+  optional string type = 11;
+  optional string user_id = 12;
+  optional string app_id = 13;
+}
+
+message NegotiationOptions {
+  optional StringList mechanisms = 1;
+  optional StringList locales = 2;
+  optional bool publisher_confirms = 3;
+  optional bool basic_nack = 4;
+  optional bool consumer_cancel_notify = 5;
+  optional uint32 channel_max = 6;
+  optional uint32 frame_max = 7;
+  optional uint32 heartbeat = 8;
+}
+
+message ConnectionStart {
+  uint32 version_major = 1;
+  uint32 version_minor = 2;
+  repeated string mechanisms = 3;
+  repeated string locales = 4;
+  bool publisher_confirms = 5;
+  bool basic_nack = 6;
+  bool consumer_cancel_notify = 7;
+}
+message ConnectionStartPattern {
+  optional uint32 version_major = 1;
+  optional uint32 version_minor = 2;
+  optional StringList mechanisms = 3;
+  optional StringList locales = 4;
+  optional bool publisher_confirms = 5;
+  optional bool basic_nack = 6;
+  optional bool consumer_cancel_notify = 7;
+}
+
+message ConnectionStartOk {
+  string mechanism = 1;
+  string locale = 2;
+  string response = 3;
+}
+message ConnectionStartOkPattern {
+  optional string mechanism = 1;
+  optional string locale = 2;
+  reserved 3;
+}
+
+message ConnectionTune {
+  uint32 channel_max = 1;
+  uint32 frame_max = 2;
+  uint32 heartbeat = 3;
+}
+message ConnectionTunePattern {
+  optional uint32 channel_max = 1;
+  optional uint32 frame_max = 2;
+  optional uint32 heartbeat = 3;
+}
+
+message ConnectionTuneOk {
+  uint32 channel_max = 1;
+  uint32 frame_max = 2;
+  uint32 heartbeat = 3;
+}
+message ConnectionTuneOkPattern {
+  optional uint32 channel_max = 1;
+  optional uint32 frame_max = 2;
+  optional uint32 heartbeat = 3;
+}
+
+message ConnectionOpen {
+  string vhost = 1;
+}
+message ConnectionOpenPattern {
+  reserved 1;
+}
+
+message ConnectionOpenOk {}
+message ConnectionOpenOkPattern {}
+
+message ConnectionClose {
+  uint32 reply_code = 1;
+  string reply_text = 2;
+  uint32 class_id = 3;
+  uint32 method_id = 4;
+}
+message ConnectionClosePattern {
+  optional uint32 reply_code = 1;
+  optional string reply_text = 2;
+  optional uint32 class_id = 3;
+  optional uint32 method_id = 4;
+}
+
+message ConnectionCloseOk {}
+message ConnectionCloseOkPattern {}
+
+message ChannelOpen {}
+message ChannelOpenPattern {}
+
+message ChannelOpenOk {}
+message ChannelOpenOkPattern {}
+
+message ChannelClose {
+  uint32 reply_code = 1;
+  string reply_text = 2;
+  uint32 class_id = 3;
+  uint32 method_id = 4;
+}
+message ChannelClosePattern {
+  optional uint32 reply_code = 1;
+  optional string reply_text = 2;
+  optional uint32 class_id = 3;
+  optional uint32 method_id = 4;
+}
+
+message ChannelCloseOk {}
+message ChannelCloseOkPattern {}
+
+message ConfirmSelect {
+  bool no_wait = 1;
+}
+message ConfirmSelectPattern {
+  reserved 1;
+}
+
+message ConfirmSelectOk {}
+message ConfirmSelectOkPattern {}
+
+message ExchangeDeclare {
+  string exchange = 1;
+  string exchange_type = 2;
+  bool passive = 3;
+  bool durable = 4;
+  bool auto_delete = 5;
+  bool internal = 6;
+  bool no_wait = 7;
+  optional AmqpTable arguments = 8;
+}
+message ExchangeDeclarePattern {
+  optional string exchange = 1;
+  reserved 2 to 8;
+}
+
+message ExchangeDeclareOk {}
+message ExchangeDeclareOkPattern {}
+
+message ExchangeBind {
+  string destination = 1;
+  string source = 2;
+  string routing_key = 3;
+  bool no_wait = 4;
+  optional AmqpTable arguments = 5;
+}
+message ExchangeBindPattern {
+  reserved 1 to 5;
+}
+
+message ExchangeBindOk {}
+message ExchangeBindOkPattern {}
+
+message QueueDeclare {
+  string queue = 1;
+  bool passive = 2;
+  bool durable = 3;
+  bool exclusive = 4;
+  bool auto_delete = 5;
+  bool no_wait = 6;
+  optional AmqpTable arguments = 7;
+}
+message QueueDeclarePattern {
+  reserved 1 to 7;
+}
+
+message QueueDeclareOk {
+  string queue = 1;
+  uint32 message_count = 2;
+  uint32 consumer_count = 3;
+}
+message QueueDeclareOkPattern {
+  reserved 1 to 3;
+}
+
+message QueueBind {
+  string queue = 1;
+  string exchange = 2;
+  string routing_key = 3;
+  bool no_wait = 4;
+  optional AmqpTable arguments = 5;
+}
+message QueueBindPattern {
+  reserved 1 to 5;
+}
+
+message QueueBindOk {}
+message QueueBindOkPattern {}
+
+message BasicQos {
+  uint32 prefetch_count = 1;
+  uint32 prefetch_size = 2;
+  bool global_qos = 3;
+}
+message BasicQosPattern {
+  reserved 1 to 3;
+}
+
+message BasicQosOk {}
+message BasicQosOkPattern {}
+
+message BasicConsume {
+  string queue = 1;
+  string consumer_tag = 2;
+  bool no_local = 3;
+  bool no_ack = 4;
+  bool no_wait = 5;
+  bool exclusive = 6;
+  optional AmqpTable arguments = 7;
+}
+message BasicConsumePattern {
+  reserved 1 to 7;
+}
+
+message BasicConsumeOk {
+  string consumer_tag = 1;
+}
+message BasicConsumeOkPattern {
+  reserved 1;
+}
+
+message BasicCancel {
+  string consumer_tag = 1;
+  bool no_wait = 2;
+}
+message BasicCancelPattern {
+  optional string consumer_tag = 1;
+  reserved 2;
+}
+
+message BasicCancelOk {
+  string consumer_tag = 1;
+}
+message BasicCancelOkPattern {
+  optional string consumer_tag = 1;
+}
+
+message BasicPublish {
+  string exchange = 1;
+  string routing_key = 2;
+  bool mandatory = 3;
+  bool immediate = 4;
+  optional MessageProperties properties = 5;
+  bytes body = 6;
+}
+message BasicPublishPattern {
+  reserved 1 to 6;
+}
+
+message BasicReturn {
+  uint32 reply_code = 1;
+  string reply_text = 2;
+  string exchange = 3;
+  string routing_key = 4;
+  optional MessageProperties properties = 5;
+  bytes body = 6;
+}
+message BasicReturnPattern {
+  optional uint32 reply_code = 1;
+  reserved 2;
+  optional string exchange = 3;
+  optional string routing_key = 4;
+  reserved 5, 6;
+}
+
+message BasicAck {
+  uint64 delivery_tag = 1;
+  bool multiple = 2;
+}
+message BasicAckPattern {
+  optional uint64 delivery_tag = 1;
+  reserved 2;
+}
+
+message BasicNack {
+  uint64 delivery_tag = 1;
+  bool multiple = 2;
+  bool requeue = 3;
+}
+message BasicNackPattern {
+  optional uint64 delivery_tag = 1;
+  reserved 2, 3;
+}
+
+message BasicReject {
+  uint64 delivery_tag = 1;
+  bool requeue = 2;
+}
+message BasicRejectPattern {
+  optional uint64 delivery_tag = 1;
+  reserved 2;
+}
+
+message BasicDeliver {
+  string consumer_tag = 1;
+  uint64 delivery_tag = 2;
+  bool redelivered = 3;
+  string exchange = 4;
+  string routing_key = 5;
+  optional MessageProperties properties = 6;
+  bytes body = 7;
+}
+message BasicDeliverPattern {
+  optional string consumer_tag = 1;
+  optional uint64 delivery_tag = 2;
+  reserved 3 to 7;
+}
+
+message BasicGet {
+  string queue = 1;
+  bool no_ack = 2;
+}
+message BasicGetPattern {
+  reserved 1, 2;
+}
+
+message BasicGetOk {
+  uint64 delivery_tag = 1;
+  bool redelivered = 2;
+  string exchange = 3;
+  string routing_key = 4;
+  uint32 message_count = 5;
+  optional MessageProperties properties = 6;
+  bytes body = 7;
+}
+message BasicGetOkPattern {
+  optional uint64 delivery_tag = 1;
+  reserved 2 to 7;
+}
+
+message BasicGetEmpty {}
+message BasicGetEmptyPattern {}
+
+message Method {
+  oneof kind {
+    ConnectionStart connection_start = 1;
+    ConnectionStartOk connection_start_ok = 2;
+    ConnectionTune connection_tune = 3;
+    ConnectionTuneOk connection_tune_ok = 4;
+    ConnectionOpen connection_open = 5;
+    ConnectionOpenOk connection_open_ok = 6;
+    ConnectionClose connection_close = 7;
+    ConnectionCloseOk connection_close_ok = 8;
+    ChannelOpen channel_open = 9;
+    ChannelOpenOk channel_open_ok = 10;
+    ChannelClose channel_close = 11;
+    ChannelCloseOk channel_close_ok = 12;
+    ConfirmSelect confirm_select = 13;
+    ConfirmSelectOk confirm_select_ok = 14;
+    ExchangeDeclare exchange_declare = 15;
+    ExchangeDeclareOk exchange_declare_ok = 16;
+    QueueDeclare queue_declare = 17;
+    QueueDeclareOk queue_declare_ok = 18;
+    QueueBind queue_bind = 19;
+    QueueBindOk queue_bind_ok = 20;
+    BasicQos basic_qos = 21;
+    BasicQosOk basic_qos_ok = 22;
+    BasicConsume basic_consume = 23;
+    BasicConsumeOk basic_consume_ok = 24;
+    BasicCancel basic_cancel = 25;
+    BasicCancelOk basic_cancel_ok = 26;
+    BasicPublish basic_publish = 27;
+    BasicReturn basic_return = 28;
+    BasicAck basic_ack = 29;
+    BasicNack basic_nack = 30;
+    BasicReject basic_reject = 31;
+    BasicDeliver basic_deliver = 32;
+    BasicGet basic_get = 33;
+    BasicGetOk basic_get_ok = 34;
+    BasicGetEmpty basic_get_empty = 35;
+    ExchangeBind exchange_bind = 36;
+    ExchangeBindOk exchange_bind_ok = 37;
+  }
+}
+
+enum BaseWeight {
+  BASE_WEIGHT_UNSPECIFIED = 0;
+  BASE_WEIGHT = 100;
+}
+
+message Pattern {
+  oneof method {
+    ConnectionStartPattern connection_start = 1;
+    ConnectionStartOkPattern connection_start_ok = 2;
+    ConnectionTunePattern connection_tune = 3;
+    ConnectionTuneOkPattern connection_tune_ok = 4;
+    ConnectionOpenPattern connection_open = 5;
+    ConnectionOpenOkPattern connection_open_ok = 6;
+    ConnectionClosePattern connection_close = 7;
+    ConnectionCloseOkPattern connection_close_ok = 8;
+    ChannelOpenPattern channel_open = 9;
+    ChannelOpenOkPattern channel_open_ok = 10;
+    ChannelClosePattern channel_close = 11;
+    ChannelCloseOkPattern channel_close_ok = 12;
+    ConfirmSelectPattern confirm_select = 13;
+    ConfirmSelectOkPattern confirm_select_ok = 14;
+    ExchangeDeclarePattern exchange_declare = 15;
+    ExchangeDeclareOkPattern exchange_declare_ok = 16;
+    ExchangeBindPattern exchange_bind = 17;
+    ExchangeBindOkPattern exchange_bind_ok = 18;
+    QueueDeclarePattern queue_declare = 19;
+    QueueDeclareOkPattern queue_declare_ok = 20;
+    QueueBindPattern queue_bind = 21;
+    QueueBindOkPattern queue_bind_ok = 22;
+    BasicQosPattern basic_qos = 23;
+    BasicQosOkPattern basic_qos_ok = 24;
+    BasicConsumePattern basic_consume = 25;
+    BasicConsumeOkPattern basic_consume_ok = 26;
+    BasicCancelPattern basic_cancel = 27;
+    BasicCancelOkPattern basic_cancel_ok = 28;
+    BasicPublishPattern basic_publish = 29;
+    BasicReturnPattern basic_return = 30;
+    BasicAckPattern basic_ack = 31;
+    BasicNackPattern basic_nack = 32;
+    BasicRejectPattern basic_reject = 33;
+    BasicDeliverPattern basic_deliver = 34;
+    BasicGetPattern basic_get = 35;
+    BasicGetOkPattern basic_get_ok = 36;
+    BasicGetEmptyPattern basic_get_empty = 37;
+  }
+}
+
+message Weighted {
+  Pattern pattern = 1;
+  optional uint32 weight = 2;
+}
+
+message Scripted {
+  oneof when {
+    Pattern received = 1;
+    Pattern sent = 2;
+  }
+  Pattern then_send = 3;
+}
+
+message SessionConfig {
+  optional uint64 seed = 1;
+  optional NegotiationOptions negotiation_options = 2;
+  repeated Weighted weights = 3;
+  repeated Weighted idle_weights = 4;
+  repeated Scripted script = 5;
+  optional uint32 stop_weight = 6;
+  optional uint32 max_sends = 7;
+  optional uint32 idle_millis = 8;
+  optional uint32 max_buffer = 9;
+  optional uint32 max_transcript_lines = 10;
+}
+
+enum TranscriptEvent {
+  TRANSCRIPT_EVENT_UNSPECIFIED = 0;
+  TRANSCRIPT_EVENT_SESSION_STARTED = 1;
+  TRANSCRIPT_EVENT_TCP_CONNECTED = 2;
+  TRANSCRIPT_EVENT_TCP_REJECTED = 3;
+  TRANSCRIPT_EVENT_TCP_DOWN = 4;
+  TRANSCRIPT_EVENT_IDLE_TIMEOUT = 5;
+  TRANSCRIPT_EVENT_PROTOCOL_HEADER = 6;
+  TRANSCRIPT_EVENT_FRAME_MALFORMED = 7;
+  TRANSCRIPT_EVENT_FRAME_HEARTBEAT = 8;
+  TRANSCRIPT_EVENT_METHOD_INGRESS = 9;
+  TRANSCRIPT_EVENT_METHOD_EGRESS = 10;
+  TRANSCRIPT_EVENT_METHOD_UNREPRESENTABLE = 11;
+}
+
+message TranscriptLine {
+  uint64 index = 1;
+  int64 micros = 2;
+  int64 epoch_micros = 3;
+  TranscriptEvent event = 4;
+  optional Method method = 5;
+  string detail = 6;
+  bytes wire_bytes = 7;
+}
+
+message StatusReply {
+  optional uint32 amqp_port = 1;
+  bool amqp_greeted = 2;
+  uint64 transcript_lines = 3;
+  int64 epoch_micros = 4;
+  SessionConfig config = 5;
+}
+
+message ConfigureRequest {
+  SessionConfig config = 1;
+}
+
+message StatusRequest {}
+
+message ResetRequest {}
+
+message TranscriptRequest {}
+
+service Imposter {
+  rpc Configure(ConfigureRequest) returns (StatusReply);
+  rpc Status(StatusRequest) returns (StatusReply);
+  rpc Reset(ResetRequest) returns (StatusReply);
+  rpc Transcript(TranscriptRequest) returns (stream TranscriptLine);
+}
