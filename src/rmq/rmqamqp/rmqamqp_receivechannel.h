@@ -92,7 +92,9 @@ class ReceiveChannel : public Channel {
                                    const MessageCallback& onNewMessage,
                                    const bsl::string& consumerTag = "");
 
-    /// Resumes the paused consumer on the channel
+    /// Resumes the paused consumer on the channel at the next opportunity:
+    /// immediately if the channel is ready, otherwise once it reopens or a
+    /// pause in flight completes.
     /// returns Future that will resolve when ConsumeOk received from server
     virtual rmqt::Future<> resume();
 
@@ -111,7 +113,9 @@ class ReceiveChannel : public Channel {
     virtual rmqt::Future<> cancel();
 
     /// Pauses the active consumer on the channel
-    /// returns Future that will resolve when CancelOk received from server
+    /// returns Future that will resolve when CancelOk received from server,
+    /// or immediately if the consumer is not consuming on the server (e.g.
+    /// whilst the channel is reopening)
     virtual rmqt::Future<> pause();
 
     /// If the channel is in a cancelled state, waits for number of the
@@ -147,6 +151,7 @@ class ReceiveChannel : public Channel {
     void onReset() BSLS_KEYWORD_OVERRIDE;
     void processFailures() BSLS_KEYWORD_OVERRIDE;
     void restartConsumers();
+    void failPendingResume(const bsl::string& reason);
     void invalidConsumerError(const bsl::string& consumerTag);
     void removeSingleMessageFromStore(uint64_t deliveryTag);
     void removeMultipleMessagesFromStore(uint64_t deliveryTag);

@@ -164,6 +164,10 @@ class Channel : public bsl::enable_shared_from_this<Channel> {
 
     const bsl::string& vhostName() const;
 
+    /// Return true once gracefulClose() has been called: the channel will
+    /// not reopen
+    bool isPermanentlyClosing() const { return d_permanentlyClosing; }
+
     virtual const char* channelType() const = 0;
 
     virtual bsl::vector<bsl::pair<bsl::string, bsl::string> >
