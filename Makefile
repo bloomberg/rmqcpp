@@ -47,7 +47,7 @@ fuzz-build:
 
 fuzz: imposter-venv fuzz-build
 	cd $(SRC_FOLDER)/src/tests && \
-	RMQ_EXE=$(abspath $(FUZZ_BUILD_FOLDER))/examples/rmqperftest/rmqperftest ASAN_OPTIONS=detect_leaks=0 PYTHONPATH=. \
+	RMQ_EXE=$(abspath $(FUZZ_BUILD_FOLDER))/examples/rmqperftest/rmqperftest PYTHONPATH=. \
 	$(abspath $(IMPOSTER_VENV))/bin/python -m pytest -p integration.rmqapitests.fuzz.fixtures -o python_files='*_fuzztests.py' \
 	--timeout 600 $(FUZZ_ARGS) --pyargs integration.rmqapitests.fuzz
 
