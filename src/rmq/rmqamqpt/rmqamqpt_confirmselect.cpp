@@ -21,6 +21,9 @@
 
 namespace BloombergLP {
 namespace rmqamqpt {
+namespace {
+const uint8_t BITMASK_BIT_NOWAIT = (1 << 0);
+} // namespace
 
 ConfirmSelect::ConfirmSelect()
 : d_noWait()
@@ -37,8 +40,13 @@ bool ConfirmSelect::decode(ConfirmSelect* select,
                            bsl::size_t dataLength)
 {
     rmqamqpt::Buffer buffer(data, dataLength);
-    uint8_t bitmask  = buffer.copy<uint8_t>();
-    select->d_noWait = bitmask & 0x1;
+
+    uint8_t bitmask = 0;
+    if (!buffer.copy<uint8_t>(&bitmask)) {
+        return false;
+    }
+
+    select->d_noWait = bitmask & BITMASK_BIT_NOWAIT;
     return true;
 }
 

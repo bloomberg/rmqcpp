@@ -20,6 +20,7 @@
 #include <rmqamqpt_queuemethod.h>
 #include <rmqt_fieldvalue.h>
 
+#include <bsl_cstddef.h>
 #include <bsl_string.h>
 #include <bsl_vector.h>
 
@@ -62,4 +63,21 @@ TEST(Methods_Queue_Bind, QueueBindEncodeDecode)
 
     ASSERT_TRUE(qm.is<rmqamqpt::QueueBind>());
     EXPECT_EQ(queueBindMethod, qm.the<rmqamqpt::QueueBind>());
+}
+
+TEST(Methods_QueueBind, NoWaitIsReadFromBitZeroOnly)
+{
+    const uint8_t cases[][2] = {{0x00, 0}, {0x01, 1}, {0x02, 0}, {0xFF, 1}};
+
+    for (bsl::size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        // reserved short, three empty short strings, the packed bit octet,
+        // then an empty field table
+        const uint8_t data[] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, cases[i][0], 0x00, 0x00, 0x00, 0x00};
+
+        rmqamqpt::QueueBind bind;
+        EXPECT_TRUE(rmqamqpt::QueueBind::decode(&bind, data, sizeof(data)));
+        EXPECT_EQ(static_cast<int>(bind.noWait()), cases[i][1])
+            << "octet: " << static_cast<int>(cases[i][0]);
+    }
 }

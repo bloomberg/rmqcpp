@@ -20,6 +20,7 @@
 
 #include <ball_log.h>
 
+#include <bsl_cstddef.h>
 #include <bsl_cstdint.h>
 #include <bsl_sstream.h>
 #include <bsl_vector.h>
@@ -540,4 +541,49 @@ TEST(Methods_BasicProperties, FromMessage)
     EXPECT_FALSE(basicProps.type());
     EXPECT_FALSE(basicProps.userId());
     EXPECT_FALSE(basicProps.appId());
+}
+
+TEST(Methods_BasicProperties, TruncatedScalarPropertiesFailToDecode)
+{
+    // Property flags announcing a property, with none of its bytes present
+    const uint16_t flags[] = {
+        0x2000, // headers
+        0x1000, // delivery-mode
+        0x0800, // priority
+        0x0040, // timestamp
+    };
+
+    for (bsl::size_t i = 0; i < sizeof(flags) / sizeof(flags[0]); ++i) {
+        const uint8_t data[] = {static_cast<uint8_t>(flags[i] >> 8),
+                                static_cast<uint8_t>(flags[i] & 0xFF)};
+
+        rmqamqpt::BasicProperties basicProps;
+        EXPECT_THAT(
+            rmqamqpt::BasicProperties::decode(&basicProps, data, sizeof(data)),
+            Eq(false))
+            << "flags: " << flags[i];
+    }
+}
+
+TEST(Methods_BasicProperties, TruncatedHeaderTableLengthFailsToDecode)
+{
+    // headers flag, with a partial field table length prefix
+    const uint8_t data[] = {0x20, 0x00, 0x00, 0x00, 0x00};
+
+    rmqamqpt::BasicProperties basicProps;
+    EXPECT_THAT(
+        rmqamqpt::BasicProperties::decode(&basicProps, data, sizeof(data)),
+        Eq(false));
+}
+
+TEST(Methods_BasicProperties, TruncatedFlagsFailToDecode)
+{
+    const uint8_t data[] = {0x20};
+
+    rmqamqpt::BasicProperties basicProps;
+    EXPECT_THAT(rmqamqpt::BasicProperties::decode(&basicProps, data, 0),
+                Eq(false));
+    EXPECT_THAT(
+        rmqamqpt::BasicProperties::decode(&basicProps, data, sizeof(data)),
+        Eq(false));
 }

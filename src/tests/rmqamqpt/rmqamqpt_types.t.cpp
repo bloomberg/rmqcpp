@@ -22,6 +22,7 @@
 #include <bdlb_bigendian.h>
 #include <bdlt_datetime.h>
 
+#include <bsl_cstddef.h>
 #include <bsl_cstring.h>
 #include <bsl_iostream.h>
 #include <bsl_limits.h>
@@ -610,9 +611,152 @@ TEST(TypesEncoding, Timestamp)
 
     bdlt::Datetime decoded;
     rmqamqpt::Buffer buf(storage.data(), storage.size());
-    rmqamqpt::Types::decodeTimestamp(&decoded, &buf), Eq(true);
+    EXPECT_THAT(rmqamqpt::Types::decodeTimestamp(&decoded, &buf), Eq(true));
 
     EXPECT_THAT(decoded, Eq(millennium));
+}
+
+TEST(TypesTruncatedDecode, TruncatedTimestampFails)
+{
+    const uint8_t truncated[] = {0x00, 0x00, 0x00, 0x00, 0x38, 0x6D, 0x43};
+
+    for (bsl::size_t length = 0; length < sizeof(truncated); ++length) {
+        bdlt::Datetime decoded;
+        rmqamqpt::Buffer buffer(truncated, length);
+
+        EXPECT_THAT(rmqamqpt::Types::decodeTimestamp(&decoded, &buffer),
+                    Eq(false))
+            << "length: " << length;
+        EXPECT_THAT(buffer.available(), Eq(length));
+    }
+}
+
+TEST(TypesTruncatedDecode, OutOfRangeTimestampFails)
+{
+    // Seconds since the epoch that no bdlt::Datetime can represent
+    const uint8_t cases[][8] = {
+        {0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+        {0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+
+    for (bsl::size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        bdlt::Datetime decoded;
+        rmqamqpt::Buffer buffer(cases[i], sizeof(cases[i]));
+
+        EXPECT_THAT(rmqamqpt::Types::decodeTimestamp(&decoded, &buffer),
+                    Eq(false))
+            << "case: " << i;
+    }
+}
+
+TEST(TypesTruncatedDecode, OutOfRangeTimestampFieldValueFails)
+{
+    const uint8_t data[] = {
+        'T', 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+    rmqt::FieldValue value;
+    rmqamqpt::Buffer buffer(data, sizeof(data));
+
+    EXPECT_THAT(rmqamqpt::Types::decodeFieldValue(&value, &buffer), Eq(false));
+}
+
+TEST(TypesFieldTableDecode, DecimalIsSkippedAndLaterFieldsStillDecode)
+{
+    // A decimal is not supported, but its 5 octets must still be consumed
+    // so that whatever follows it in the table is read from the right place.
+    const uint8_t table[] = {
+        0x00, 0x00, 0x00, 0x10,             // table length
+        0x05, 'p',  'r',  'i',  'c',  'e',  // "price"
+        'D',  0x02, 0x00, 0x00, 0x00, 0x63, // decimal, scale 2, 99
+        0x01, 'x',                          // "x"
+        'b',  0x07};                        // short short int, 7
+
+    rmqamqpt::Buffer buffer(table, sizeof(table));
+    rmqt::FieldTable ft;
+
+    EXPECT_THAT(rmqamqpt::Types::decodeFieldTable(&ft, &buffer), Eq(true));
+    EXPECT_THAT(ft.size(), Eq(2u));
+
+    EXPECT_TRUE(ft["price"].isUnset());
+
+    EXPECT_TRUE(ft["x"].is<bsl::int8_t>());
+    EXPECT_THAT(ft["x"].the<bsl::int8_t>(), Eq(7));
+}
+
+TEST(TypesTruncatedDecode, TruncatedDecimalFails)
+{
+    const uint8_t truncated[] = {'D', 0x02, 0x00, 0x00, 0x00};
+
+    for (bsl::size_t length = 1; length < sizeof(truncated); ++length) {
+        rmqt::FieldValue value;
+        rmqamqpt::Buffer buffer(truncated, length);
+
+        EXPECT_THAT(rmqamqpt::Types::decodeFieldValue(&value, &buffer),
+                    Eq(false))
+            << "length: " << length;
+    }
+}
+
+TEST(TypesTruncatedDecode, TruncatedFieldTableLengthPrefixFails)
+{
+    const uint8_t truncated[] = {0x00, 0x00, 0x00};
+
+    for (bsl::size_t length = 0; length < sizeof(truncated); ++length) {
+        rmqt::FieldTable table;
+        rmqamqpt::Buffer buffer(truncated, length);
+
+        EXPECT_THAT(rmqamqpt::Types::decodeFieldTable(&table, &buffer),
+                    Eq(false))
+            << "length: " << length;
+    }
+}
+
+TEST(TypesTruncatedDecode, TruncatedFieldArrayLengthPrefixFails)
+{
+    const uint8_t truncated[] = {0x00, 0x00, 0x00};
+
+    for (bsl::size_t length = 0; length < sizeof(truncated); ++length) {
+        rmqt::FieldArray array;
+        rmqamqpt::Buffer buffer(truncated, length);
+
+        EXPECT_THAT(rmqamqpt::Types::decodeFieldArray(&array, &buffer),
+                    Eq(false))
+            << "length: " << length;
+    }
+}
+
+TEST(TypesTruncatedDecode, TruncatedFieldValuePayloadFails)
+{
+    // Every field value type header, with no payload bytes following it
+    const bsl::string types("tbBsuIiLlfdDSxATF");
+
+    for (bsl::size_t i = 0; i < types.size(); ++i) {
+        const uint8_t type = static_cast<uint8_t>(types[i]);
+
+        rmqt::FieldValue value;
+        rmqamqpt::Buffer buffer(&type, sizeof(type));
+
+        EXPECT_THAT(rmqamqpt::Types::decodeFieldValue(&value, &buffer),
+                    Eq(false))
+            << "type: " << types[i];
+    }
+}
+
+TEST(TypesTruncatedDecode, TruncatedStringLengthPrefixFails)
+{
+    const uint8_t truncated[] = {0x00, 0x00, 0x00};
+
+    bsl::string decoded;
+    rmqamqpt::Buffer empty(truncated, 0);
+    EXPECT_THAT(rmqamqpt::Types::decodeShortString(&decoded, &empty),
+                Eq(false));
+
+    for (bsl::size_t length = 0; length < sizeof(truncated); ++length) {
+        rmqamqpt::Buffer buffer(truncated, length);
+
+        EXPECT_THAT(rmqamqpt::Types::decodeLongString(&decoded, &buffer),
+                    Eq(false))
+            << "length: " << length;
+    }
 }
 
 rmqt::FieldValue roundTripFieldValue(bool* decodeResult,

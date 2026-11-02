@@ -40,13 +40,7 @@ bool QueueDeleteOk::decode(QueueDeleteOk* deleteOk,
 
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (buffer.available() < sizeof(deleteOk->d_messageCount)) {
-        return false;
-    }
-
-    deleteOk->d_messageCount = buffer.copy<bdlb::BigEndianUint32>();
-
-    return true;
+    return buffer.copy<bdlb::BigEndianUint32>(&deleteOk->d_messageCount);
 }
 
 void QueueDeleteOk::encode(Writer& output, const QueueDeleteOk& deleteOk)

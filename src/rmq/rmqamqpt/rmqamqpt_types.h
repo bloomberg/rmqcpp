@@ -75,7 +75,7 @@ class Types {
     static void encodeTimestamp(Writer& output,
                                 const bdlt::Datetime& timestamp);
 
-    static void decodeTimestamp(bdlt::Datetime* timestamp,
+    static bool decodeTimestamp(bdlt::Datetime* timestamp,
                                 rmqamqpt::Buffer* buffer);
 
     template <typename T>
