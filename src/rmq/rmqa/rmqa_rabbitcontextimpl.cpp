@@ -67,8 +67,14 @@ void handleErrorCbOnEventLoop(bdlmt::ThreadPool* threadPool,
                               int errorCode)
 {
     if (errorCb) {
-        threadPool->enqueueJob(
+        const int rc = threadPool->enqueueJob(
             bdlf::BindUtil::bind(errorCb, errorText, errorCode));
+
+        if (rc != 0) {
+            BALL_LOG_ERROR << "Couldn't enqueue thread pool job for error "
+                              "callback (return code "
+                           << rc << "). Error was: " << errorText;
+        }
     }
 }
 
@@ -256,7 +262,9 @@ RabbitContextImpl::~RabbitContextImpl()
 
     d_hostHealthMonitor.reset();
 
-    d_hostedThreadPool.reset();
+    if (d_hostedThreadPool) {
+        d_hostedThreadPool->shutdown();
+    }
 
     d_connectionWatchDog.reset();
 
@@ -319,6 +327,8 @@ RabbitContextImpl::~RabbitContextImpl()
     }
 
     d_eventLoop.reset();
+
+    d_hostedThreadPool.reset();
 }
 
 bsl::shared_ptr<rmqp::Connection> RabbitContextImpl::createVHostConnection(

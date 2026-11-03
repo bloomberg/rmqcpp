@@ -288,8 +288,8 @@ void Connection::initiateConnect()
     callbacks.onError =
         bdlf::BindUtil::bind(&Connection::socketError, weak_from_this(), _1);
 
-    d_hungTimer->start(
-        bdlf::BindUtil::bind(&Connection::connectionHung, this, _1));
+    d_hungTimer->start(bdlf::BindUtil::bind(
+        &Connection::connectionHungCb, weak_from_this(), _1));
 
     if (d_endpoint->securityParameters()) {
         d_socketConnection = d_resolver->asyncSecureConnect(
@@ -905,13 +905,27 @@ void Connection::startHeartbeatManager(uint32_t timeout)
     using bdlf::PlaceHolders::_1;
     d_heartbeatManager->start(
         timeout,
-        bdlf::BindUtil::bind(&Connection::sendHeartbeat, this, _1),
-        bdlf::BindUtil::bind(&Connection::killConnection, this));
+        bdlf::BindUtil::bind(
+            &Connection::sendHeartbeatCb, weak_from_this(), _1),
+        bdlf::BindUtil::bind(&Connection::killConnectionCb, weak_from_this()));
 }
 
 void Connection::sendHeartbeat(const rmqamqpt::Frame& heartbeat)
 {
     asyncWriteSingleFrame(serializeFrame(heartbeat), &noopWriteComplete);
+}
+
+void Connection::sendHeartbeatCb(const bsl::weak_ptr<Connection>& weakSelf,
+                                 const rmqamqpt::Frame& heartbeat)
+{
+    bsl::shared_ptr<Connection> self = weakSelf.lock();
+
+    if (!self) {
+        BALL_LOG_DEBUG << "Heartbeat after connection destruction";
+        return;
+    }
+
+    self->sendHeartbeat(heartbeat);
 }
 
 void Connection::killConnection()
@@ -921,6 +935,18 @@ void Connection::killConnection()
 
     d_metricPublisher->publishCounter("heartbeat_timeouts", 1, d_vhostTags);
     closeSocket(WILL_RETRY);
+}
+
+void Connection::killConnectionCb(const bsl::weak_ptr<Connection>& weakSelf)
+{
+    bsl::shared_ptr<Connection> self = weakSelf.lock();
+
+    if (!self) {
+        BALL_LOG_DEBUG << "Heartbeat timeout after connection destruction";
+        return;
+    }
+
+    self->killConnection();
 }
 
 void Connection::asyncWriteSingleFrame(
@@ -1093,6 +1119,19 @@ void Connection::connectionHung(rmqio::Timer::InterruptReason reason)
                        << " ms while connecting: " << connectionDebugName();
         closeSocket(WILL_RETRY);
     }
+}
+
+void Connection::connectionHungCb(const bsl::weak_ptr<Connection>& weakSelf,
+                                  rmqio::Timer::InterruptReason reason)
+{
+    bsl::shared_ptr<Connection> self = weakSelf.lock();
+
+    if (!self) {
+        BALL_LOG_DEBUG << "Connection hung timer after connection destruction";
+        return;
+    }
+
+    self->connectionHung(reason);
 }
 
 void Connection::channelHung(const bsl::weak_ptr<Connection>& self)
