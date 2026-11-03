@@ -299,9 +299,17 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
 
     void sendHeartbeat(const rmqamqpt::Frame&);
 
+    static void sendHeartbeatCb(const bsl::weak_ptr<Connection>& weakSelf,
+                                const rmqamqpt::Frame& heartbeat);
+
     void killConnection();
 
+    static void killConnectionCb(const bsl::weak_ptr<Connection>& weakSelf);
+
     void connectionHung(rmqio::Timer::InterruptReason reason);
+
+    static void connectionHungCb(const bsl::weak_ptr<Connection>& weakSelf,
+                                 rmqio::Timer::InterruptReason reason);
 
     static void channelHung(const bsl::weak_ptr<Connection>& self);
 
