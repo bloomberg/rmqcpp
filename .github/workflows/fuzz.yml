@@ -1,0 +1,67 @@
+name: Fuzz
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  Fuzz:
+    name: ${{ matrix.suite }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [consumer, producer]
+    env:
+      FUZZ_SEED_COUNT: 1000
+      FUZZ_TARGET: integration/rmqapitests/fuzz/${{ matrix.suite }}_fuzztests.py
+      COMPOSE_FILE: dockerfiles/docker-compose.yaml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: .vcpkg-cache
+          key: vcpkg-${{ github.run_id }}
+          restore-keys: vcpkg-
+
+      - run: docker compose build dev
+
+      - name: Fuzz
+        shell: bash
+        run: |
+          mkdir -p .vcpkg-cache
+          docker compose run --rm --no-deps -T \
+            -v "$GITHUB_WORKSPACE/.vcpkg-cache:/vcpkg-cache" \
+            -e VCPKG_DEFAULT_BINARY_CACHE=/vcpkg-cache \
+            -e FUZZ_SEED_COUNT -e FUZZ_SEED_OFFSET -e FUZZ_TARGET -e COLUMNS=250 \
+            -e FUZZ_TRANSCRIPT_DIR=/workarea/fuzz-transcripts \
+            dev make fuzz 2>&1 | tee fuzz.log
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: fuzz-transcripts-${{ matrix.suite }}
+          path: fuzz-transcripts/
+          if-no-files-found: ignore
+
+      - name: Summarise
+        if: ${{ failure() }}
+        run: |
+          {
+            offset=${FUZZ_SEED_OFFSET:-0}
+            echo "### ${{ matrix.suite }}, seeds $offset to $(( offset + FUZZ_SEED_COUNT - 1 ))"
+            echo '```'
+            grep -E '^(FAILED|ERROR) |^SUMMARY: [A-Za-z]+Sanitizer' fuzz.log || echo "No test results, see the Fuzz step"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
