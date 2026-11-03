@@ -33,6 +33,8 @@ from .fixtures import (  # noqa: F401 — re-export fixtures for pytest discover
 )
 from .platforms import Platform
 
+pytest_plugins = ["integration.rmqapitests.xfail"]
+
 
 class PlatformHookSpec:
     @pytest.hookspec(firstresult=True)

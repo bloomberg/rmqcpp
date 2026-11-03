@@ -161,6 +161,9 @@ int Runner::run(const PerfTestArgs& args)
 {
     rmqa::RabbitContextOptions options;
     options.setShuffleConnectionEndpoints(args.shuffleConnectionEndpoints);
+    if (args.immediateRetry) {
+        options.setTunable("IIR");
+    }
     rmqa::RabbitContext rabbit(options);
 
     bsl::optional<rmqt::VHostInfo> vhostInfo =
