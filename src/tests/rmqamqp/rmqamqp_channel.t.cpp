@@ -196,19 +196,41 @@ TEST_F(ChannelTests, OpenChannel)
     bsl::shared_ptr<ChannelTestImpl> channel = makeOpeningChannel(d_topology);
 }
 
-TEST_F(ChannelTests, GracefulCloseChannel)
+TEST_F(ChannelTests, GracefulCloseOnClosedChannelNeverReopens)
 {
     bsl::shared_ptr<ChannelTestImpl> mockChannel = makeChannel(d_topology);
-    rmqamqpt::ChannelClose closeMethod(rmqamqpt::Constants::REPLY_SUCCESS,
-                                       "Closing Channel");
 
-    EXPECT_CALL(d_callback,
-                onAsyncWrite(::testing::Pointee(
-                                 MessageEq(rmqamqp::Message(rmqamqpt::Method(
-                                     rmqamqpt::ChannelMethod(closeMethod))))),
-                             _));
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).Times(0);
 
     mockChannel->gracefulClose();
+    mockChannel->open();
+}
+
+TEST_F(ChannelTests, GracefulCloseWhileClosingCleansUpOnCloseOk)
+{
+    bsl::shared_ptr<ChannelTestImpl> mockChannel = makeChannel(d_topology);
+    mockChannel->setState(rmqamqp::Channel::CHANNEL_CLOSE_SENT);
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).Times(0);
+
+    mockChannel->gracefulClose();
+
+    rmqamqpt::ChannelCloseOk closeOkMethod;
+    EXPECT_THAT(mockChannel->processReceived(rmqamqp::Message(
+                    rmqamqpt::Method(rmqamqpt::ChannelMethod(closeOkMethod)))),
+                Eq(rmqamqp::Channel::CLEANUP));
+}
+
+TEST_F(ChannelTests, ResetDuringGracefulCloseReturnsCleanup)
+{
+    bsl::shared_ptr<ChannelTestImpl> mockChannel =
+        makeOpeningChannel(d_topology);
+    mockChannel->setState(rmqamqp::Channel::READY);
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _));
+    mockChannel->gracefulClose();
+
+    EXPECT_THAT(mockChannel->reset(), Eq(rmqamqp::Channel::CLEANUP));
 }
 
 TEST_F(ChannelTests, closingProcessCloseOkReturnsCleanup)

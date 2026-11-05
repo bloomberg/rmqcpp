@@ -462,7 +462,7 @@ Channel::CleanupIndicator Channel::reset(bool startRetry)
     d_metricPublisher->publishCounter(
         "channel_disconnected", 1, getVHostAndChannelTags());
 
-    return KEEP;
+    return d_permanentlyClosing ? CLEANUP : KEEP;
 }
 
 void Channel::retry(const bsl::weak_ptr<Channel>& weakSelf)
@@ -498,6 +498,11 @@ void Channel::ready()
 
 void Channel::open()
 {
+    if (d_permanentlyClosing) {
+        BALL_LOG_DEBUG << "Not opening a channel which is permanently closing";
+        return;
+    }
+
     using bdlf::PlaceHolders::_1;
     d_hungProgressTimer->start(
         bdlf::BindUtil::bind(&Channel::channelHung, weak_from_this(), _1));
@@ -526,6 +531,11 @@ void Channel::writeMessage(
 void Channel::gracefulClose()
 {
     d_permanentlyClosing = true;
+
+    if (d_state == CLOSED || d_state == CHANNEL_CLOSE_SENT) {
+        return;
+    }
+
     close(rmqamqpt::Constants::REPLY_SUCCESS, "Closing Channel");
 }
 
