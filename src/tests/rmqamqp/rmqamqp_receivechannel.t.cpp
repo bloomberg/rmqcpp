@@ -710,6 +710,60 @@ TEST_F(ReceiveChannelTests, ServerCancels)
     EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::CLOSED));
 }
 
+TEST_F(ReceiveChannelTests, NoAckAfterChannelCloseSent)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, "consumer1");
+
+    const rmqt::Envelope envelope(1,
+                                  receiveChannel->lifetimeId(),
+                                  "consumer1",
+                                  "exchange",
+                                  "routing-key",
+                                  false);
+    receiveMessage(*receiveChannel, envelope.deliveryTag(), "consumer1");
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).WillOnce(InvokeArgument<1>());
+    receiveChannel->processReceived(rmqamqp::Message(rmqamqpt::Method(
+        rmqamqpt::BasicMethod(rmqamqpt::BasicCancel("consumer1")))));
+    ASSERT_THAT(receiveChannel->state(),
+                Eq(rmqamqp::Channel::CHANNEL_CLOSE_SENT));
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).Times(0);
+    ackMessage(*receiveChannel, envelope);
+}
+
+TEST_F(ReceiveChannelTests, NoAckAfterChannelCloseOkSent)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, "consumer1");
+
+    const rmqt::Envelope envelope(1,
+                                  receiveChannel->lifetimeId(),
+                                  "consumer1",
+                                  "exchange",
+                                  "routing-key",
+                                  false);
+    receiveMessage(*receiveChannel, envelope.deliveryTag(), "consumer1");
+
+    EXPECT_CALL(
+        d_callback,
+        onAsyncWrite(Pointee(MethodMsgTypeEq(rmqamqpt::Method(
+                         rmqamqpt::ChannelMethod(rmqamqpt::ChannelCloseOk())))),
+                     _));
+    receiveChannel->processReceived(rmqamqp::Message(
+        rmqamqpt::Method(rmqamqpt::ChannelMethod(rmqamqpt::ChannelClose(
+            rmqamqpt::Constants::REPLY_SUCCESS, "Closing Channel")))));
+    ASSERT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::CLOSED));
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).Times(0);
+    ackMessage(*receiveChannel, envelope);
+}
+
 TEST_F(ReceiveChannelTests, AckMessage)
 {
     bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
