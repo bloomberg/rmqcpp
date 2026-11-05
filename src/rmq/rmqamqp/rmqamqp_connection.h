@@ -208,6 +208,7 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
 
     ConnectedCallback d_firstConnectCb;
     CloseFinishCallback d_closeCb;
+    bool d_closeRequested;
 
     bsls::TimeInterval d_connectStartTime;
     bool d_hasBeenConnected; // For metrics purposes -- indicates whether this
