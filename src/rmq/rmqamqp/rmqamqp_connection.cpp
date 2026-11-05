@@ -242,6 +242,7 @@ Connection::Connection(
 , d_timerFactory(timerFactory)
 , d_firstConnectCb()
 , d_closeCb()
+, d_closeRequested(false)
 , d_connectStartTime()
 , d_hasBeenConnected(false)
 , d_vhostTags()
@@ -255,15 +256,24 @@ void Connection::close(const CloseFinishCallback& closeCallback)
 {
     BALL_LOG_INFO << "Closing connection: " << connectionDebugName();
 
-    d_closeCb = closeCallback;
+    d_closeCb        = closeCallback;
+    d_closeRequested = true;
 
-    if (d_state == DISCONNECTED) {
-        socketShutdown(Connection::FATAL,
-                       rmqio::Connection::GRACEFUL_DISCONNECT);
-    }
-    else {
-        sendConnectionClose(rmqamqpt::Constants::REPLY_SUCCESS,
-                            "Closing Connection");
+    switch (d_state) {
+        case DISCONNECTED:
+            socketShutdown(Connection::FATAL,
+                           rmqio::Connection::GRACEFUL_DISCONNECT);
+            break;
+        case CONNECTION_CLOSE_SENT_EXIT:
+        case CONNECTION_CLOSE_SENT_RECONNECT:
+        case CONNECTION_CLOSE_RECEIVED:
+        case CONNECTION_CLOSEOK_SENT:
+        case CONNECTION_CLOSED:
+            break;
+        default:
+            sendConnectionClose(rmqamqpt::Constants::REPLY_SUCCESS,
+                                "Closing Connection");
+            break;
     }
 }
 
@@ -579,7 +589,7 @@ void Connection::connectionException(
 void Connection::retry(const bsl::weak_ptr<Connection>& weakSelf)
 {
     bsl::shared_ptr<Connection> self = weakSelf.lock();
-    if (!self) {
+    if (!self || self->d_closeRequested) {
         BALL_LOG_TRACE << "Retry handler called during shutdown";
         return;
     }
@@ -609,11 +619,11 @@ void Connection::closeSocket(DisconnectType disconnectType)
 void Connection::socketShutdown(DisconnectType dcType,
                                 rmqio::Connection::ReturnCode code)
 {
+    const bool willRetry = dcType == WILL_RETRY && !d_closeRequested;
+
     if (code != rmqio::Connection::CONNECT_ERROR) {
         BALL_LOG_INFO << "Disconnected from Broker: " << connectionDebugName()
-                      << (dcType == rmqamqp::Connection::WILL_RETRY
-                              ? " Retrying"
-                              : " Connection closed")
+                      << (willRetry ? " Retrying" : " Connection closed")
                       << ". Error code " << code;
     }
 
@@ -633,7 +643,7 @@ void Connection::socketShutdown(DisconnectType dcType,
 
     d_state = Connection::DISCONNECTED;
     BALL_LOG_TRACE << "State now set to: " << d_state;
-    if (dcType == WILL_RETRY) {
+    if (willRetry) {
         // The connection is down and will be retried: either an establishment
         // attempt failed or an established connection was lost. Schedule the
         // retry before invoking the observational hook: the hook is a

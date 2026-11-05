@@ -993,6 +993,58 @@ TEST_F(ConnectionTests, GracefulClose)
     EXPECT_TRUE(invoked);
 }
 
+TEST_F(ConnectionTests, NoReconnectWhenServerClosesDuringGracefulClose)
+{
+    expectFirstHandshakeFrames();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    d_eventLoop.run();
+    d_eventLoop.restart();
+
+    expectCloseFrame(false);
+    expectCloseFrame();
+    expectCloseOkFrame();
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).Times(0);
+
+    bool invoked = false;
+    conn->close(bdlf::BindUtil::bind(&gracefulCloseHandler, bsl::ref(invoked)));
+
+    d_eventLoop.run();
+
+    EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::DISCONNECTED));
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+    EXPECT_TRUE(invoked);
+}
+
+TEST_F(ConnectionTests, NoCloseWhenServerAlreadyClosed)
+{
+    expectFirstHandshakeFrames();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    d_eventLoop.run();
+    d_eventLoop.restart();
+
+    expectCloseFrame();
+    expectCloseOkFrame();
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).Times(0);
+
+    feedNextFrame();
+    d_eventLoop.run_one();
+
+    bool invoked = false;
+    conn->close(bdlf::BindUtil::bind(&gracefulCloseHandler, bsl::ref(invoked)));
+
+    d_eventLoop.run();
+
+    EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::DISCONNECTED));
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+    EXPECT_TRUE(invoked);
+}
+
 TEST_F(ConnectionTests, AddReceiveChannelWhenConnected)
 {
     expectFirstHandshakeFrames();
