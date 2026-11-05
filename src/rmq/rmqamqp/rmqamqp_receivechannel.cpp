@@ -608,6 +608,12 @@ void ReceiveChannel::consumeAckBatchFromQueue()
     bsl::shared_ptr<rmqt::ConsumerAckBatch> batch = d_ackQueue->popFront();
     bsl::vector<rmqt::ConsumerAck>& acks          = batch->lock();
 
+    if (state() == CHANNEL_CLOSE_SENT || state() == CLOSED) {
+        BALL_LOG_WARN << "Ignoring " << acks.size()
+                      << " ack/nacks for a channel which is closing.";
+        return;
+    }
+
     bsl::vector<rmqt::ConsumerAck>::iterator valid = acks.begin();
     for (bsl::vector<rmqt::ConsumerAck>::iterator it = valid; it < acks.end();
          ++it) {
