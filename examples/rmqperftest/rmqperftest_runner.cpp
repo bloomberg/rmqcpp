@@ -52,7 +52,8 @@ class ConsumerCallback {
                      const bsl::shared_ptr<bsls::AtomicBool>& finished)
     : d_args(args)
     , d_finished(finished)
-    , d_remainingCount(bsl::make_shared<bsls::AtomicUint64>())
+    , d_remainingCount(bsl::make_shared<bsls::AtomicInt64>())
+    , d_ackedCount(bsl::make_shared<bsls::AtomicInt64>())
     , d_limitCount()
     {
         if (d_args.consumerMessageCount > 0) {
@@ -63,12 +64,17 @@ class ConsumerCallback {
 
     void operator()(rmqp::MessageGuard& guard)
     {
-        if (d_limitCount && *d_remainingCount == 0) {
-            *d_finished = true;
+        if (!d_limitCount) {
+            guard.ack();
             return;
         }
+
+        if (--*d_remainingCount < 0) {
+            return;
+        }
+
         guard.ack();
-        if (d_limitCount && --*d_remainingCount == 0) {
+        if (++*d_ackedCount == d_args.consumerMessageCount) {
             *d_finished = true;
         }
     }
@@ -76,7 +82,8 @@ class ConsumerCallback {
   private:
     ConsumerArgs d_args;
     bsl::shared_ptr<bsls::AtomicBool> d_finished;
-    bsl::shared_ptr<bsls::AtomicUint64> d_remainingCount;
+    bsl::shared_ptr<bsls::AtomicInt64> d_remainingCount;
+    bsl::shared_ptr<bsls::AtomicInt64> d_ackedCount;
     bool d_limitCount;
 };
 
