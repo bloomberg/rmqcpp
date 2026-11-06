@@ -1,0 +1,111 @@
+[build-system]
+requires = ["setuptools >= 77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amqp-imposter"
+version = "0.10.0"
+requires-python = ">=3.15"
+dependencies = [
+    "pika >= 1.4",
+    "grpcio == 1.84.0",
+    "grpcio-reflection == 1.84.0",
+    "protobuf == 7.36.1",
+]
+
+[project.scripts]
+amqp-imposter = "amqp_imposter.control.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["amqp_imposter*"]
+
+[tool.setuptools.package-data]
+"*" = ["py.typed", "*.pyi", "*.md"]
+
+[tool.pytest]
+addopts = ["-ra"]
+testpaths = ["tests"]
+consider_namespace_packages = true
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py{315}-{test,mypy},lint
+
+[testenv]
+description = Run test under {base_python}
+deps =
+    -rrequirements-dev.txt
+commands =
+    python -m pytest -n auto --junitxml=junit-{envname}.xml --cov=amqp_imposter --cov-report=xml:coverage-{envname}.xml {posargs}
+
+[testenv:lint]
+description = Run version-agnostic lint tools
+commands =
+    ruff check {env:RUFF_EXTRA_ARGS}
+    ruff format --check
+
+[testenv:proto]
+description = Regenerate protobuf and gRPC code from proto/
+commands =
+    python -m grpc_tools.protoc -I{toxinidir}/proto --plugin=protoc-gen-mypy={envbindir}/protoc-gen-mypy --plugin=protoc-gen-mypy_grpc={envbindir}/protoc-gen-mypy_grpc --python_out={toxinidir} --mypy_out={toxinidir} --grpc_python_out={toxinidir} --mypy_grpc_out={toxinidir} amqp_imposter/control/v1/imposter.proto
+[testenv:py{315}-mypy]
+description = Run mypy under {base_python}
+commands =
+    mypy
+"""
+
+[tool.mypy]
+explicit_package_bases = true
+strict = true
+packages = ["amqp_imposter", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["pika.*"]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py315"
+extend-exclude = ["*_pb2.py", "*_pb2.pyi", "*_pb2_grpc.py", "*_pb2_grpc.pyi"]
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules/
+# In addition to the default set of Ruff rules, also check:
+extend-select = [
+  'A', # flake8-builtins
+  'ASYNC', # flake8-async
+  'B', # flake8-bugbear
+  'BLE', # flake8-blind-except
+  'C4', # flake8-comprehensions
+  'DTZ', # flake8-datetimez
+  'FAST', # FastAPI
+  'I', # isort
+  'INT', # flake8-gettext
+  'ISC', # flake8-implicit-str-concat
+  'LOG', # flake8-logging
+  'NPY', # NumPy-specific rules
+  'PGH', # pygrep-hooks
+  'PIE', # flake8-pie
+  'PLC', # Pylint Convention
+  'PLE', # Pylint Error
+  'PLW', # Pylint Warning
+  'PT', # flake8-pytest-style
+  'RUF', # Ruff-specific rules
+  'SLF', # flake8-self
+  'T10', # flake8-debugger
+  'T20', # flake8-print
+  'UP', # pyupgrade
+  'W', # pycodestyle Warning
+  'YTT', # flake8-2020
+]
+ignore = [
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["amqp_imposter"]
+
+[tool.ruff.lint.flake8-pytest-style]
+parametrize-values-type = "tuple"
+
