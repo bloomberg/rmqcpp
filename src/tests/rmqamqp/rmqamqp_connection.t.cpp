@@ -125,7 +125,7 @@ class MockConnection : public rmqio::Connection {
     {
     }
 
-    rmqamqpt::Method examineFrameMethod(const SerializedFrame& frame)
+    rmqamqp::Message decodeMessage(const SerializedFrame& frame)
     {
         rmqamqpt::Frame decoded;
         size_t unused1 = 0, unused2 = 0;
@@ -135,17 +135,16 @@ class MockConnection : public rmqio::Connection {
                                                    frame.serialized(),
                                                    frame.frameLength());
         if (rc != Frame::OK) {
-            return rmqamqpt::Method();
+            return rmqamqp::Message();
         }
         rmqamqp::Framer framer;
         uint16_t channel;
         rmqamqp::Message msg;
-        if (framer.appendFrame(&channel, &msg, decoded) ==
-                rmqamqp::Framer::OK &&
-            msg.is<rmqamqpt::Method>()) {
-            return msg.the<rmqamqpt::Method>();
+        if (framer.appendFrame(&channel, &msg, decoded) !=
+            rmqamqp::Framer::OK) {
+            return rmqamqp::Message();
         }
-        return rmqamqpt::Method();
+        return msg;
     }
 
     void feedNextFrame()
@@ -188,10 +187,10 @@ class MockConnection : public rmqio::Connection {
              ++it) {
             BSLS_ASSERT_OPT(*(d_replayFrame.writeFrame()) == **it);
         }
-        bool closeOk = rmqamqpt::Method::Util::typeMatch(
-            examineFrameMethod(*frames[0]),
-            rmqamqpt::Method(
-                rmqamqpt::ConnectionMethod(rmqamqpt::ConnectionCloseOk())));
+        bool closeOk =
+            rmqamqp::MessageUtil::isMethod<rmqamqpt::ConnectionMethod,
+                                           rmqamqpt::ConnectionCloseOk>(
+                decodeMessage(*frames[0]));
 
         boost::asio::post(d_eventLoop, callback);
 
