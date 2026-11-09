@@ -44,8 +44,11 @@ using namespace ::testing;
 namespace {
 const char* TEST_VHOST = "vhostname";
 void noOpOnError(const bsl::string&, int) {}
-void dummyHungTimerCallback(rmqio::Timer::InterruptReason)
+void dummyHungTimerCallback(rmqio::Timer::InterruptReason reason)
 {
+    if (reason == rmqio::Timer::CANCEL) {
+        return;
+    }
     BSLS_ASSERT(
         !"This timer is only called when Channel hasn't properly set up "
          "its own");
@@ -1003,6 +1006,17 @@ TEST_F(ChannelHungTests, OpenOkTimeout)
     const int HUNG_TIMEOUT_SECONDS = 65;
 
     EXPECT_CALL(d_callback, onHungTimerCallback());
+    d_timerFactory->step_time(bsls::TimeInterval(HUNG_TIMEOUT_SECONDS));
+}
+
+TEST_F(ChannelHungTests, NoHungCallbackAfterReset)
+{
+    bsl::shared_ptr<ChannelTestImpl> channel = makeOpeningChannel(d_topology);
+
+    channel->reset();
+
+    const int HUNG_TIMEOUT_SECONDS = 65;
+    EXPECT_CALL(d_callback, onHungTimerCallback()).Times(0);
     d_timerFactory->step_time(bsls::TimeInterval(HUNG_TIMEOUT_SECONDS));
 }
 
