@@ -152,7 +152,7 @@ class Channel : public bsl::enable_shared_from_this<Channel> {
     void ready();
 
     // Callback for writes
-    static void onWriteComplete(const bsl::weak_ptr<Channel>& weakSelf);
+    static void onCloseOkWritten(const bsl::weak_ptr<Channel>& weakSelf);
 
     void writeMessage(const rmqamqp::Message& message, State newState);
 
@@ -160,7 +160,8 @@ class Channel : public bsl::enable_shared_from_this<Channel> {
                       const rmqio::Connection::SuccessWriteCallback& callBack);
 
     /// Callback for re-opening channel
-    static void retry(const bsl::weak_ptr<Channel>& weakSelf);
+    static void retry(const bsl::weak_ptr<Channel>& weakSelf,
+                      size_t scheduledLifetimeId);
 
     const bsl::string& vhostName() const;
 

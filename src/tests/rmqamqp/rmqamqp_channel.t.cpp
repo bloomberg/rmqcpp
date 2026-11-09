@@ -199,6 +199,24 @@ TEST_F(ChannelTests, OpenChannel)
     bsl::shared_ptr<ChannelTestImpl> channel = makeOpeningChannel(d_topology);
 }
 
+TEST_F(ChannelTests, OpenWhileOpeningSendsNothing)
+{
+    bsl::shared_ptr<ChannelTestImpl> channel = makeOpeningChannel(d_topology);
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).Times(0);
+    channel->open();
+}
+
+TEST_F(ChannelTests, CloseOkWhileOpeningSendsNothing)
+{
+    bsl::shared_ptr<ChannelTestImpl> channel = makeOpeningChannel(d_topology);
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).WillRepeatedly(InvokeArgument<0>());
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).Times(0);
+    channel->processReceived(rmqamqp::Message(
+        rmqamqpt::Method(rmqamqpt::ChannelMethod(rmqamqpt::ChannelCloseOk()))));
+}
+
 TEST_F(ChannelTests, GracefulCloseOnClosedChannelNeverReopens)
 {
     bsl::shared_ptr<ChannelTestImpl> mockChannel = makeChannel(d_topology);
@@ -304,6 +322,73 @@ TEST_F(ChannelTests, ReceiveCloseMethodReOpens)
                 Eq(rmqamqp::Channel::KEEP));
 
     EXPECT_THAT(mockChannel->state(), Eq(rmqamqp::Channel::CHANNEL_OPEN_SENT));
+}
+
+TEST_F(ChannelTests, ServerCloseRetriesOnceWithWritesInFlight)
+{
+    bsl::shared_ptr<ChannelTestImpl> mockChannel =
+        makeOpeningChannel(d_topology);
+
+    bsl::function<void()> queueDeclareWritten;
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _))
+        .WillOnce(SaveArg<1>(&queueDeclareWritten));
+    mockChannel->processReceived(rmqamqp::Message(
+        rmqamqpt::Method(rmqamqpt::ChannelMethod(rmqamqpt::ChannelOpenOk()))));
+
+    bsl::function<void()> closeOkWritten;
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _))
+        .WillOnce(SaveArg<1>(&closeOkWritten));
+    mockChannel->processReceived(rmqamqp::Message(
+        rmqamqpt::Method(rmqamqpt::ChannelMethod(rmqamqpt::ChannelClose(
+            rmqamqpt::Constants::REPLY_SUCCESS, "Closing Channel")))));
+
+    EXPECT_CALL(*d_retryHandler, retry(_));
+    queueDeclareWritten();
+    closeOkWritten();
+}
+
+TEST_F(ChannelTests, ServerCloseCrossingGracefulCloseCleansUpOnCloseOk)
+{
+    bsl::shared_ptr<ChannelTestImpl> mockChannel =
+        makeOpeningChannel(d_topology);
+    mockChannel->setState(rmqamqp::Channel::READY);
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).WillOnce(InvokeArgument<1>());
+    mockChannel->gracefulClose();
+
+    EXPECT_CALL(d_callback,
+                onAsyncWrite(
+                    Pointee(MessageEq(rmqamqp::Message(rmqamqpt::Method(
+                        rmqamqpt::ChannelMethod(rmqamqpt::ChannelCloseOk()))))),
+                    _))
+        .WillOnce(InvokeArgument<1>());
+    mockChannel->processReceived(rmqamqp::Message(
+        rmqamqpt::Method(rmqamqpt::ChannelMethod(rmqamqpt::ChannelClose(
+            rmqamqpt::Constants::REPLY_SUCCESS, "Closing Channel")))));
+
+    EXPECT_THAT(mockChannel->processReceived(rmqamqp::Message(rmqamqpt::Method(
+                    rmqamqpt::ChannelMethod(rmqamqpt::ChannelCloseOk())))),
+                Eq(rmqamqp::Channel::CLEANUP));
+}
+
+TEST_F(ChannelTests, ServerCloseCrossingOurCloseReopensOnlyAfterCloseOk)
+{
+    bsl::shared_ptr<ChannelTestImpl> mockChannel =
+        makeOpeningChannel(d_topology);
+    mockChannel->setState(rmqamqp::Channel::READY);
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).WillOnce(InvokeArgument<1>());
+    mockChannel->close(rmqamqpt::Constants::CHANNEL_ERROR, "Channel error");
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).Times(0);
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).WillOnce(InvokeArgument<1>());
+    mockChannel->processReceived(rmqamqp::Message(
+        rmqamqpt::Method(rmqamqpt::ChannelMethod(rmqamqpt::ChannelClose(
+            rmqamqpt::Constants::REPLY_SUCCESS, "Closing Channel")))));
+
+    EXPECT_CALL(*d_retryHandler, retry(_));
+    mockChannel->processReceived(rmqamqp::Message(
+        rmqamqpt::Method(rmqamqpt::ChannelMethod(rmqamqpt::ChannelCloseOk()))));
 }
 
 TEST_F(ChannelTests, ReceiveOpenOkMethod)
@@ -973,19 +1058,22 @@ TEST_F(ChannelTests, sendBindAndUnbind)
     EXPECT_TRUE(future2.tryResult());
 }
 
-TEST_F(ChannelTests, onWriteCompleteCbValidity)
+TEST_F(ChannelTests, onCloseOkWrittenCbValidity)
 {
-    // Ensure that the onWriteComplete callback can be invoked after the Channel
-    // is destructed.
+    // Ensure that the onCloseOkWritten callback can be invoked after the
+    // Channel is destructed.
 
     bsl::function<void()> callbackFn;
 
     {
-        bsl::shared_ptr<ChannelTestImpl> channel = makeChannel(d_topology);
+        bsl::shared_ptr<ChannelTestImpl> channel =
+            makeOpeningChannel(d_topology);
 
         EXPECT_CALL(d_callback, onAsyncWrite(_, _))
             .WillOnce(SaveArg<1>(&callbackFn));
-        channel->open();
+        channel->processReceived(rmqamqp::Message(
+            rmqamqpt::Method(rmqamqpt::ChannelMethod(rmqamqpt::ChannelClose(
+                rmqamqpt::Constants::REPLY_SUCCESS, "Closing Channel")))));
     }
 
     // This shouldn't segfault

@@ -145,9 +145,19 @@ class Channel::ChannelMethodProcessor {
         BALL_LOG_INFO << "Received ChannelClose from server: " << closeMethod;
 
         rmqamqpt::ChannelCloseOk closeOkMethod;
-        d_channel.writeMessage(
-            Message(rmqamqpt::Method(rmqamqpt::ChannelMethod(closeOkMethod))),
-            CLOSED);
+        const Message closeOk =
+            Message(rmqamqpt::Method(rmqamqpt::ChannelMethod(closeOkMethod)));
+
+        if (d_channel.d_state == CHANNEL_CLOSE_SENT) {
+            d_channel.writeMessage(closeOk, &noopWriteHandler);
+        }
+        else {
+            d_channel.updateState(CLOSED);
+            d_channel.writeMessage(
+                closeOk,
+                bdlf::BindUtil::bind(&Channel::onCloseOkWritten,
+                                     d_channel.weak_from_this()));
+        }
 
         if (closeMethod.classId() || closeMethod.methodId()) {
             (d_channel.d_retryHandler->errorCallback())(
@@ -160,6 +170,12 @@ class Channel::ChannelMethodProcessor {
 
     ResultType operator()(const rmqamqpt::ChannelCloseOk&) const
     {
+        if (d_channel.d_state == CHANNEL_OPEN_SENT) {
+            BALL_LOG_INFO << "Ignoring channel CLOSE-OK from before the "
+                             "channel was reopened";
+            return KEEP;
+        }
+
         if (d_channel.d_state != CHANNEL_CLOSE_SENT) {
             BALL_LOG_ERROR << "Received channel CLOSE-OK method from server "
                               "without sending CLOSE method";
@@ -443,19 +459,16 @@ void Channel::processMessage(const rmqt::Message&)
     BALL_LOG_ERROR << "Throwing Content Away";
 }
 
-void Channel::onWriteComplete(const bsl::weak_ptr<Channel>& weakSelf)
+void Channel::onCloseOkWritten(const bsl::weak_ptr<Channel>& weakSelf)
 {
     bsl::shared_ptr<Channel> self = weakSelf.lock();
     if (!self) {
-        BALL_LOG_TRACE
-            << "Write completion handler called after channel destroyed";
+        BALL_LOG_TRACE << "Close-Ok write completed after channel destroyed";
         return;
     }
 
-    if (self->d_state == CLOSED) {
-        const bool startRetry = !self->d_permanentlyClosing;
-        self->reset(startRetry);
-    }
+    const bool startRetry = !self->d_permanentlyClosing;
+    self->reset(startRetry);
 }
 
 Channel::CleanupIndicator Channel::reset(bool startRetry)
@@ -466,8 +479,8 @@ Channel::CleanupIndicator Channel::reset(bool startRetry)
 
     onReset();
     if (startRetry) {
-        d_retryHandler->retry(
-            bdlf::BindUtil::bind(&Channel::retry, weak_from_this()));
+        d_retryHandler->retry(bdlf::BindUtil::bind(
+            &Channel::retry, weak_from_this(), lifetimeId()));
     }
     d_metricPublisher->publishCounter(
         "channel_disconnected", 1, getVHostAndChannelTags());
@@ -475,11 +488,19 @@ Channel::CleanupIndicator Channel::reset(bool startRetry)
     return d_permanentlyClosing ? CLEANUP : KEEP;
 }
 
-void Channel::retry(const bsl::weak_ptr<Channel>& weakSelf)
+void Channel::retry(const bsl::weak_ptr<Channel>& weakSelf,
+                    size_t scheduledLifetimeId)
 {
     bsl::shared_ptr<Channel> self = weakSelf.lock();
     if (!self) {
         BALL_LOG_TRACE << "Retry handler called during shutdown";
+        return;
+    }
+
+    if (self->lifetimeId() != scheduledLifetimeId) {
+        BALL_LOG_DEBUG << "Ignoring retry scheduled in channel lifetime "
+                       << scheduledLifetimeId << ", current lifetime is "
+                       << self->lifetimeId();
         return;
     }
 
@@ -513,6 +534,11 @@ void Channel::open()
         return;
     }
 
+    if (d_state != CLOSED) {
+        BALL_LOG_DEBUG << "Not opening a channel in state " << d_state;
+        return;
+    }
+
     using bdlf::PlaceHolders::_1;
     d_hungProgressTimer->start(
         bdlf::BindUtil::bind(&Channel::channelHung, weak_from_this(), _1));
@@ -526,9 +552,7 @@ void Channel::writeMessage(const rmqamqp::Message& message, State newState)
 {
     updateState(newState);
     BALL_LOG_TRACE << "State now set to: " << d_state;
-    d_onAsyncWrite(
-        bsl::make_shared<Message>(message),
-        bdlf::BindUtil::bind(&Channel::onWriteComplete, weak_from_this()));
+    d_onAsyncWrite(bsl::make_shared<Message>(message), &noopWriteHandler);
 }
 
 void Channel::writeMessage(

@@ -2264,6 +2264,25 @@ TEST_F(ReceiveChannelTests, ServerCancelAfterChannelCloseSentIsDiscarded)
         Eq(rmqamqp::Channel::CLEANUP));
 }
 
+TEST_F(ReceiveChannelTests, ConsumeOkCrossingGracefulCloseStillCleansUp)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).WillOnce(InvokeArgument<1>());
+    setupConsumerNoReply(*receiveChannel, d_consumerTag);
+
+    expectChannelClose();
+    receiveChannel->gracefulClose();
+
+    consumerReply(*receiveChannel, d_consumerTag);
+
+    EXPECT_THAT(
+        receiveChannel->processReceived(rmqamqp::Message(rmqamqpt::Method(
+            rmqamqpt::ChannelMethod(rmqamqpt::ChannelCloseOk())))),
+        Eq(rmqamqp::Channel::CLEANUP));
+}
+
 TEST_F(ReceiveChannelTests, ResumeRefusedWhilstClosingForGood)
 {
     bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);

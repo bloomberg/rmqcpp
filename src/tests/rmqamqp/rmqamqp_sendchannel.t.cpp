@@ -515,6 +515,24 @@ TEST_F(SendChannelTests, MessagesArePublishedAfterReconnecting)
     startupExpectations(*d_sendChannel);
 }
 
+TEST_F(SendChannelTests, RetryScheduledBeforeResetDoesNotReopen)
+{
+    startupExpectations(*d_sendChannel);
+
+    rmqio::RetryHandler::RetryCallback scheduledRetry;
+    EXPECT_CALL(*d_retryHandler, retry(_))
+        .WillOnce(SaveArg<0>(&scheduledRetry));
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).WillOnce(InvokeArgument<1>());
+    d_sendChannel->processReceived(rmqamqp::Message(
+        rmqamqpt::Method(rmqamqpt::ChannelMethod(rmqamqpt::ChannelClose(
+            rmqamqpt::Constants::REPLY_SUCCESS, "Closing Channel")))));
+
+    d_sendChannel->reset();
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).Times(0);
+    scheduledRetry();
+}
+
 TEST_F(SendChannelTests, MessagesArePublishedAfterFlow)
 {
     rmqt::Message message;
