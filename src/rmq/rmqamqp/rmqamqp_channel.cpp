@@ -592,6 +592,7 @@ void Channel::updateState(State state)
             break;
         case CLOSED:
             BALL_LOG_DEBUG << "Closing channel for vhost:" << d_vhostName;
+            d_hungProgressTimer->cancel();
             // fall through
         default:
             d_state = state;
