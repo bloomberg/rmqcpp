@@ -934,19 +934,6 @@ TEST_F(ConnectionTests, GetFrameIncorrectOrder)
         d_replayFrame.pushInbound(bsl::make_shared<SerializedFrame>(tuneFrame));
     }
 
-    {
-        ConnectionClose closeMethod(Constants::UNEXPECTED_FRAME,
-                                    "Unexpected frame",
-                                    Constants::CONNECTION,
-                                    Constants::CONNECTION_TUNE);
-        Frame closeFrame;
-        Framer::makeMethodFrame(
-            &closeFrame, 0, Method(ConnectionMethod(closeMethod)));
-        d_replayFrame.pushOutbound(
-            bsl::make_shared<SerializedFrame>(closeFrame));
-
-        expectCloseOkFrame(false); // from the server
-    }
     resetExpectations();
 
     expectFirstHandshakeFrames();
@@ -1037,6 +1024,58 @@ TEST_F(ConnectionTests, NoCloseWhenServerAlreadyClosed)
 
     bool invoked = false;
     conn->close(bdlf::BindUtil::bind(&gracefulCloseHandler, bsl::ref(invoked)));
+
+    d_eventLoop.run();
+
+    EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::DISCONNECTED));
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+    EXPECT_TRUE(invoked);
+}
+
+TEST_F(ConnectionTests, CloseBeforeOpenSendsNoConnectionClose)
+{
+    expectHeaderAndStartFrames();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    d_eventLoop.run();
+    d_eventLoop.restart();
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).Times(0);
+    EXPECT_CALL(d_callbacks, onConnect(false));
+
+    bool invoked = false;
+    conn->close(bdlf::BindUtil::bind(&gracefulCloseHandler, bsl::ref(invoked)));
+
+    d_eventLoop.run();
+
+    EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::DISCONNECTED));
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+    EXPECT_TRUE(invoked);
+}
+
+TEST_F(ConnectionTests, CloseAfterOpenWaitsForOpenOk)
+{
+    expectHeaderAndStartFrames();
+    expectTuneFrames();
+    expectOpenFrame();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    d_eventLoop.run();
+    d_eventLoop.restart();
+
+    expectOpenOkFrame();
+    expectCloseFrame(false);
+    expectCloseOkFrame(false);
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).Times(0);
+    EXPECT_CALL(d_callbacks, onConnect(true)).Times(0);
+    EXPECT_CALL(d_callbacks, onConnect(false));
+
+    bool invoked = false;
+    conn->close(bdlf::BindUtil::bind(&gracefulCloseHandler, bsl::ref(invoked)));
+    feedNextFrame();
 
     d_eventLoop.run();
 
@@ -1663,21 +1702,6 @@ TEST_F(TuneParamNegotiationTests,
         Framer::makeMethodFrame(
             &tuneFrame, 0, Method(ConnectionMethod(tuneMethod)));
         d_replayFrame.pushInbound(bsl::make_shared<SerializedFrame>(tuneFrame));
-    }
-
-    {
-        ConnectionClose closeMethod(
-            Constants::NOT_ALLOWED,
-            "Negotiated frame-max 4095 is below the minimum of 4096",
-            Constants::CONNECTION,
-            Constants::CONNECTION_TUNE);
-        Frame closeFrame;
-        Framer::makeMethodFrame(
-            &closeFrame, 0, Method(ConnectionMethod(closeMethod)));
-        d_replayFrame.pushOutbound(
-            bsl::make_shared<SerializedFrame>(closeFrame));
-
-        expectCloseOkFrame(false); // from the server
     }
 
     // capture what the application is told, rather than only that it is told

@@ -245,12 +245,9 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
                              rmqamqpt::Constants::AMQPMethodId failingMethodId =
                                  rmqamqpt::Constants::NO_METHOD);
 
-    // Callback for writes
-    void onWriteComplete(State newState);
+    void updateState(State state);
 
-    // Callback for writes
-    static void onWriteCompleteCb(bsl::weak_ptr<Connection> weakSelf,
-                                  State newState);
+    void onCloseOkWritten();
 
     // Connection Method Router
     void processConnectionMethod(const rmqamqpt::ConnectionMethod& method);

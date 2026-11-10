@@ -61,6 +61,8 @@ namespace BloombergLP {
 namespace rmqamqp {
 namespace {
 
+void noopWriteHandler() {}
+
 template <typename A, typename B>
 rmqt::Result<A> passOnSuccessImpl(const bsl::shared_ptr<A>& item,
                                   const rmqt::Result<B>& result)
@@ -264,6 +266,15 @@ void Connection::close(const CloseFinishCallback& closeCallback)
             socketShutdown(Connection::FATAL,
                            rmqio::Connection::GRACEFUL_DISCONNECT);
             break;
+        case PROTOCOL_HEADER_SENT:
+        case CONNECTION_START_RECEIVED:
+        case CONNECTION_STARTOK_SENT:
+        case CONNECTION_TUNE_RECEIVED:
+        case CONNECTION_TUNEOK_SENT:
+            closeSocket(FATAL);
+            break;
+        case CONNECTION_OPEN_SENT:
+            break;
         case CONNECTION_CLOSE_SENT_EXIT:
         case CONNECTION_CLOSE_SENT_RECONNECT:
         case CONNECTION_CLOSE_RECEIVED:
@@ -334,13 +345,13 @@ void Connection::startFirstConnection(
 
 void Connection::connect()
 {
+    updateState(PROTOCOL_HEADER_SENT);
+
     asyncWriteSingleFrame(
         bsl::make_shared<rmqio::SerializedFrame>(
             static_cast<const uint8_t*>(rmqamqpt::Constants::PROTOCOL_HEADER),
             rmqamqpt::Constants::PROTOCOL_HEADER_LENGTH),
-        bdlf::BindUtil::bind(&Connection::onWriteCompleteCb,
-                             weak_from_this(),
-                             PROTOCOL_HEADER_SENT));
+        &noopWriteHandler);
 }
 
 void Connection::connectError(const rmqio::Resolver::Error&)
@@ -393,28 +404,13 @@ void Connection::socketError(const bsl::weak_ptr<Connection>& weakConn,
     conn->socketShutdown(WILL_RETRY, rc);
 }
 
-void Connection::onWriteComplete(State state)
+void Connection::updateState(State state)
 {
     d_state = state;
     BALL_LOG_TRACE << "State now set to: " << d_state;
-
-    // close socket if the server closed us
-    if (d_state == CONNECTION_CLOSEOK_SENT) {
-        closeSocket(WILL_RETRY);
-    }
 }
 
-void Connection::onWriteCompleteCb(bsl::weak_ptr<Connection> weakSelf,
-                                   State newState)
-{
-    bsl::shared_ptr<Connection> self = weakSelf.lock();
-    if (!self) {
-        BALL_LOG_TRACE << "Write completion handler called during shutdown";
-        return;
-    }
-
-    self->onWriteComplete(newState);
-}
+void Connection::onCloseOkWritten() { closeSocket(WILL_RETRY); }
 
 void Connection::sendConnectionStartOk()
 {
@@ -429,10 +425,9 @@ void Connection::sendConnectionStartOk()
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(startOkMethod));
 
-    asyncWriteSingleFrame(serializeFrame(frame),
-                          bdlf::BindUtil::bind(&Connection::onWriteCompleteCb,
-                                               weak_from_this(),
-                                               CONNECTION_STARTOK_SENT));
+    updateState(CONNECTION_STARTOK_SENT);
+
+    asyncWriteSingleFrame(serializeFrame(frame), &noopWriteHandler);
     BALL_LOG_TRACE << "Connection Start-ok method sent to server: "
                    << startOkMethod;
 }
@@ -491,10 +486,10 @@ bool Connection::sendConnectionTuneOk(
     rmqamqpt::Frame frame;
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(tuneOkMethod));
-    asyncWriteSingleFrame(serializeFrame(frame),
-                          bdlf::BindUtil::bind(&Connection::onWriteCompleteCb,
-                                               weak_from_this(),
-                                               CONNECTION_TUNEOK_SENT));
+
+    updateState(CONNECTION_TUNEOK_SENT);
+
+    asyncWriteSingleFrame(serializeFrame(frame), &noopWriteHandler);
     BALL_LOG_TRACE << "Connection Tune-ok method sent to server: "
                    << tuneOkMethod;
     return true;
@@ -507,10 +502,10 @@ void Connection::sendConnectionOpen()
     rmqamqpt::Frame frame;
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(openMethod));
-    asyncWriteSingleFrame(serializeFrame(frame),
-                          bdlf::BindUtil::bind(&Connection::onWriteCompleteCb,
-                                               weak_from_this(),
-                                               CONNECTION_OPEN_SENT));
+
+    updateState(CONNECTION_OPEN_SENT);
+
+    asyncWriteSingleFrame(serializeFrame(frame), &noopWriteHandler);
     BALL_LOG_TRACE << "Connection Open method sent to server: " << openMethod;
 }
 
@@ -521,10 +516,12 @@ void Connection::sendConnectionCloseOk()
     rmqamqpt::Frame frame;
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(closeOkMethod));
+
+    updateState(CONNECTION_CLOSEOK_SENT);
+
     asyncWriteSingleFrame(serializeFrame(frame),
-                          bdlf::BindUtil::bind(&Connection::onWriteComplete,
-                                               shared_from_this(),
-                                               CONNECTION_CLOSEOK_SENT));
+                          bdlf::BindUtil::bind(&Connection::onCloseOkWritten,
+                                               shared_from_this()));
     BALL_LOG_TRACE << "Connection Close-ok method sent to server: "
                    << closeOkMethod;
 }
@@ -541,19 +538,12 @@ void Connection::sendConnectionClose(
     rmqamqpt::Frame frame;
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(closeMethod));
-    if (replyCode != rmqamqpt::Constants::REPLY_SUCCESS) {
-        asyncWriteSingleFrame(
-            serializeFrame(frame),
-            bdlf::BindUtil::bind(&Connection::onWriteComplete,
-                                 shared_from_this(),
-                                 CONNECTION_CLOSE_SENT_RECONNECT));
-    }
-    else {
-        asyncWriteSingleFrame(serializeFrame(frame),
-                              bdlf::BindUtil::bind(&Connection::onWriteComplete,
-                                                   shared_from_this(),
-                                                   CONNECTION_CLOSE_SENT_EXIT));
-    }
+
+    updateState(replyCode == rmqamqpt::Constants::REPLY_SUCCESS
+                    ? CONNECTION_CLOSE_SENT_EXIT
+                    : CONNECTION_CLOSE_SENT_RECONNECT);
+
+    asyncWriteSingleFrame(serializeFrame(frame), &noopWriteHandler);
 
     BALL_LOG_TRACE << "Connection Close method sent to server: " << closeMethod;
 }
@@ -569,13 +559,8 @@ void Connection::connectionException(
             closeSocket(FATAL);
             break;
 
-        case CONNECTED:
-        case PROTOCOL_HEADER_SENT:
-        case CONNECTION_START_RECEIVED:
-        case CONNECTION_STARTOK_SENT:
-        case CONNECTION_TUNE_RECEIVED:
-        case CONNECTION_TUNEOK_SENT:
         case CONNECTION_OPEN_SENT:
+        case CONNECTED:
         case CONNECTION_OPENOK_RECEIVED:
             sendConnectionClose(
                 replyCode, replyText, failingClassId, failingMethodId);
@@ -600,8 +585,7 @@ void Connection::closeSocket(DisconnectType disconnectType)
 {
     BALL_LOG_TRACE << "closeSocket: " << disconnectType;
 
-    d_state = CONNECTION_CLOSED;
-    BALL_LOG_TRACE << "State now set to: " << d_state;
+    updateState(CONNECTION_CLOSED);
     using bdlf::PlaceHolders::_1;
     if (d_socketConnection && d_socketConnection->isConnected()) {
         BALL_LOG_TRACE << "Closing Socket Gracefully";
@@ -641,8 +625,7 @@ void Connection::socketShutdown(DisconnectType dcType,
 
     d_metricPublisher->publishCounter("disconnect_events", 1, d_vhostTags);
 
-    d_state = Connection::DISCONNECTED;
-    BALL_LOG_TRACE << "State now set to: " << d_state;
+    updateState(DISCONNECTED);
     if (willRetry) {
         // The connection is down and will be retried: either an establishment
         // attempt failed or an established connection was lost. Schedule the
@@ -696,8 +679,7 @@ class Connection::ConnectionMethodProcessor {
     void operator()(const rmqamqpt::ConnectionStart& start) const
     {
         if (expectedState(start, Connection::PROTOCOL_HEADER_SENT)) {
-            conn.d_state = CONNECTION_START_RECEIVED;
-            BALL_LOG_TRACE << "State now set to: " << conn.d_state;
+            conn.updateState(CONNECTION_START_RECEIVED);
             conn.sendConnectionStartOk();
         }
     }
@@ -705,8 +687,7 @@ class Connection::ConnectionMethodProcessor {
     void operator()(const rmqamqpt::ConnectionTune& tune) const
     {
         if (expectedState(tune, Connection::CONNECTION_STARTOK_SENT)) {
-            conn.d_state = CONNECTION_TUNE_RECEIVED;
-            BALL_LOG_TRACE << "State now set to: " << conn.d_state;
+            conn.updateState(CONNECTION_TUNE_RECEIVED);
             if (conn.sendConnectionTuneOk(tune)) {
                 conn.sendConnectionOpen();
             }
@@ -716,10 +697,15 @@ class Connection::ConnectionMethodProcessor {
     void operator()(const rmqamqpt::ConnectionOpenOk& openok) const
     {
         if (expectedState(openok, Connection::CONNECTION_OPEN_SENT)) {
+            if (conn.d_closeRequested) {
+                conn.sendConnectionClose(rmqamqpt::Constants::REPLY_SUCCESS,
+                                         "Closing Connection");
+                return;
+            }
+
             BALL_LOG_INFO << "Connected " << conn.connectionDebugName();
 
-            conn.d_state = CONNECTED;
-            BALL_LOG_TRACE << "State now set to: " << conn.d_state;
+            conn.updateState(CONNECTED);
             conn.d_hungTimer->cancel();
             conn.d_retryHandler->success();
 
@@ -767,8 +753,7 @@ class Connection::ConnectionMethodProcessor {
         // https://www.rabbitmq.com/resources/specs/amqp0-9-1.extended.xml
         BALL_LOG_INFO << "Received Connection.Close method from server. "
                       << closeMethod;
-        conn.d_state = CONNECTION_CLOSE_RECEIVED;
-        BALL_LOG_TRACE << "State now set to: " << conn.d_state;
+        conn.updateState(CONNECTION_CLOSE_RECEIVED);
         conn.sendConnectionCloseOk();
 
         if (closeMethod.classId() || closeMethod.methodId()) {
