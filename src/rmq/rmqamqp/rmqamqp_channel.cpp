@@ -385,6 +385,16 @@ Channel::processReceived(const rmqamqp::Message& message)
         return KEEP;
     }
 
+    if (d_state == CHANNEL_CLOSE_SENT &&
+        !MessageUtil::isMethod<rmqamqpt::ChannelMethod, rmqamqpt::ChannelClose>(
+            message) &&
+        !MessageUtil::isMethod<rmqamqpt::ChannelMethod,
+                               rmqamqpt::ChannelCloseOk>(message)) {
+        BALL_LOG_DEBUG << "Discarding frame received after sending "
+                          "Channel.Close";
+        return KEEP;
+    }
+
     if (message.is<rmqamqpt::Method>()) {
         const rmqamqpt::Method& method = message.the<rmqamqpt::Method>();
         switch (method.classId()) {

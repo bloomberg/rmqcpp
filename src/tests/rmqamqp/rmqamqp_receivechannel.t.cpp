@@ -69,15 +69,6 @@ const MethodTypeT& MethodGetter(const bsl::shared_ptr<rmqamqp::Message>& msg)
     throw bsl::runtime_error("MethodMatcher: No Match");
 }
 
-template <typename MethodClassT, typename MethodTypeT>
-bool MethodMatcher(const bsl::shared_ptr<rmqamqp::Message>& msg)
-{
-    return (msg->is<rmqamqpt::Method>() &&
-            msg->the<rmqamqpt::Method>().is<MethodClassT>() &&
-            msg->the<rmqamqpt::Method>()
-                .the<MethodClassT>()
-                .template is<MethodTypeT>());
-}
 MATCHER_P(EXPECT_QOSPREFETCH_IS, pf, "Prefetch isn't " + PrintToString(pf))
 {
     try {
@@ -2252,6 +2243,25 @@ TEST_F(ReceiveChannelTests, PauseRefusedWhilstClosingForGood)
     rmqt::Future<> werePaused = receiveChannel->pause();
     EXPECT_THAT(werePaused.tryResult().error(),
                 Eq("Pause called on a channel that is permanently closing"));
+}
+
+TEST_F(ReceiveChannelTests, ServerCancelAfterChannelCloseSentIsDiscarded)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, d_consumerTag);
+
+    expectChannelClose();
+    receiveChannel->gracefulClose();
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _)).Times(0);
+    receiveBasicCancel(*receiveChannel, d_consumerTag);
+
+    EXPECT_THAT(
+        receiveChannel->processReceived(rmqamqp::Message(rmqamqpt::Method(
+            rmqamqpt::ChannelMethod(rmqamqpt::ChannelCloseOk())))),
+        Eq(rmqamqp::Channel::CLEANUP));
 }
 
 TEST_F(ReceiveChannelTests, ResumeRefusedWhilstClosingForGood)
