@@ -498,9 +498,9 @@ void Channel::retry(const bsl::weak_ptr<Channel>& weakSelf,
     }
 
     if (self->lifetimeId() != scheduledLifetimeId) {
-        BALL_LOG_DEBUG << "Ignoring retry scheduled in channel lifetime "
-                       << scheduledLifetimeId << ", current lifetime is "
-                       << self->lifetimeId();
+        BALL_LOG_INFO << "Ignoring retry scheduled in channel lifetime "
+                      << scheduledLifetimeId << ", current lifetime is "
+                      << self->lifetimeId();
         return;
     }
 
@@ -535,7 +535,7 @@ void Channel::open()
     }
 
     if (d_state != CLOSED) {
-        BALL_LOG_DEBUG << "Not opening a channel in state " << d_state;
+        BALL_LOG_INFO << "Not opening a channel in state " << d_state;
         return;
     }
 
