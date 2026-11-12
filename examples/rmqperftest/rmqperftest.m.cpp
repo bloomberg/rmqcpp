@@ -78,6 +78,11 @@ int main(int argc, char* argv[])
         args.shuffleConnectionEndpoints = true;
     }
 
+    char* envImmediateRetry = std::getenv("RMQAPITESTS_IMMEDIATE_RETRY");
+    if (envImmediateRetry && bsl::string(envImmediateRetry) == "1") {
+        args.immediateRetry = true;
+    }
+
     balcl::OptionInfo specTable[] = {
         {
             "d|id",

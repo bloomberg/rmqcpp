@@ -8,6 +8,16 @@ CMAKE_PRESET?=macos-arm64-vcpkg
 RMQ_HOSTNAME?=localhost
 RMQ_MGMT?="http://localhost:15672"
 
+IMPOSTER_FOLDER?=$(SRC_FOLDER)/src/tests/amqp_imposter
+IMPOSTER_VENV?=$(BUILD_FOLDER)/imposter-venv
+FUZZ_BUILD_FOLDER?=$(BUILD_FOLDER)/fuzz-asan
+FUZZ_CXX_FLAGS?=-fsanitize=address -fno-omit-frame-pointer
+FUZZ_ARGS?=-n auto
+FUZZ_TARGET?=integration/rmqapitests/fuzz
+FUZZ_SEED_COUNT?=1000
+FUZZ_SEED_OFFSET?=0
+FUZZ_TRANSCRIPT_DIR?=$(BUILD_FOLDER)/fuzz-transcripts
+
 
 default: build unit
 
@@ -22,11 +32,31 @@ unit:
 
 full: init build 
 
-full-test: full unit integration
+full-test: full unit integration imposter-test
 
 integration: 
 	RMQ_USER=guest RMQ_PWD=guest RMQ_USER_MGMT="guest" RMQ_PWD_MGMT="guest" RMQ_PORT="5672" RMQ_TLS_PORT="5671" RMQ_PROXY_CONTROL_PORT="5700" \
 	cmake --build $(BUILD_FOLDER) -t test_integration 
+
+imposter-venv:
+	uv venv --allow-existing --python 3.15 $(IMPOSTER_VENV)
+	uv pip install --python $(IMPOSTER_VENV) -e $(IMPOSTER_FOLDER) -r $(IMPOSTER_FOLDER)/requirements-dev.txt
+
+imposter-test: imposter-venv
+	cd $(IMPOSTER_FOLDER) && $(abspath $(IMPOSTER_VENV))/bin/python -m pytest -n auto
+
+fuzz-build:
+	cmake --preset ${CMAKE_PRESET} -B ${FUZZ_BUILD_FOLDER} -S ${SRC_FOLDER} -G Ninja -DCMAKE_CXX_FLAGS="$(FUZZ_CXX_FLAGS)"
+	cmake --build ${FUZZ_BUILD_FOLDER} -t rmqperftest
+
+fuzz: imposter-venv fuzz-build
+	uv pip install --python $(IMPOSTER_VENV) -r $(SRC_FOLDER)/src/tests/integration/requirements.txt
+	rm -rf $(FUZZ_TRANSCRIPT_DIR)
+	cd $(SRC_FOLDER)/src/tests && \
+	RMQ_EXE=$(abspath $(FUZZ_BUILD_FOLDER))/examples/rmqperftest/rmqperftest FUZZ_SEED_COUNT=$(FUZZ_SEED_COUNT) FUZZ_SEED_OFFSET=$(FUZZ_SEED_OFFSET) \
+	FUZZ_TRANSCRIPT_DIR=$(abspath $(FUZZ_TRANSCRIPT_DIR)) RMQAPITESTS_IMMEDIATE_RETRY=1 PYTHONPATH=. \
+	$(abspath $(IMPOSTER_VENV))/bin/python -m pytest -p integration.rmqapitests.fuzz.fixtures -o python_files='*_fuzztests.py' \
+	--rootdir . --timeout 600 $(FUZZ_ARGS) '$(FUZZ_TARGET)'
 
 clean:
 	rm -rf $(BUILD_FOLDER)
@@ -43,4 +73,4 @@ docker-test:
 docker-shell:
 	cd $(SRC_FOLDER)/dockerfiles && docker compose run dev
 
-.PHONY: build init unit integration clean full full-test
+.PHONY: build init unit integration clean full full-test imposter-venv imposter-test fuzz-build fuzz

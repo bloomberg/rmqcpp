@@ -227,7 +227,8 @@ RabbitContextImpl::RabbitContextImpl(
             options.clientProperties(),
             options.connectionErrorThreshold(),
             options.connectionEstablishmentTimeout(),
-            isHostHealthMonitoringEnabled);
+            isHostHealthMonitoringEnabled,
+            d_tunables);
 
     if (!d_threadPool) {
         bslmt::ThreadAttributes attributes;

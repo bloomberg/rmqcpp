@@ -34,6 +34,7 @@
 #include <rmqt_credentials.h>
 #include <rmqt_endpoint.h>
 #include <rmqt_message.h>
+#include <rmqt_properties.h>
 
 #include <ball_log.h>
 #include <bslmt_mutex.h>
@@ -340,7 +341,8 @@ class Connection::Factory {
         const rmqt::FieldTable& clientProperties,
         const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold,
         const bsl::optional<bsls::TimeInterval>& connectionEstablishmentTimeout,
-        const bool isHostHealthMonitoringEnabled);
+        const bool isHostHealthMonitoringEnabled,
+        const rmqt::Tunables& tunables = rmqt::Tunables());
 
     virtual ~Factory() {}
 
@@ -367,6 +369,7 @@ class Connection::Factory {
     const bsl::optional<bsls::TimeInterval> d_connectionErrorThreshold;
     const bsl::optional<bsls::TimeInterval> d_connectionEstablishmentTimeout;
     const bool d_isHostHealthMonitoringEnabled;
+    const rmqt::Tunables d_tunables;
 }; // class Connection::Factory
 } // namespace rmqamqp
 } // namespace BloombergLP

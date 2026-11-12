@@ -105,6 +105,7 @@ struct PerfTestArgs {
     , consumer()
     , producer()
     , shuffleConnectionEndpoints(false)
+    , immediateRetry(false)
     {
     }
 
@@ -118,6 +119,7 @@ struct PerfTestArgs {
     ProducerArgs producer;
 
     bool shuffleConnectionEndpoints;
+    bool immediateRetry;
 };
 
 } // namespace rmqperftest

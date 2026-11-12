@@ -1169,7 +1169,8 @@ Connection::Factory::Factory(
     const rmqt::FieldTable& clientProperties,
     const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold,
     const bsl::optional<bsls::TimeInterval>& connectionEstablishmentTimeout,
-    const bool isHostHealthMonitoringEnabled)
+    const bool isHostHealthMonitoringEnabled,
+    const rmqt::Tunables& tunables)
 : d_errorCb(errorCb)
 , d_clientProperties(clientProperties)
 , d_metricPublisher(metricPublisher)
@@ -1179,6 +1180,7 @@ Connection::Factory::Factory(
 , d_connectionErrorThreshold(connectionErrorThreshold)
 , d_connectionEstablishmentTimeout(connectionEstablishmentTimeout)
 , d_isHostHealthMonitoringEnabled(isHostHealthMonitoringEnabled)
+, d_tunables(tunables)
 {
 }
 
@@ -1207,17 +1209,23 @@ bsl::shared_ptr<Connection> Connection::Factory::create(
 
 bsl::shared_ptr<rmqio::RetryHandler> Connection::Factory::newRetryHandler()
 {
+    const bsl::shared_ptr<rmqio::RetryStrategy> retryStrategy =
+        d_tunables.find("IIR") != d_tunables.end()
+            ? bsl::make_shared<rmqio::BackoffLevelRetryStrategy>(
+                  bsl::numeric_limits<unsigned int>::max())
+            : bsl::make_shared<rmqio::BackoffLevelRetryStrategy>();
+
     return d_connectionErrorThreshold
                ? bsl::shared_ptr<rmqio::RetryHandler>(
                      bsl::make_shared<rmqio::ConnectionRetryHandler>(
                          d_timerFactory,
                          d_errorCb,
-                         bsl::make_shared<rmqio::BackoffLevelRetryStrategy>(),
+                         retryStrategy,
                          *d_connectionErrorThreshold))
                : bsl::make_shared<rmqio::RetryHandler>(
                      d_timerFactory,
                      d_errorCb,
-                     bsl::make_shared<rmqio::BackoffLevelRetryStrategy>());
+                     retryStrategy);
 }
 
 bsl::shared_ptr<rmqamqp::HeartbeatManager>
