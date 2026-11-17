@@ -49,14 +49,14 @@ jobs:
 
   Formatting:
     name: Clang Format
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: clang-format style check
         run: |
-          git clang-format-18 --diff -q origin/main | tee format_diff.txt
+          git clang-format-20 --diff -q origin/main | tee format_diff.txt
           if [ -s format_diff.txt ]; then exit 1; fi
 
   Linting:
