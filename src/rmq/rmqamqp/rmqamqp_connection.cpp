@@ -1223,9 +1223,7 @@ bsl::shared_ptr<rmqio::RetryHandler> Connection::Factory::newRetryHandler()
                          retryStrategy,
                          *d_connectionErrorThreshold))
                : bsl::make_shared<rmqio::RetryHandler>(
-                     d_timerFactory,
-                     d_errorCb,
-                     retryStrategy);
+                     d_timerFactory, d_errorCb, retryStrategy);
 }
 
 bsl::shared_ptr<rmqamqp::HeartbeatManager>
