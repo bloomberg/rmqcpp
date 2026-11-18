@@ -67,7 +67,8 @@ class MultipleAckHandlerTests : public ::testing::Test {
         d_acks.push_back(rmqt::ConsumerAck(
             rmqt::Envelope(
                 dt, 0, "consumerTag", "exchange", "routing-key", false),
-            requeue ? rmqt::ConsumerAck::REQUEUE : rmqt::ConsumerAck::REJECT));
+            requeue ? rmqt::ConsumerAck::NACK_REQUEUE_TRUE
+                    : rmqt::ConsumerAck::NACK_REQUEUE_FALSE));
     }
 
     void expectAck(uint64_t tag, bool multiple)

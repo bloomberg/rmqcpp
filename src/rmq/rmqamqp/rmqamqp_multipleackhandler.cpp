@@ -116,7 +116,9 @@ void MultipleAckHandler::sendAck(uint64_t deliveryTag,
         d_onAck(deliveryTag, multiple);
     }
     else {
-        d_onNack(deliveryTag, type == rmqt::ConsumerAck::REQUEUE, multiple);
+        d_onNack(deliveryTag,
+                 type == rmqt::ConsumerAck::NACK_REQUEUE_TRUE,
+                 multiple);
     }
 }
 

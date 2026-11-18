@@ -152,8 +152,8 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
     {
         ackOrNackMessage(rc,
                          id,
-                         requeue ? rmqt::ConsumerAck::REQUEUE
-                                 : rmqt::ConsumerAck::REJECT);
+                         requeue ? rmqt::ConsumerAck::NACK_REQUEUE_TRUE
+                                 : rmqt::ConsumerAck::NACK_REQUEUE_FALSE);
     }
 
     void setupConsumerNoReply(rmqamqp::ReceiveChannel& rc,

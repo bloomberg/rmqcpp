@@ -80,8 +80,8 @@ MessageGuard::~MessageGuard()
                        << d_message.guid()
                        << ", payload size: " << d_message.payloadSize();
         try {
-            d_ackCallback(
-                rmqt::ConsumerAck(d_envelope, rmqt::ConsumerAck::REQUEUE));
+            d_ackCallback(rmqt::ConsumerAck(
+                d_envelope, rmqt::ConsumerAck::NACK_REQUEUE_TRUE));
         }
         catch (bsl::exception& e) {
             BALL_LOG_ERROR
@@ -107,7 +107,8 @@ void MessageGuard::ack() { resolve(rmqt::ConsumerAck::ACK); }
 
 void MessageGuard::nack(bool requeue)
 {
-    resolve(requeue ? rmqt::ConsumerAck::REQUEUE : rmqt::ConsumerAck::REJECT);
+    resolve(requeue ? rmqt::ConsumerAck::NACK_REQUEUE_TRUE
+                    : rmqt::ConsumerAck::NACK_REQUEUE_FALSE);
 }
 
 void MessageGuard::resolve(rmqt::ConsumerAck::Type ackOption)
