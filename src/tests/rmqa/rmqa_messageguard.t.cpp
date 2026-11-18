@@ -164,7 +164,9 @@ TEST_F(MessageGuardTest, onlyFirstNackApplies)
     EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::NACK_REQUEUE_TRUE);
 }
 
-TEST_F(MessageGuardTest, destructorCallsNack)
+// A guard destroyed without being resolved - the uncaught exception path -
+// rejects with requeue so that the delivery counts towards delivery-limit.
+TEST_F(MessageGuardTest, destructorCallsReject)
 {
     {
         rmqa::MessageGuard mg(
@@ -175,7 +177,7 @@ TEST_F(MessageGuardTest, destructorCallsNack)
             &d_consumer);
     }
     EXPECT_TRUE(d_acked);
-    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::NACK_REQUEUE_TRUE);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REJECT_REQUEUE_TRUE);
 }
 
 TEST_F(MessageGuardTest, copyingInvalidatesOriginalAndNoNackCalled)
@@ -194,8 +196,10 @@ TEST_F(MessageGuardTest, copyingInvalidatesOriginalAndNoNackCalled)
             EXPECT_FALSE(d_acked);
         }
     }
+    // mg2 took ownership and was itself destroyed unresolved, so the guard
+    // rejects with requeue
     EXPECT_TRUE(d_acked);
-    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::NACK_REQUEUE_TRUE);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REJECT_REQUEUE_TRUE);
 }
 
 TEST_F(MessageGuardTest, copiedObjectIsvalidAndCanAck)

@@ -39,8 +39,10 @@ namespace rmqa {
 /// A MessageGuard is passed to the rmqa::Consumer callback function
 /// (defined in rmqp::Consumer) for each message. The object allows
 /// acknowledging either positively or negatively, with options to requeue. If a
-/// MessageGuard object is allowed to destruct before ack/nack is called a nack
-/// with requeue is automatically signaled to the broker.
+/// MessageGuard object is allowed to destruct before ack/nack/reject is called
+/// - for example because the consumer callback threw - a reject with requeue is
+/// automatically signaled to the broker. The delivery is therefore counted as a
+/// failed attempt and is subject to the queue's delivery-limit, if one is set.
 
 class MessageGuard : public rmqp::MessageGuard {
   public:
@@ -69,8 +71,8 @@ class MessageGuard : public rmqp::MessageGuard {
     /// to (n)ack.
     MessageGuard(const MessageGuard& obj);
 
-    /// If not processed (`ack()`/`nack()` called), message will be nacked
-    /// automatically.
+    /// If not processed (`ack()`/`nack()`/`reject()` called), message will be
+    /// rejected with requeue automatically.
     ~MessageGuard() BSLS_KEYWORD_OVERRIDE;
 
     /// Access the received message

@@ -211,7 +211,7 @@ class MessageConsumer {
 
 `reject` and `nack` both return a delivered message to the broker, for it to discard or requeue, but from RabbitMQ 4.3 they are not counted the same way. Only `basic.reject` increments the broker's `delivery-count`, which is what a quorum queue's `delivery-limit` is measured against. Use `reject` when processing a message failed, so that a message which always fails is eventually dead lettered or dropped rather than redelivered forever. `nack` is kept because `basic.nack` is part of the protocol.
 
-If a `MessageGuard` is destroyed without `ack`, `nack` or `reject` being called, such as when the consumer callback throws, the library nacks it with requeue.
+If a `MessageGuard` is destroyed without `ack`, `nack` or `reject` being called, such as when the consumer callback throws, the library rejects it with requeue.
 
 See [Negative Acknowledgements](https://www.rabbitmq.com/docs/nack) and the broker's table of [when delivery count is incremented](https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented).
 

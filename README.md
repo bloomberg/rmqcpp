@@ -163,7 +163,7 @@ class MessageConsumer {
             // Reject and requeue, counting the failed attempt towards the
             // queue's delivery-limit
             messageGuard.reject();
-            // Would automatically nack if it goes out of scope
+            // Would automatically reject with requeue if it goes out of scope
         }
     }
 };
