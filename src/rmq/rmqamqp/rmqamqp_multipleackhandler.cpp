@@ -16,6 +16,7 @@
 #include <rmqamqp_multipleackhandler.h>
 
 #include <ball_log.h>
+#include <bsls_assert.h>
 
 namespace BloombergLP {
 namespace rmqamqp {
@@ -30,9 +31,11 @@ bool compare(const rmqt::ConsumerAck& a, const rmqt::ConsumerAck& b)
 } // namespace
 
 MultipleAckHandler::MultipleAckHandler(const AckCallback& ackCb,
-                                       const NackCallback& nackCb)
+                                       const NackCallback& nackCb,
+                                       const RejectCallback& rejectCb)
 : d_onAck(ackCb)
 , d_onNack(nackCb)
+, d_onReject(rejectCb)
 , d_totalAcked(0)
 , d_maxProcessedTag(0)
 {
@@ -56,9 +59,11 @@ void MultipleAckHandler::process(bsl::vector<rmqt::ConsumerAck>& acks)
         const rmqt::ConsumerAck::Type type = acks[i].type();
 
         // We can only batch the next ack if we have already processed all
-        // messages in the interval [1 .. n] and the next message has the tag
-        // n+1
-        if (d_totalAcked == d_maxProcessedTag && tag == d_maxProcessedTag + 1) {
+        // messages in the interval [1 .. n], the next message has the tag
+        // n+1, and the resolution is one the broker lets us batch (basic.ack
+        // and basic.nack have a `multiple` field, basic.reject does not)
+        if (d_totalAcked == d_maxProcessedTag && tag == d_maxProcessedTag + 1 &&
+            rmqt::ConsumerAck::supportsMultiple(type)) {
 
             // If this ack has a different type than the pending batch, the
             // batch is closed and can be acked to the broker
@@ -107,13 +112,17 @@ void MultipleAckHandler::sendAck(uint64_t deliveryTag,
 {
     const bool multiple = (batchSize > 1);
 
-    BALL_LOG_TRACE << (type == rmqt::ConsumerAck::ACK ? "Acking: "
-                                                      : "Nacking: ")
-                   << deliveryTag << ", type = " << type
+    BALL_LOG_TRACE << "Resolving: " << deliveryTag << ", type = " << type
                    << ", batch size = " << batchSize;
 
     if (type == rmqt::ConsumerAck::ACK) {
         d_onAck(deliveryTag, multiple);
+    }
+    else if (rmqt::ConsumerAck::usesBasicReject(type)) {
+        // Rejects are always sent one delivery at a time, as
+        // supportsMultiple() keeps them out of batches
+        BSLS_ASSERT(!multiple);
+        d_onReject(deliveryTag, type == rmqt::ConsumerAck::REJECT_REQUEUE_TRUE);
     }
     else {
         d_onNack(deliveryTag,

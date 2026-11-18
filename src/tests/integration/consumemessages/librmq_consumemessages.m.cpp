@@ -125,20 +125,28 @@ class MessageConsumer {
                 guard.ack();
             }
             else if (input == "N") {
-                BALL_LOG_INFO << "Sending NACK (reject)...";
+                BALL_LOG_INFO << "Sending NACK (discard)...";
                 guard.nack(false);
             }
             else if (input == "R") {
                 BALL_LOG_INFO << "Sending NACK (requeue)...";
                 guard.nack(true);
             }
+            else if (input == "D") {
+                BALL_LOG_INFO << "Sending REJECT (discard)...";
+                guard.reject(false);
+            }
+            else if (input == "Q") {
+                BALL_LOG_INFO << "Sending REJECT (requeue)...";
+                guard.reject(true);
+            }
             else if (input == "I") {
                 BALL_LOG_INFO << "IGNORING...";
                 return;
             }
             else {
-                BALL_LOG_ERROR << "Unsuported ack type (A/N/R)";
-                guard.nack(true);
+                BALL_LOG_ERROR << "Unsuported ack type (A/N/R/D/Q/I)";
+                guard.reject(true);
             }
         }
         else {

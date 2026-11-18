@@ -83,6 +83,9 @@ TEST_F(MessageGuardTest, ackCallsCallback)
     EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::ACK);
 }
 
+// The two nack tests below pin NACK_REQUEUE_*, not just "some negative
+// outcome": nack must never be silently upgraded to a reject. An application
+// asking for an uncounted return has to keep getting one.
 TEST_F(MessageGuardTest, nackRequeueCallsCallback)
 {
     rmqa::MessageGuard mg(
@@ -105,6 +108,30 @@ TEST_F(MessageGuardTest, nackRejectCallsCallback)
     mg.nack(false);
     EXPECT_TRUE(d_acked);
     EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::NACK_REQUEUE_FALSE);
+}
+
+TEST_F(MessageGuardTest, rejectRequeueCallsCallback)
+{
+    rmqa::MessageGuard mg(
+        rmqt::Message(),
+        rmqt::Envelope(0, 0, "consumerTag", "exchange", "routing-key", false),
+        callback(),
+        &d_consumer);
+    mg.reject();
+    EXPECT_TRUE(d_acked);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REJECT_REQUEUE_TRUE);
+}
+
+TEST_F(MessageGuardTest, rejectDiscardCallsCallback)
+{
+    rmqa::MessageGuard mg(
+        rmqt::Message(),
+        rmqt::Envelope(0, 0, "consumerTag", "exchange", "routing-key", false),
+        callback(),
+        &d_consumer);
+    mg.reject(false);
+    EXPECT_TRUE(d_acked);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REJECT_REQUEUE_FALSE);
 }
 
 TEST_F(MessageGuardTest, onlyFirstAckApplies)

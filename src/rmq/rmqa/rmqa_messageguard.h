@@ -87,12 +87,42 @@ class MessageGuard : public rmqp::MessageGuard {
     /// redelivered to another consumer.
     void ack() BSLS_KEYWORD_OVERRIDE;
 
-    /// Negative acknowledge the received message. Callable only once.
+    /// Return the received message to the broker without counting this
+    /// delivery as a failed processing attempt (`basic.nack`). Callable only
+    /// once.
     /// \param requeue `true`
     /// requeues the message on the broker for redelivery , if
     /// `false`, then the message will be either dead lettered (if a
     /// dead letter exchange is specified) or dropped if not.
+    ///
+    /// \warning Consider `reject` instead. From RabbitMQ 4.3 a quorum queue's
+    ///          delivery-limit is measured against the broker's
+    ///          delivery-count, which `nack` does not increment, so a message
+    ///          returned with `nack(true)` never reaches the limit. See the
+    ///          documentation below.
+    ///
+    /// \see https://www.rabbitmq.com/docs/nack
+    /// \see
+    /// https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented
     void nack(bool requeue = true) BSLS_KEYWORD_OVERRIDE;
+
+    /// Reject the received message, counting this delivery as a failed
+    /// processing attempt (`basic.reject`). Callable only once.
+    ///
+    /// Use this when processing a message failed. Unlike `nack`, it
+    /// increments the broker's delivery-count, so from RabbitMQ 4.3 the
+    /// delivery counts towards a quorum queue's delivery-limit, where one is
+    /// set, and the message is eventually dead lettered or dropped rather
+    /// than redelivered forever.
+    ///
+    /// \param requeue `true` requeues the message on the broker for
+    /// redelivery. If `false`, the message will be either dead lettered (if a
+    /// dead letter exchange is specified) or dropped if not.
+    ///
+    /// \see https://www.rabbitmq.com/docs/nack
+    /// \see
+    /// https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented
+    void reject(bool requeue = true) BSLS_KEYWORD_OVERRIDE;
 
     /// Pointer to the Consumer, e.g. to cancel the message flow
     virtual rmqp::Consumer* consumer() const BSLS_KEYWORD_OVERRIDE;

@@ -159,6 +159,9 @@ class ReceiveChannel : public Channel {
     void sendAck(uint64_t deliveryTag, bool multiple = false);
     void
     sendNack(uint64_t deliveryTag, bool requeue = true, bool multiple = false);
+    /// basic.reject has no `multiple` field, so this always resolves a single
+    /// delivery
+    void sendReject(uint64_t deliveryTag, bool requeue = true);
     void sendAckOrNack(const rmqamqpt::BasicMethod& basicMethod,
                        uint64_t deliveryTag,
                        bool multiple);

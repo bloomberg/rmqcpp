@@ -156,6 +156,16 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
                                  : rmqt::ConsumerAck::NACK_REQUEUE_FALSE);
     }
 
+    void rejectMessage(rmqamqp::ReceiveChannel& rc,
+                       const rmqt::Envelope& id,
+                       bool requeue = true)
+    {
+        ackOrNackMessage(rc,
+                         id,
+                         requeue ? rmqt::ConsumerAck::REJECT_REQUEUE_TRUE
+                                 : rmqt::ConsumerAck::REJECT_REQUEUE_FALSE);
+    }
+
     void setupConsumerNoReply(rmqamqp::ReceiveChannel& rc,
                               const bsl::string& consumerTag = "")
     {
@@ -810,6 +820,67 @@ TEST_F(ReceiveChannelTests, NackMessage)
         .WillOnce(InvokeArgument<1>());
 
     nackMessage(*receiveChannel, id_nack);
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
+}
+
+TEST_F(ReceiveChannelTests, RejectMessage)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    setupConsumer(*receiveChannel, "consumer1");
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    const uint64_t deliveryTag = 41;
+    rmqt::Envelope id_reject(deliveryTag,
+                             receiveChannel->lifetimeId(),
+                             "consumer1",
+                             "exchange",
+                             "routing-key",
+                             false);
+    receiveMessage(*receiveChannel, id_reject.deliveryTag(), "consumer1");
+
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
+
+    rmqamqpt::BasicReject basicReject(id_reject.deliveryTag(), true);
+    EXPECT_CALL(d_callback,
+                onAsyncWrite(
+                    ::testing::Pointee(MessageEq(rmqamqp::Message(
+                        rmqamqpt::Method(rmqamqpt::BasicMethod(basicReject))))),
+                    _))
+        .WillOnce(InvokeArgument<1>());
+
+    rejectMessage(*receiveChannel, id_reject);
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
+}
+
+TEST_F(ReceiveChannelTests, RejectMessageNoRequeue)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, "consumer1");
+
+    const uint64_t deliveryTag = 41;
+    rmqt::Envelope id_reject(deliveryTag,
+                             receiveChannel->lifetimeId(),
+                             "consumer1",
+                             "exchange",
+                             "routing-key",
+                             false);
+    receiveMessage(*receiveChannel, id_reject.deliveryTag(), "consumer1");
+
+    rmqamqpt::BasicReject basicReject(id_reject.deliveryTag(), false);
+    EXPECT_CALL(d_callback,
+                onAsyncWrite(
+                    ::testing::Pointee(MessageEq(rmqamqp::Message(
+                        rmqamqpt::Method(rmqamqpt::BasicMethod(basicReject))))),
+                    _))
+        .WillOnce(InvokeArgument<1>());
+
+    rejectMessage(*receiveChannel, id_reject, false);
     EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
 }
 

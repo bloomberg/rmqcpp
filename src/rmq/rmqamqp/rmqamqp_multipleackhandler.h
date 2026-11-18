@@ -35,8 +35,11 @@ class MultipleAckHandler {
   public:
     typedef bsl::function<void(uint64_t, bool)> AckCallback;
     typedef bsl::function<void(uint64_t, bool, bool)> NackCallback;
+    typedef bsl::function<void(uint64_t, bool)> RejectCallback;
 
-    MultipleAckHandler(const AckCallback& ackCb, const NackCallback& nackCb);
+    MultipleAckHandler(const AckCallback& ackCb,
+                       const NackCallback& nackCb,
+                       const RejectCallback& rejectCb);
     ~MultipleAckHandler();
 
     /// Batches and acknowledges the given acks.
@@ -56,6 +59,9 @@ class MultipleAckHandler {
 
     /// Callback for sending basic.nack to the broker
     NackCallback d_onNack;
+
+    /// Callback for sending basic.reject to the broker
+    RejectCallback d_onReject;
 
     /// Total number of messages acknowledged
     uint64_t d_totalAcked;

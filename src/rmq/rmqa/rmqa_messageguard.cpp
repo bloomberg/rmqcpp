@@ -111,6 +111,12 @@ void MessageGuard::nack(bool requeue)
                     : rmqt::ConsumerAck::NACK_REQUEUE_FALSE);
 }
 
+void MessageGuard::reject(bool requeue)
+{
+    resolve(requeue ? rmqt::ConsumerAck::REJECT_REQUEUE_TRUE
+                    : rmqt::ConsumerAck::REJECT_REQUEUE_FALSE);
+}
+
 void MessageGuard::resolve(rmqt::ConsumerAck::Type ackOption)
 {
     if (d_state == TRANSFERRED) {

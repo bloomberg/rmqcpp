@@ -387,7 +387,8 @@ ReceiveChannel::ReceiveChannel(
 , d_ackQueue(ackQueue)
 , d_multipleAckHandler(
       bdlf::BindUtil::bind(&ReceiveChannel::sendAck, this, _1, _2),
-      bdlf::BindUtil::bind(&ReceiveChannel::sendNack, this, _1, _2, _3))
+      bdlf::BindUtil::bind(&ReceiveChannel::sendNack, this, _1, _2, _3),
+      bdlf::BindUtil::bind(&ReceiveChannel::sendReject, this, _1, _2))
 , d_consumeFuturePair()
 , d_cancelFuturePair()
 , d_drainFuture()
@@ -1082,6 +1083,14 @@ void ReceiveChannel::sendNack(uint64_t deliveryTag, bool requeue, bool multiple)
                       rmqamqpt::BasicNack(deliveryTag, requeue, multiple)),
                   deliveryTag,
                   multiple);
+}
+
+void ReceiveChannel::sendReject(uint64_t deliveryTag, bool requeue)
+{
+    sendAckOrNack(
+        rmqamqpt::BasicMethod(rmqamqpt::BasicReject(deliveryTag, requeue)),
+        deliveryTag,
+        false);
 }
 
 void ReceiveChannel::sendAckOrNack(const rmqamqpt::BasicMethod& basicMethod,
