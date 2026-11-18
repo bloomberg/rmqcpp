@@ -160,7 +160,9 @@ class MessageConsumer {
             messageGuard.ack();
         }
         else {
-            messageGuard.nack();
+            // Reject and requeue, counting the failed attempt towards the
+            // queue's delivery-limit
+            messageGuard.reject();
             // Would automatically nack if it goes out of scope
         }
     }

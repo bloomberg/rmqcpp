@@ -89,7 +89,7 @@ int main(int argc, char** argv)
                 // triggered this publish
             }
             else {
-                // Send error response, rollback transaction, nack message
+                // Send error response, rollback transaction, reject message
                 // and/or raise an alarm for investigation - your message is not
                 // delivered to all (or perhaps any) of the queues it was
                 // intended for.
