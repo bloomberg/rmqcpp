@@ -26,6 +26,7 @@
 #include <rmqamqpt_basicpublish.h>
 #include <rmqamqpt_basicqos.h>
 #include <rmqamqpt_basicqosok.h>
+#include <rmqamqpt_basicreject.h>
 #include <rmqamqpt_basicreturn.h>
 #include <rmqamqpt_constants.h>
 #include <rmqamqpt_writer.h>
@@ -48,6 +49,7 @@ typedef bdlb::Variant<BasicAck,
                       BasicPublish,
                       BasicQoS,
                       BasicQoSOk,
+                      BasicReject,
                       BasicReturn>
     SupportedBasicMethods;
 

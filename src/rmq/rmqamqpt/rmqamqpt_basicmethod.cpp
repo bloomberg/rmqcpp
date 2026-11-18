@@ -53,6 +53,7 @@ bool decodeBasicMethodPayload(BasicMethod* basicMethod,
         DECODE_METHOD(BasicDeliver)
         DECODE_METHOD(BasicNack)
         DECODE_METHOD(BasicPublish)
+        DECODE_METHOD(BasicReject)
         DECODE_METHOD(BasicReturn)
         DECODE_METHOD(BasicQoS)
         DECODE_METHOD(BasicQoSOk)
