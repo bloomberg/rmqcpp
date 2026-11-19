@@ -15,26 +15,27 @@
 
 from . import method_fields as mf
 from . import methods as m
+from .domains import Short, ShortStr
 
 type ErrorReply = m.ChannelClose | m.ConnectionClose
 
 
 def error_reply(
-    reply_code: mf.ReplyCode, reply_text: str, causing_method: m.Method
+    reply_code: mf.ReplyCode, reply_text: ShortStr, causing_method: m.Method
 ) -> ErrorReply:
     if reply_code in mf.SOFT_ERRORS:
         return m.ChannelClose(
             reply_code=reply_code,
             reply_text=reply_text,
             class_id=causing_method.CLASS_ID,
-            method_id=causing_method.METHOD_ID,
+            method_id=Short(causing_method.METHOD_ID),
         )
     else:
         return m.ConnectionClose(
             reply_code=reply_code,
             reply_text=reply_text,
             class_id=causing_method.CLASS_ID,
-            method_id=causing_method.METHOD_ID,
+            method_id=Short(causing_method.METHOD_ID),
         )
 
 

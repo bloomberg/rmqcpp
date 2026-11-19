@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 import pytest
@@ -20,7 +21,10 @@ import pytest
 from amqp_imposter.control.client import (
     amqp_imposter,
     pb,
+    seek_transcript_line,
     weighted,
+    when_receive,
+    when_send,
 )
 
 from ..generators import (
@@ -66,10 +70,10 @@ def test_interleave_returns_teardown(seed: int) -> None:
     scenario = producer_scenario(seed)
     config = pb.SessionConfig(
         weights=(
-            weighted(pb.BasicReturnPattern(), pb.BASE_WEIGHT // 4),
-            weighted(pb.BasicAckPattern(), pb.BASE_WEIGHT // 2),
+            weighted(pb.BasicReturnSelector(), pb.BASE_WEIGHT // 4),
+            weighted(pb.BasicAckSelector(), pb.BASE_WEIGHT // 2),
             weighted(
-                pb.ConnectionClosePattern(class_id=0, method_id=0),
+                pb.ConnectionCloseSelector(class_id=0, method_id=0),
                 pb.BASE_WEIGHT // 20,
             ),
         ),
@@ -86,6 +90,100 @@ def test_interleave_returns_teardown(seed: int) -> None:
         unroutable_message_ids = producer.publish_until_acked()
 
         message_ids = frozenset(m.message_id for m in scenario.messages)
+        assert_properties(
+            imposter.transcript(),
+            producer_properties(message_ids, unroutable_message_ids),
+        )
+
+
+@pytest.mark.timeout(TIMEOUT)
+@pytest.mark.parametrize("seed", SEEDS)
+def test_return_single_ack_multiple(seed: int) -> None:
+    scenario = producer_scenario(seed)
+
+    tag_count = len(scenario.messages)
+    config = pb.SessionConfig(
+        script=(
+            when_receive(
+                pb.BasicPublishPattern(mandatory=True),
+                then_send=pb.BasicReturnPattern(),
+            ),
+            when_receive(
+                pb.BasicPublishPattern(mandatory=False),
+                then_send=pb.BasicAckPattern(delivery_tag=tag_count, multiple=True),
+            ),
+            when_send(
+                pb.BasicReturnPattern(),
+                then_send=pb.BasicAckPattern(delivery_tag=tag_count, multiple=True),
+            ),
+        ),
+        weights=(
+            weighted(pb.BasicAckSelector(), 0),
+            weighted(pb.BasicNackSelector(), 0),
+        ),
+        seed=seed,
+    )
+
+    with amqp_imposter(config) as imposter:
+        producer = ResilientProducer(
+            amqp_port=imposter.amqp_port,
+            exchange=scenario.exchange,
+            routing_key=scenario.routing_key,
+            messages=scenario.messages,
+        )
+        unroutable_message_ids = producer.publish_until_acked()
+
+        message_ids = frozenset(m.message_id for m in scenario.messages)
+        assert unroutable_message_ids == {
+            m.message_id for m in scenario.messages if m.mandatory
+        }
+        assert_properties(
+            imposter.transcript(),
+            producer_properties(message_ids, unroutable_message_ids),
+        )
+
+
+@pytest.mark.timeout(TIMEOUT)
+@pytest.mark.parametrize("seed", SEEDS)
+def test_reconfigure_while_unconfirmed(seed: int) -> None:
+    scenario = producer_scenario(seed)
+    config = pb.SessionConfig(
+        seed=seed,
+        weights=(
+            weighted(pb.BasicAckSelector(), 0),
+            weighted(pb.BasicNackSelector(), 0),
+            weighted(pb.BasicReturnSelector(), 0),
+        ),
+    )
+
+    last_message_id = scenario.messages[-1].message_id
+
+    with amqp_imposter(config) as imposter, ThreadPoolExecutor() as tp:
+        producer = ResilientProducer(
+            amqp_port=imposter.amqp_port,
+            exchange=scenario.exchange,
+            routing_key=scenario.routing_key,
+            messages=scenario.messages,
+        )
+
+        # watch transcript until the publishes are done
+        watcher = tp.submit(
+            seek_transcript_line,
+            imposter.watch_transcript(timeout=TIMEOUT / 2),
+            lambda line: (
+                line.method.basic_publish.properties.message_id == last_message_id
+            ),
+        )
+        # then drop TCP and reconfigure
+        watcher.add_done_callback(
+            lambda _: imposter.configure(pb.SessionConfig(seed=seed))
+        )
+
+        unroutable_message_ids = producer.publish_until_acked()
+        assert watcher.result()
+
+        message_ids = frozenset(m.message_id for m in scenario.messages)
+
         assert_properties(
             imposter.transcript(),
             producer_properties(message_ids, unroutable_message_ids),

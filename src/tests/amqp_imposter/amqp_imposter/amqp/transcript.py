@@ -13,14 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 from collections import deque
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from enum import StrEnum
+from itertools import islice
 
 from ..model import methods as m
 
 HARD_MAX_TRANSCRIPT_LINES = 1_000_000
-DEFAULT_MAX_TRANSCRIPT_LINES = HARD_MAX_TRANSCRIPT_LINES
+DEFAULT_TRANSCRIPT_LINES_MAX = HARD_MAX_TRANSCRIPT_LINES
 
 
 class TranscriptEvent(StrEnum):
@@ -48,14 +51,22 @@ class TranscriptLine:
     wire_bytes: bytes = b""
 
 
+class TranscriptWatchLossy(Exception):
+    pass
+
+
 @dataclass(slots=True)
 class Transcript:
-    max_lines: int = DEFAULT_MAX_TRANSCRIPT_LINES
     lines: deque[TranscriptLine] = field(init=False)
-    recorded: int = field(default=0, init=False)
+    lines_max: int = DEFAULT_TRANSCRIPT_LINES_MAX
+    got_line: asyncio.Event = field(default_factory=asyncio.Event, init=False)
+    finished: bool = field(default=False, init=False)
+
+    # sequence number (does not index into the ring buffer)
+    next_index: int = field(default=0, init=False)
 
     def __post_init__(self) -> None:
-        self.lines = deque(maxlen=self.max_lines)
+        self.lines = deque(maxlen=self.lines_max)
 
     def add(
         self,
@@ -68,7 +79,7 @@ class Transcript:
     ) -> None:
         self.lines.append(
             TranscriptLine(
-                index=self.recorded,
+                index=self.next_index,
                 micros=micros,
                 epoch_micros=epoch_micros,
                 event=event,
@@ -77,4 +88,37 @@ class Transcript:
                 wire_bytes=wire_bytes,
             )
         )
-        self.recorded += 1
+        self.next_index += 1
+
+        self.got_line.set()
+        self.got_line.clear()
+
+    def finish(self) -> None:
+        self.finished = True
+        self.got_line.set()
+
+    def lines_after(self, index: int) -> Iterator[TranscriptLine]:
+        count = self.next_index - index
+        count = max(0, min(count, len(self.lines)))  # clamp
+        reverse_iter = islice(reversed(self.lines), count)
+
+        return reversed(list(reverse_iter))
+
+    async def watch(self) -> AsyncIterator[TranscriptLine]:
+        index = self.next_index - len(self.lines)
+
+        while index < self.next_index or not self.finished:
+            # ahead?
+            if index == self.next_index:
+                await self.got_line.wait()
+            # behind?
+            elif self.next_index - index <= len(self.lines):
+                for line in self.lines_after(index):
+                    index = line.index + 1
+                    yield line
+            # far behind?
+            else:
+                first_index = self.next_index - len(self.lines)
+                raise TranscriptWatchLossy(
+                    f"dropped lines {index}..{first_index - 1}; consume faster or allow a longer transcript"
+                )

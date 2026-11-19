@@ -13,15 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import calendar
 import struct
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any, TypeIs, assert_never, cast
 
 import pika.frame as pf
 import pika.spec as ps
 from pika.exceptions import InvalidFrameError
 
+from ..model import domains as d
 from ..model import method_fields as mf
 from ..model import method_unification as mu
 from ..model import methods as m
@@ -90,6 +94,8 @@ def to_pika_value(value: Any) -> Any:
     match value:
         case mf.Void():
             return None
+        case d.Timestamp():
+            return datetime.fromtimestamp(value, UTC)
         case frozendict():
             return {key: to_pika_value(one) for key, one in value.items()}
         case tuple():
@@ -103,9 +109,19 @@ def from_pika_value(value: Any) -> Any:
         case None:
             return mf.Void()
         case dict():
-            return frozendict((key, from_pika_value(one)) for key, one in value.items())
+            return frozendict(
+                (d.ShortStr(key), from_pika_value(one)) for key, one in value.items()
+            )
         case list():
             return tuple(from_pika_value(one) for one in value)
+        case bool():
+            return value
+        case int():
+            return d.SignedLongLong(value)
+        case Decimal():
+            return d.DecimalValue(value)
+        case datetime():
+            return d.Timestamp(calendar.timegm(value.utctimetuple()))
         case _:
             return value
 
@@ -134,10 +150,7 @@ def capabilities_of(spec: Any) -> Mapping[str, Any]:
             return {}
 
 
-def to_pika_properties(properties: mf.MessageProperties | None) -> ps.BasicProperties:
-    if properties is None:
-        return ps.BasicProperties()
-
+def to_pika_properties(properties: mf.MessageProperties) -> ps.BasicProperties:
     return ps.BasicProperties(
         content_type=properties.content_type,
         content_encoding=properties.content_encoding,
@@ -157,23 +170,27 @@ def to_pika_properties(properties: mf.MessageProperties | None) -> ps.BasicPrope
     )
 
 
+def from_optional[T](domain: Callable[[Any], T], value: Any) -> T | None:
+    return None if value is None else domain(value)
+
+
 def from_properties(properties: ps.BasicProperties | None) -> mf.MessageProperties:
     if properties is None:
         return mf.MessageProperties()
 
     return mf.MessageProperties(
-        content_type=properties.content_type,
-        content_encoding=properties.content_encoding,
-        delivery_mode=cast(Any, properties.delivery_mode),
-        priority=properties.priority,
-        correlation_id=properties.correlation_id,
-        reply_to=properties.reply_to,
-        expiration=properties.expiration,
-        message_id=properties.message_id,
-        timestamp=properties.timestamp,
-        type=properties.type,
-        user_id=properties.user_id,
-        app_id=properties.app_id,
+        content_type=from_optional(d.ShortStr, properties.content_type),
+        content_encoding=from_optional(d.ShortStr, properties.content_encoding),
+        delivery_mode=from_optional(d.Octet, properties.delivery_mode),
+        priority=from_optional(d.Octet, properties.priority),
+        correlation_id=from_optional(d.ShortStr, properties.correlation_id),
+        reply_to=from_optional(d.ShortStr, properties.reply_to),
+        expiration=from_optional(d.ShortStr, properties.expiration),
+        message_id=from_optional(d.ShortStr, properties.message_id),
+        timestamp=from_optional(d.Timestamp, properties.timestamp),
+        type=from_optional(d.ShortStr, properties.type),
+        user_id=from_optional(d.ShortStr, properties.user_id),
+        app_id=from_optional(d.ShortStr, properties.app_id),
         headers=from_pika_value(properties.headers)
         if properties.headers is not None
         else None,
@@ -399,8 +416,8 @@ def from_pika(
             capabilities = capabilities_of(spec)
 
             return m.ConnectionStart(
-                version_major=spec.version_major,
-                version_minor=spec.version_minor,
+                version_major=d.Octet(spec.version_major),
+                version_minor=d.Octet(spec.version_minor),
                 mechanisms=from_amqp_tuple(spec.mechanisms),
                 locales=from_amqp_tuple(spec.locales),
                 publisher_confirms=bool(capabilities.get(PUBLISHER_CONFIRMS, False)),
@@ -411,34 +428,34 @@ def from_pika(
             )
         case ps.Connection.StartOk():
             return m.ConnectionStartOk(
-                mechanism=spec.mechanism,
-                locale=spec.locale,
+                mechanism=d.ShortStr(spec.mechanism),
+                locale=d.ShortStr(spec.locale),
                 response=to_text(spec.response),
             )
         case ps.Connection.Tune():
             return m.ConnectionTune(
-                channel_max=spec.channel_max,
-                frame_max=spec.frame_max,
-                heartbeat=spec.heartbeat,
+                channel_max=d.Short(spec.channel_max),
+                frame_max=d.Long(spec.frame_max),
+                heartbeat=d.Short(spec.heartbeat),
             )
         case ps.Connection.TuneOk():
             return m.ConnectionTuneOk(
-                channel_max=spec.channel_max,
-                frame_max=spec.frame_max,
-                heartbeat=spec.heartbeat,
+                channel_max=d.Short(spec.channel_max),
+                frame_max=d.Long(spec.frame_max),
+                heartbeat=d.Short(spec.heartbeat),
             )
         case ps.Connection.Open():
             return m.ConnectionOpen(
-                vhost=spec.virtual_host,
+                vhost=d.ShortStr(spec.virtual_host),
             )
         case ps.Connection.OpenOk():
             return m.ConnectionOpenOk()
         case ps.Connection.Close():
             return m.ConnectionClose(
-                reply_code=spec.reply_code,
-                reply_text=spec.reply_text,
-                class_id=spec.class_id,
-                method_id=spec.method_id,
+                reply_code=d.Short(spec.reply_code),
+                reply_text=d.ShortStr(spec.reply_text),
+                class_id=d.Short(spec.class_id),
+                method_id=d.Short(spec.method_id),
             )
         case ps.Connection.CloseOk():
             return m.ConnectionCloseOk()
@@ -448,10 +465,10 @@ def from_pika(
             return m.ChannelOpenOk()
         case ps.Channel.Close():
             return m.ChannelClose(
-                reply_code=spec.reply_code,
-                reply_text=spec.reply_text,
-                class_id=spec.class_id,
-                method_id=spec.method_id,
+                reply_code=d.Short(spec.reply_code),
+                reply_text=d.ShortStr(spec.reply_text),
+                class_id=d.Short(spec.class_id),
+                method_id=d.Short(spec.method_id),
             )
         case ps.Channel.CloseOk():
             return m.ChannelCloseOk()
@@ -463,8 +480,8 @@ def from_pika(
             return m.ConfirmSelectOk()
         case ps.Exchange.Declare():
             return m.ExchangeDeclare(
-                exchange=spec.exchange,
-                exchange_type=spec.type,
+                exchange=d.ShortStr(spec.exchange),
+                exchange_type=d.ShortStr(spec.type),
                 passive=spec.passive,
                 durable=spec.durable,
                 auto_delete=spec.auto_delete,
@@ -476,9 +493,9 @@ def from_pika(
             return m.ExchangeDeclareOk()
         case ps.Exchange.Bind():
             return m.ExchangeBind(
-                destination=to_text(spec.destination),
-                source=to_text(spec.source),
-                routing_key=spec.routing_key,
+                destination=d.ShortStr(to_text(spec.destination)),
+                source=d.ShortStr(to_text(spec.source)),
+                routing_key=d.ShortStr(spec.routing_key),
                 no_wait=spec.nowait,
                 arguments=from_pika_value(spec.arguments),
             )
@@ -486,7 +503,7 @@ def from_pika(
             return m.ExchangeBindOk()
         case ps.Queue.Declare():
             return m.QueueDeclare(
-                queue=spec.queue,
+                queue=d.ShortStr(spec.queue),
                 passive=spec.passive,
                 durable=spec.durable,
                 exclusive=spec.exclusive,
@@ -496,15 +513,15 @@ def from_pika(
             )
         case ps.Queue.DeclareOk():
             return m.QueueDeclareOk(
-                queue=spec.queue,
-                message_count=spec.message_count,
-                consumer_count=spec.consumer_count,
+                queue=d.NonEmptyShortStr(spec.queue),
+                message_count=d.Long(spec.message_count),
+                consumer_count=d.Long(spec.consumer_count),
             )
         case ps.Queue.Bind():
             return m.QueueBind(
-                queue=spec.queue,
-                exchange=spec.exchange,
-                routing_key=spec.routing_key,
+                queue=d.ShortStr(spec.queue),
+                exchange=d.ShortStr(spec.exchange),
+                routing_key=d.ShortStr(spec.routing_key),
                 no_wait=spec.nowait,
                 arguments=from_pika_value(spec.arguments),
             )
@@ -512,16 +529,16 @@ def from_pika(
             return m.QueueBindOk()
         case ps.Basic.Qos():
             return m.BasicQos(
-                prefetch_count=spec.prefetch_count,
-                prefetch_size=spec.prefetch_size,
+                prefetch_count=d.Short(spec.prefetch_count),
+                prefetch_size=d.Long(spec.prefetch_size),
                 global_qos=spec.global_qos,
             )
         case ps.Basic.QosOk():
             return m.BasicQosOk()
         case ps.Basic.Consume():
             return m.BasicConsume(
-                queue=spec.queue,
-                consumer_tag=spec.consumer_tag,
+                queue=d.ShortStr(spec.queue),
+                consumer_tag=d.ShortStr(spec.consumer_tag),
                 no_local=spec.no_local,
                 no_ack=spec.no_ack,
                 no_wait=spec.nowait,
@@ -530,21 +547,21 @@ def from_pika(
             )
         case ps.Basic.ConsumeOk():
             return m.BasicConsumeOk(
-                consumer_tag=spec.consumer_tag,
+                consumer_tag=d.NonEmptyShortStr(spec.consumer_tag),
             )
         case ps.Basic.Cancel():
             return m.BasicCancel(
-                consumer_tag=spec.consumer_tag,
+                consumer_tag=d.ShortStr(spec.consumer_tag),
                 no_wait=spec.nowait,
             )
         case ps.Basic.CancelOk():
             return m.BasicCancelOk(
-                consumer_tag=spec.consumer_tag,
+                consumer_tag=d.ShortStr(spec.consumer_tag),
             )
         case ps.Basic.Publish():
             return m.BasicPublish(
-                exchange=spec.exchange,
-                routing_key=spec.routing_key,
+                exchange=d.ShortStr(spec.exchange),
+                routing_key=d.ShortStr(spec.routing_key),
                 mandatory=spec.mandatory,
                 immediate=spec.immediate,
                 properties=from_properties(properties),
@@ -552,51 +569,51 @@ def from_pika(
             )
         case ps.Basic.Return():
             return m.BasicReturn(
-                reply_code=spec.reply_code,
-                reply_text=spec.reply_text,
-                exchange=spec.exchange,
-                routing_key=spec.routing_key,
+                reply_code=d.Short(spec.reply_code),
+                reply_text=d.NonEmptyShortStr(spec.reply_text),
+                exchange=d.ShortStr(spec.exchange),
+                routing_key=d.ShortStr(spec.routing_key),
                 properties=from_properties(properties),
                 body=body,
             )
         case ps.Basic.Ack():
             return m.BasicAck(
-                delivery_tag=spec.delivery_tag,
+                delivery_tag=d.LongLong(spec.delivery_tag),
                 multiple=spec.multiple,
             )
         case ps.Basic.Nack():
             return m.BasicNack(
-                delivery_tag=spec.delivery_tag,
+                delivery_tag=d.LongLong(spec.delivery_tag),
                 multiple=spec.multiple,
                 requeue=spec.requeue,
             )
         case ps.Basic.Reject():
             return m.BasicReject(
-                delivery_tag=spec.delivery_tag,
+                delivery_tag=d.LongLong(spec.delivery_tag),
                 requeue=spec.requeue,
             )
         case ps.Basic.Deliver():
             return m.BasicDeliver(
-                consumer_tag=spec.consumer_tag,
-                delivery_tag=spec.delivery_tag,
+                consumer_tag=d.ShortStr(spec.consumer_tag),
+                delivery_tag=d.LongLong(spec.delivery_tag),
                 redelivered=spec.redelivered,
-                exchange=spec.exchange,
-                routing_key=spec.routing_key,
+                exchange=d.ShortStr(spec.exchange),
+                routing_key=d.ShortStr(spec.routing_key),
                 properties=from_properties(properties),
                 body=body,
             )
         case ps.Basic.Get():
             return m.BasicGet(
-                queue=spec.queue,
+                queue=d.ShortStr(spec.queue),
                 no_ack=spec.no_ack,
             )
         case ps.Basic.GetOk():
             return m.BasicGetOk(
-                delivery_tag=spec.delivery_tag,
+                delivery_tag=d.LongLong(spec.delivery_tag),
                 redelivered=spec.redelivered,
-                exchange=spec.exchange,
-                routing_key=spec.routing_key,
-                message_count=spec.message_count,
+                exchange=d.ShortStr(spec.exchange),
+                routing_key=d.ShortStr(spec.routing_key),
+                message_count=d.Long(spec.message_count),
                 properties=from_properties(properties),
                 body=body,
             )
@@ -707,7 +724,7 @@ def decode_one(buffer: bytes, max_buffer: int) -> tuple[Ingress | None, int]:
                 reason = f"unexpected frame: {type(frame).__name__}"
                 return Undecodable(reason), len(buffer)
 
-    except InvalidFrameError as bad:
+    except (InvalidFrameError, d.BadDomain) as bad:
         return Undecodable(str(bad)), len(buffer)
 
 

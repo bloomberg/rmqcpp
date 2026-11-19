@@ -15,6 +15,7 @@
 
 import pytest
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -59,7 +60,7 @@ def test_no_ack_acknowledgement_closes_channel(
     server = consuming_no_ack()
 
     deliver(server, 1)
-    receive_unwrap(server, acknowledge(1))
+    receive_unwrap(server, acknowledge(d.LongLong(1)))
 
     assert error_replies_to(server, acknowledge) == channel_errors(
         mf.ReplyCode.PRECONDITION_FAILED
@@ -117,7 +118,7 @@ def test_no_ack_get_ok_ack_closes_channel() -> None:
 
     receive_unwrap(server, m.BasicGet(queue=QUEUE, no_ack=True))
     send_unwrap(server, m.BasicGetOk, delivery_tag=1)
-    receive_unwrap(server, m.BasicAck(delivery_tag=1))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(1)))
 
     assert error_replies_to(server, m.BasicAck) == channel_errors(
         mf.ReplyCode.PRECONDITION_FAILED

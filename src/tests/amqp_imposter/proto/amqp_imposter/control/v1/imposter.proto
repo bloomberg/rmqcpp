@@ -83,6 +83,15 @@ message ConnectionStart {
   bool basic_nack = 6;
   bool consumer_cancel_notify = 7;
 }
+message ConnectionStartSelector {
+  optional uint32 version_major = 1;
+  optional uint32 version_minor = 2;
+  optional StringList mechanisms = 3;
+  optional StringList locales = 4;
+  optional bool publisher_confirms = 5;
+  optional bool basic_nack = 6;
+  optional bool consumer_cancel_notify = 7;
+}
 message ConnectionStartPattern {
   optional uint32 version_major = 1;
   optional uint32 version_minor = 2;
@@ -98,16 +107,26 @@ message ConnectionStartOk {
   string locale = 2;
   string response = 3;
 }
-message ConnectionStartOkPattern {
+message ConnectionStartOkSelector {
   optional string mechanism = 1;
   optional string locale = 2;
   reserved 3;
+}
+message ConnectionStartOkPattern {
+  optional string mechanism = 1;
+  optional string locale = 2;
+  optional string response = 3;
 }
 
 message ConnectionTune {
   uint32 channel_max = 1;
   uint32 frame_max = 2;
   uint32 heartbeat = 3;
+}
+message ConnectionTuneSelector {
+  optional uint32 channel_max = 1;
+  optional uint32 frame_max = 2;
+  optional uint32 heartbeat = 3;
 }
 message ConnectionTunePattern {
   optional uint32 channel_max = 1;
@@ -120,6 +139,11 @@ message ConnectionTuneOk {
   uint32 frame_max = 2;
   uint32 heartbeat = 3;
 }
+message ConnectionTuneOkSelector {
+  optional uint32 channel_max = 1;
+  optional uint32 frame_max = 2;
+  optional uint32 heartbeat = 3;
+}
 message ConnectionTuneOkPattern {
   optional uint32 channel_max = 1;
   optional uint32 frame_max = 2;
@@ -129,11 +153,15 @@ message ConnectionTuneOkPattern {
 message ConnectionOpen {
   string vhost = 1;
 }
-message ConnectionOpenPattern {
+message ConnectionOpenSelector {
   reserved 1;
+}
+message ConnectionOpenPattern {
+  optional string vhost = 1;
 }
 
 message ConnectionOpenOk {}
+message ConnectionOpenOkSelector {}
 message ConnectionOpenOkPattern {}
 
 message ConnectionClose {
@@ -141,6 +169,12 @@ message ConnectionClose {
   string reply_text = 2;
   uint32 class_id = 3;
   uint32 method_id = 4;
+}
+message ConnectionCloseSelector {
+  optional uint32 reply_code = 1;
+  optional string reply_text = 2;
+  optional uint32 class_id = 3;
+  optional uint32 method_id = 4;
 }
 message ConnectionClosePattern {
   optional uint32 reply_code = 1;
@@ -150,12 +184,15 @@ message ConnectionClosePattern {
 }
 
 message ConnectionCloseOk {}
+message ConnectionCloseOkSelector {}
 message ConnectionCloseOkPattern {}
 
 message ChannelOpen {}
+message ChannelOpenSelector {}
 message ChannelOpenPattern {}
 
 message ChannelOpenOk {}
+message ChannelOpenOkSelector {}
 message ChannelOpenOkPattern {}
 
 message ChannelClose {
@@ -163,6 +200,12 @@ message ChannelClose {
   string reply_text = 2;
   uint32 class_id = 3;
   uint32 method_id = 4;
+}
+message ChannelCloseSelector {
+  optional uint32 reply_code = 1;
+  optional string reply_text = 2;
+  optional uint32 class_id = 3;
+  optional uint32 method_id = 4;
 }
 message ChannelClosePattern {
   optional uint32 reply_code = 1;
@@ -172,16 +215,21 @@ message ChannelClosePattern {
 }
 
 message ChannelCloseOk {}
+message ChannelCloseOkSelector {}
 message ChannelCloseOkPattern {}
 
 message ConfirmSelect {
   bool no_wait = 1;
 }
-message ConfirmSelectPattern {
+message ConfirmSelectSelector {
   reserved 1;
+}
+message ConfirmSelectPattern {
+  optional bool no_wait = 1;
 }
 
 message ConfirmSelectOk {}
+message ConfirmSelectOkSelector {}
 message ConfirmSelectOkPattern {}
 
 message ExchangeDeclare {
@@ -194,12 +242,23 @@ message ExchangeDeclare {
   bool no_wait = 7;
   optional AmqpTable arguments = 8;
 }
-message ExchangeDeclarePattern {
+message ExchangeDeclareSelector {
   optional string exchange = 1;
   reserved 2 to 8;
 }
+message ExchangeDeclarePattern {
+  optional string exchange = 1;
+  optional string exchange_type = 2;
+  optional bool passive = 3;
+  optional bool durable = 4;
+  optional bool auto_delete = 5;
+  optional bool internal = 6;
+  optional bool no_wait = 7;
+  optional AmqpTable arguments = 8;
+}
 
 message ExchangeDeclareOk {}
+message ExchangeDeclareOkSelector {}
 message ExchangeDeclareOkPattern {}
 
 message ExchangeBind {
@@ -209,11 +268,19 @@ message ExchangeBind {
   bool no_wait = 4;
   optional AmqpTable arguments = 5;
 }
-message ExchangeBindPattern {
+message ExchangeBindSelector {
   reserved 1 to 5;
+}
+message ExchangeBindPattern {
+  optional string destination = 1;
+  optional string source = 2;
+  optional string routing_key = 3;
+  optional bool no_wait = 4;
+  optional AmqpTable arguments = 5;
 }
 
 message ExchangeBindOk {}
+message ExchangeBindOkSelector {}
 message ExchangeBindOkPattern {}
 
 message QueueDeclare {
@@ -225,8 +292,17 @@ message QueueDeclare {
   bool no_wait = 6;
   optional AmqpTable arguments = 7;
 }
-message QueueDeclarePattern {
+message QueueDeclareSelector {
   reserved 1 to 7;
+}
+message QueueDeclarePattern {
+  optional string queue = 1;
+  optional bool passive = 2;
+  optional bool durable = 3;
+  optional bool exclusive = 4;
+  optional bool auto_delete = 5;
+  optional bool no_wait = 6;
+  optional AmqpTable arguments = 7;
 }
 
 message QueueDeclareOk {
@@ -234,8 +310,13 @@ message QueueDeclareOk {
   uint32 message_count = 2;
   uint32 consumer_count = 3;
 }
-message QueueDeclareOkPattern {
+message QueueDeclareOkSelector {
   reserved 1 to 3;
+}
+message QueueDeclareOkPattern {
+  optional string queue = 1;
+  optional uint32 message_count = 2;
+  optional uint32 consumer_count = 3;
 }
 
 message QueueBind {
@@ -245,11 +326,19 @@ message QueueBind {
   bool no_wait = 4;
   optional AmqpTable arguments = 5;
 }
-message QueueBindPattern {
+message QueueBindSelector {
   reserved 1 to 5;
+}
+message QueueBindPattern {
+  optional string queue = 1;
+  optional string exchange = 2;
+  optional string routing_key = 3;
+  optional bool no_wait = 4;
+  optional AmqpTable arguments = 5;
 }
 
 message QueueBindOk {}
+message QueueBindOkSelector {}
 message QueueBindOkPattern {}
 
 message BasicQos {
@@ -257,11 +346,17 @@ message BasicQos {
   uint32 prefetch_size = 2;
   bool global_qos = 3;
 }
-message BasicQosPattern {
+message BasicQosSelector {
   reserved 1 to 3;
+}
+message BasicQosPattern {
+  optional uint32 prefetch_count = 1;
+  optional uint32 prefetch_size = 2;
+  optional bool global_qos = 3;
 }
 
 message BasicQosOk {}
+message BasicQosOkSelector {}
 message BasicQosOkPattern {}
 
 message BasicConsume {
@@ -273,28 +368,47 @@ message BasicConsume {
   bool exclusive = 6;
   optional AmqpTable arguments = 7;
 }
-message BasicConsumePattern {
+message BasicConsumeSelector {
   reserved 1 to 7;
+}
+message BasicConsumePattern {
+  optional string queue = 1;
+  optional string consumer_tag = 2;
+  optional bool no_local = 3;
+  optional bool no_ack = 4;
+  optional bool no_wait = 5;
+  optional bool exclusive = 6;
+  optional AmqpTable arguments = 7;
 }
 
 message BasicConsumeOk {
   string consumer_tag = 1;
 }
-message BasicConsumeOkPattern {
+message BasicConsumeOkSelector {
   reserved 1;
+}
+message BasicConsumeOkPattern {
+  optional string consumer_tag = 1;
 }
 
 message BasicCancel {
   string consumer_tag = 1;
   bool no_wait = 2;
 }
-message BasicCancelPattern {
+message BasicCancelSelector {
   optional string consumer_tag = 1;
   reserved 2;
+}
+message BasicCancelPattern {
+  optional string consumer_tag = 1;
+  optional bool no_wait = 2;
 }
 
 message BasicCancelOk {
   string consumer_tag = 1;
+}
+message BasicCancelOkSelector {
+  optional string consumer_tag = 1;
 }
 message BasicCancelOkPattern {
   optional string consumer_tag = 1;
@@ -308,8 +422,16 @@ message BasicPublish {
   optional MessageProperties properties = 5;
   bytes body = 6;
 }
-message BasicPublishPattern {
+message BasicPublishSelector {
   reserved 1 to 6;
+}
+message BasicPublishPattern {
+  optional string exchange = 1;
+  optional string routing_key = 2;
+  optional bool mandatory = 3;
+  optional bool immediate = 4;
+  optional MessageProperties properties = 5;
+  optional bytes body = 6;
 }
 
 message BasicReturn {
@@ -320,21 +442,33 @@ message BasicReturn {
   optional MessageProperties properties = 5;
   bytes body = 6;
 }
-message BasicReturnPattern {
+message BasicReturnSelector {
   optional uint32 reply_code = 1;
   reserved 2;
   optional string exchange = 3;
   optional string routing_key = 4;
   reserved 5, 6;
 }
+message BasicReturnPattern {
+  optional uint32 reply_code = 1;
+  optional string reply_text = 2;
+  optional string exchange = 3;
+  optional string routing_key = 4;
+  optional MessageProperties properties = 5;
+  optional bytes body = 6;
+}
 
 message BasicAck {
   uint64 delivery_tag = 1;
   bool multiple = 2;
 }
-message BasicAckPattern {
+message BasicAckSelector {
   optional uint64 delivery_tag = 1;
   reserved 2;
+}
+message BasicAckPattern {
+  optional uint64 delivery_tag = 1;
+  optional bool multiple = 2;
 }
 
 message BasicNack {
@@ -342,18 +476,27 @@ message BasicNack {
   bool multiple = 2;
   bool requeue = 3;
 }
-message BasicNackPattern {
+message BasicNackSelector {
   optional uint64 delivery_tag = 1;
   reserved 2, 3;
+}
+message BasicNackPattern {
+  optional uint64 delivery_tag = 1;
+  optional bool multiple = 2;
+  optional bool requeue = 3;
 }
 
 message BasicReject {
   uint64 delivery_tag = 1;
   bool requeue = 2;
 }
-message BasicRejectPattern {
+message BasicRejectSelector {
   optional uint64 delivery_tag = 1;
   reserved 2;
+}
+message BasicRejectPattern {
+  optional uint64 delivery_tag = 1;
+  optional bool requeue = 2;
 }
 
 message BasicDeliver {
@@ -365,18 +508,31 @@ message BasicDeliver {
   optional MessageProperties properties = 6;
   bytes body = 7;
 }
-message BasicDeliverPattern {
+message BasicDeliverSelector {
   optional string consumer_tag = 1;
   optional uint64 delivery_tag = 2;
   reserved 3 to 7;
+}
+message BasicDeliverPattern {
+  optional string consumer_tag = 1;
+  optional uint64 delivery_tag = 2;
+  optional bool redelivered = 3;
+  optional string exchange = 4;
+  optional string routing_key = 5;
+  optional MessageProperties properties = 6;
+  optional bytes body = 7;
 }
 
 message BasicGet {
   string queue = 1;
   bool no_ack = 2;
 }
-message BasicGetPattern {
+message BasicGetSelector {
   reserved 1, 2;
+}
+message BasicGetPattern {
+  optional string queue = 1;
+  optional bool no_ack = 2;
 }
 
 message BasicGetOk {
@@ -388,12 +544,22 @@ message BasicGetOk {
   optional MessageProperties properties = 6;
   bytes body = 7;
 }
-message BasicGetOkPattern {
+message BasicGetOkSelector {
   optional uint64 delivery_tag = 1;
   reserved 2 to 7;
 }
+message BasicGetOkPattern {
+  optional uint64 delivery_tag = 1;
+  optional bool redelivered = 2;
+  optional string exchange = 3;
+  optional string routing_key = 4;
+  optional uint32 message_count = 5;
+  optional MessageProperties properties = 6;
+  optional bytes body = 7;
+}
 
 message BasicGetEmpty {}
+message BasicGetEmptySelector {}
 message BasicGetEmptyPattern {}
 
 message Method {
@@ -443,6 +609,48 @@ enum BaseWeight {
   BASE_WEIGHT = 100;
 }
 
+message Selector {
+  oneof method {
+    ConnectionStartSelector connection_start = 1;
+    ConnectionStartOkSelector connection_start_ok = 2;
+    ConnectionTuneSelector connection_tune = 3;
+    ConnectionTuneOkSelector connection_tune_ok = 4;
+    ConnectionOpenSelector connection_open = 5;
+    ConnectionOpenOkSelector connection_open_ok = 6;
+    ConnectionCloseSelector connection_close = 7;
+    ConnectionCloseOkSelector connection_close_ok = 8;
+    ChannelOpenSelector channel_open = 9;
+    ChannelOpenOkSelector channel_open_ok = 10;
+    ChannelCloseSelector channel_close = 11;
+    ChannelCloseOkSelector channel_close_ok = 12;
+    ConfirmSelectSelector confirm_select = 13;
+    ConfirmSelectOkSelector confirm_select_ok = 14;
+    ExchangeDeclareSelector exchange_declare = 15;
+    ExchangeDeclareOkSelector exchange_declare_ok = 16;
+    ExchangeBindSelector exchange_bind = 17;
+    ExchangeBindOkSelector exchange_bind_ok = 18;
+    QueueDeclareSelector queue_declare = 19;
+    QueueDeclareOkSelector queue_declare_ok = 20;
+    QueueBindSelector queue_bind = 21;
+    QueueBindOkSelector queue_bind_ok = 22;
+    BasicQosSelector basic_qos = 23;
+    BasicQosOkSelector basic_qos_ok = 24;
+    BasicConsumeSelector basic_consume = 25;
+    BasicConsumeOkSelector basic_consume_ok = 26;
+    BasicCancelSelector basic_cancel = 27;
+    BasicCancelOkSelector basic_cancel_ok = 28;
+    BasicPublishSelector basic_publish = 29;
+    BasicReturnSelector basic_return = 30;
+    BasicAckSelector basic_ack = 31;
+    BasicNackSelector basic_nack = 32;
+    BasicRejectSelector basic_reject = 33;
+    BasicDeliverSelector basic_deliver = 34;
+    BasicGetSelector basic_get = 35;
+    BasicGetOkSelector basic_get_ok = 36;
+    BasicGetEmptySelector basic_get_empty = 37;
+  }
+}
+
 message Pattern {
   oneof method {
     ConnectionStartPattern connection_start = 1;
@@ -485,8 +693,9 @@ message Pattern {
   }
 }
 
+
 message Weighted {
-  Pattern pattern = 1;
+  Selector selector = 1;
   optional uint32 weight = 2;
 }
 
@@ -505,7 +714,7 @@ message SessionConfig {
   repeated Weighted idle_weights = 4;
   repeated Scripted script = 5;
   optional uint32 stop_weight = 6;
-  optional uint32 max_sends = 7;
+  optional uint32 max_burst_length = 7;
   optional uint32 idle_millis = 8;
   optional uint32 max_buffer = 9;
   optional uint32 max_transcript_lines = 10;
@@ -554,9 +763,12 @@ message ResetRequest {}
 
 message TranscriptRequest {}
 
+message WatchTranscriptRequest {}
+
 service Imposter {
   rpc Configure(ConfigureRequest) returns (StatusReply);
   rpc Status(StatusRequest) returns (StatusReply);
   rpc Reset(ResetRequest) returns (StatusReply);
   rpc Transcript(TranscriptRequest) returns (stream TranscriptLine);
+  rpc WatchTranscript(WatchTranscriptRequest) returns (stream TranscriptLine);
 }

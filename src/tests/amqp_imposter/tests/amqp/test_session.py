@@ -20,7 +20,7 @@ from amqp_imposter.amqp import session as se
 from amqp_imposter.amqp.transcript import TranscriptEvent as ev
 from amqp_imposter.model import methods as m
 from amqp_imposter.model.method_scripts import Received, ScriptRule
-from amqp_imposter.model.method_weights import WeightedPattern
+from amqp_imposter.model.method_weights import WeightedSelector
 
 from .helpers import (
     B_BAD_FRAME,
@@ -43,7 +43,7 @@ from .helpers import (
     encoded_method,
     filter_action_method_kinds,
     filter_action_methods,
-    has_drop_action,
+    has_socket_close_action,
     session_connected,
     transcript_events,
     transcript_method_lines,
@@ -57,8 +57,8 @@ MANY_IDLES = 200
 def test_session_starts() -> None:
     session = se.Session(se.SessionConfig(seed=SEED, stop_weight=STOP_WEIGHT_DRAIN))
 
-    assert transcript_events(session.transcript()) == (ev.SESSION_STARTED,)
-    assert session.transcript()[0].index == 0
+    assert transcript_events(session.transcript_lines()) == (ev.SESSION_STARTED,)
+    assert session.transcript_lines()[0].index == 0
 
 
 def test_connect_then_disconnect() -> None:
@@ -66,7 +66,7 @@ def test_connect_then_disconnect() -> None:
 
     assert session.on_connected() == ()
     assert session.on_disconnected() == ()
-    assert transcript_events(session.transcript()) == (
+    assert transcript_events(session.transcript_lines()) == (
         ev.SESSION_STARTED,
         ev.TCP_CONNECTED,
         ev.TCP_DOWN,
@@ -78,8 +78,8 @@ def test_rejected() -> None:
 
     acts = session.on_rejected()
 
-    assert has_drop_action(acts)
-    assert transcript_events(session.transcript())[-1] == ev.TCP_REJECTED
+    assert has_socket_close_action(acts)
+    assert transcript_events(session.transcript_lines())[-1] == ev.TCP_REJECTED
 
 
 def test_ingress_protocol_header() -> None:
@@ -90,7 +90,7 @@ def test_ingress_protocol_header() -> None:
     assert filter_action_methods(acts) == (
         fr.MethodOnChannel(GLOBAL_CHANNEL, CONNECTION_START),
     )
-    assert transcript_events(session.transcript())[-2:] == (
+    assert transcript_events(session.transcript_lines())[-2:] == (
         ev.PROTOCOL_HEADER,
         ev.METHOD_EGRESS,
     )
@@ -106,7 +106,7 @@ def test_connection_open_handshake() -> None:
         m.ConnectionTune,
         m.ConnectionOpenOk,
     ]
-    assert ev.METHOD_INGRESS in transcript_events(session.transcript())
+    assert ev.METHOD_INGRESS in transcript_events(session.transcript_lines())
 
 
 def test_method_before_protocol_header() -> None:
@@ -114,8 +114,10 @@ def test_method_before_protocol_header() -> None:
 
     acts = session.on_ingress(encoded_method(CONNECTION_START_OK))
 
-    assert has_drop_action(acts)
-    assert transcript_events(session.transcript())[-1] == ev.METHOD_UNREPRESENTABLE
+    assert has_socket_close_action(acts)
+    assert (
+        transcript_events(session.transcript_lines())[-1] == ev.METHOD_UNREPRESENTABLE
+    )
 
 
 def test_second_protocol_header() -> None:
@@ -124,8 +126,10 @@ def test_second_protocol_header() -> None:
 
     acts = session.on_ingress(fr.PROTOCOL_HEADER_091)
 
-    assert has_drop_action(acts)
-    assert transcript_events(session.transcript())[-1] == ev.METHOD_UNREPRESENTABLE
+    assert has_socket_close_action(acts)
+    assert (
+        transcript_events(session.transcript_lines())[-1] == ev.METHOD_UNREPRESENTABLE
+    )
 
 
 def test_unsupported_protocol_header() -> None:
@@ -135,11 +139,11 @@ def test_unsupported_protocol_header() -> None:
     acts = session.on_ingress(amqp_0_10)
 
     assert acts == (
-        se.Write(fr.PROTOCOL_HEADER_091),
-        se.Drop(se.REASON_UNSUPPORTED_PROTOCOL),
+        se.SocketWrite(fr.PROTOCOL_HEADER_091),
+        se.SocketClose(se.REASON_UNSUPPORTED_PROTOCOL),
     )
-    assert session.transcript()[-1].event == ev.METHOD_UNREPRESENTABLE
-    assert session.transcript()[-1].wire_bytes == amqp_0_10
+    assert session.transcript_lines()[-1].event == ev.METHOD_UNREPRESENTABLE
+    assert session.transcript_lines()[-1].wire_bytes == amqp_0_10
 
 
 def test_malformed_frame() -> None:
@@ -148,8 +152,8 @@ def test_malformed_frame() -> None:
 
     acts = session.on_ingress(B_BAD_FRAME)
 
-    assert has_drop_action(acts)
-    assert transcript_events(session.transcript())[-1] == ev.FRAME_MALFORMED
+    assert has_socket_close_action(acts)
+    assert transcript_events(session.transcript_lines())[-1] == ev.FRAME_MALFORMED
 
 
 @pytest.mark.parametrize(
@@ -164,7 +168,7 @@ def test_bad_channels(method: m.Method, channel: int) -> None:
     session = session_connected(STOP_WEIGHT_DRAIN)
     session.on_ingress(fr.PROTOCOL_HEADER_091)
 
-    assert has_drop_action(session.on_ingress(encoded_method(method, channel)))
+    assert has_socket_close_action(session.on_ingress(encoded_method(method, channel)))
 
 
 def test_two_channels_at_once() -> None:
@@ -174,7 +178,7 @@ def test_two_channels_at_once() -> None:
 
     acts = session.on_ingress(encoded_method(m.ChannelOpen(), OTHER_CHANNEL))
 
-    assert has_drop_action(acts)
+    assert has_socket_close_action(acts)
 
 
 def test_wrong_channel() -> None:
@@ -184,7 +188,7 @@ def test_wrong_channel() -> None:
 
     acts = session.on_ingress(encoded_method(BASIC_PUBLISH, OTHER_CHANNEL))
 
-    assert has_drop_action(acts)
+    assert has_socket_close_action(acts)
 
 
 def test_duplicate_open() -> None:
@@ -194,7 +198,7 @@ def test_duplicate_open() -> None:
 
     acts = session.on_ingress(encoded_method(m.ChannelOpen(), CHANNEL))
 
-    assert not has_drop_action(acts)
+    assert not has_socket_close_action(acts)
     assert filter_action_method_kinds(acts) == [m.ConnectionClose]
 
 
@@ -206,7 +210,7 @@ def test_channel_close() -> None:
 
     acts = session.on_ingress(encoded_method(m.ChannelOpen(), OTHER_CHANNEL))
 
-    assert not has_drop_action(acts)
+    assert not has_socket_close_action(acts)
     assert filter_action_methods(acts) == (
         fr.MethodOnChannel(OTHER_CHANNEL, m.ChannelOpenOk()),
     )
@@ -229,7 +233,7 @@ def test_simultaneous_channel_close() -> None:
     reopening += session.on_ingress(encoded_method(m.ChannelOpen(), CHANNEL))
 
     assert filter_action_method_kinds(closing) == [m.ChannelClose, m.ChannelCloseOk]
-    assert not has_drop_action(reopening)
+    assert not has_socket_close_action(reopening)
     assert filter_action_methods(reopening) == (
         fr.MethodOnChannel(CHANNEL, m.ChannelOpenOk()),
     )
@@ -254,8 +258,8 @@ def test_simultaneous_connection_close() -> None:
         m.ConnectionClose,
         m.ConnectionCloseOk,
     ]
-    assert not has_drop_action(closing)
-    assert has_drop_action(completing)
+    assert not has_socket_close_action(closing)
+    assert has_socket_close_action(completing)
 
 
 def test_reconnect_clean_slate() -> None:
@@ -267,7 +271,7 @@ def test_reconnect_clean_slate() -> None:
     session.on_connected()
     acts = session.on_ingress(fr.PROTOCOL_HEADER_091)
 
-    assert not has_drop_action(acts)
+    assert not has_socket_close_action(acts)
     assert filter_action_method_kinds(acts) == [m.ConnectionStart]
 
 
@@ -275,7 +279,7 @@ def test_nothing_to_send() -> None:
     session = session_connected(STOP_WEIGHT_DRAIN)
     connection_open_handshake(session)
 
-    i = len(session.transcript())
+    i = len(session.transcript_lines())
     acts: tuple[se.SocketAction, ...] = ()
 
     acts += session.on_idle()
@@ -284,12 +288,12 @@ def test_nothing_to_send() -> None:
     acts += session.on_idle()
 
     assert filter_action_methods(acts) == ()
-    assert session.transcript()[i:] == ()  # no-op timeouts only
+    assert session.transcript_lines()[i:] == ()  # no-op timeouts only
 
 
 def test_zero_weight_never_sent() -> None:
     session = se.Session(
-        se.SessionConfig(seed=SEED, weights=(WeightedPattern(m.ConnectionStart(), 0),))
+        se.SessionConfig(seed=SEED, weights=(WeightedSelector(m.ConnectionStart(), 0),))
     )
     session.on_connected()
 
@@ -306,8 +310,8 @@ def test_idle_weights_iff_idle() -> None:
         se.SessionConfig(
             seed=SEED,
             stop_weight=STOP_WEIGHT_DRAIN,
-            weights=(WeightedPattern(m.ConnectionStart(), 0),),
-            idle_weights=(WeightedPattern(m.ConnectionStart()),),
+            weights=(WeightedSelector(m.ConnectionStart(), 0),),
+            idle_weights=(WeightedSelector(m.ConnectionStart()),),
         )
     )
     session.on_connected()
@@ -324,7 +328,7 @@ def test_script_method_on_receive() -> None:
         se.SessionConfig(
             seed=SEED,
             stop_weight=STOP_WEIGHT_DRAIN,
-            weights=(WeightedPattern(m.ConnectionTune(), 0),),
+            weights=(WeightedSelector(m.ConnectionTune(), 0),),
             script=(
                 ScriptRule(
                     Received(m.ConnectionStartOk()), then_send=m.ConnectionTune()
@@ -349,21 +353,21 @@ def test_deterministic() -> None:
     connection_open_handshake(first)
     connection_open_handshake(second)
 
-    assert transcript_time_normalised(first.transcript()) == transcript_time_normalised(
-        second.transcript()
-    )
+    assert transcript_time_normalised(
+        first.transcript_lines()
+    ) == transcript_time_normalised(second.transcript_lines())
 
 
 def test_reset_seed() -> None:
     session = session_connected(STOP_WEIGHT_DRAIN)
     connection_open_handshake(session)
-    before = transcript_time_normalised(session.transcript())
+    before = transcript_time_normalised(session.transcript_lines())
 
     session.reset()
     session.on_connected()
     connection_open_handshake(session)
 
-    assert transcript_time_normalised(session.transcript()) == before
+    assert transcript_time_normalised(session.transcript_lines()) == before
 
 
 def test_reset_transcript() -> None:
@@ -372,7 +376,7 @@ def test_reset_transcript() -> None:
 
     session.reset()
 
-    assert transcript_events(session.transcript()) == (ev.SESSION_STARTED,)
+    assert transcript_events(session.transcript_lines()) == (ev.SESSION_STARTED,)
 
 
 def test_reset_config() -> None:
@@ -387,7 +391,7 @@ def test_reset_config() -> None:
 def test_transcript_time_order() -> None:
     session = session_connected(STOP_WEIGHT_DRAIN)
     connection_open_handshake(session)
-    lines = session.transcript()
+    lines = session.transcript_lines()
 
     assert [line.index for line in lines] == list(range(len(lines)))
     assert [line.micros for line in lines] == sorted(line.micros for line in lines)
@@ -433,8 +437,8 @@ def test_ingress_buffer_maxed() -> None:
 
     acts = session.on_ingress(B_OVERLONG_FRAME)
 
-    assert has_drop_action(acts)
-    assert transcript_events(session.transcript())[-1] == ev.FRAME_MALFORMED
+    assert has_socket_close_action(acts)
+    assert transcript_events(session.transcript_lines())[-1] == ev.FRAME_MALFORMED
 
 
 def test_transcript_capped() -> None:
@@ -446,7 +450,7 @@ def test_transcript_capped() -> None:
     session.on_connected()
     session.on_disconnected()
 
-    lines = session.transcript()
+    lines = session.transcript_lines()
 
     assert len(lines) == 2
     assert lines[0].index == 1
@@ -463,20 +467,20 @@ def test_transcribe_consumer() -> None:
         encoded_method(m.ChannelOpen(), CHANNEL),
         encoded_method(BASIC_CONSUME, CHANNEL),
     ):
-        i = len(session.transcript())
+        i = len(session.transcript_lines())
         session.on_ingress(setup_part)
         for _ in range(IDLES):
             session.on_idle()
         assert all(
             line.event in (ev.METHOD_INGRESS, ev.METHOD_EGRESS)
-            for line in transcript_method_lines(session.transcript()[i:])
+            for line in transcript_method_lines(session.transcript_lines()[i:])
         )
 
-    i = len(session.transcript())
+    i = len(session.transcript_lines())
     for _ in range(MANY_IDLES):
         session.on_idle()
 
-    lines = session.transcript()[i:]  # cut the transcript to the idle part
+    lines = session.transcript_lines()[i:]  # cut the transcript to the idle part
     assert lines[0].event == ev.IDLE_TIMEOUT
 
     method_lines = transcript_method_lines(lines)

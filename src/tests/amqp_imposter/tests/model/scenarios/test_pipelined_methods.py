@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from amqp_imposter.model import Unrepresentable
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -58,7 +59,12 @@ def test_pipelined_replies_come_in_order() -> None:
 
     receive_unwrap(server, m.QueueDeclare(queue=QUEUE))
     receive_unwrap(
-        server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY)
+        server,
+        m.QueueBind(
+            queue=QUEUE,
+            exchange=EXCHANGE,
+            routing_key=ROUTING_KEY,
+        ),
     )
 
     assert not subsets_any_sendable(server, m.QueueBindOk)
@@ -73,7 +79,12 @@ def test_out_of_order_reply_is_illegal() -> None:
 
     receive_unwrap(server, m.QueueDeclare(queue=QUEUE))
     receive_unwrap(
-        server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY)
+        server,
+        m.QueueBind(
+            queue=QUEUE,
+            exchange=EXCHANGE,
+            routing_key=ROUTING_KEY,
+        ),
     )
 
     assert isinstance(server.send(m.QueueBindOk()), Unrepresentable)
@@ -83,7 +94,7 @@ def test_same_method_replies_come_in_order() -> None:
     server = channelled()
 
     receive_unwrap(server, m.QueueDeclare(queue=QUEUE))
-    receive_unwrap(server, m.QueueDeclare(queue=QUEUE + "other"))
+    receive_unwrap(server, m.QueueDeclare(queue=d.ShortStr(QUEUE + "other")))
 
     assert send_unwrap(server, m.QueueDeclareOk).queue == QUEUE
     assert lookup_unique_sendable(server, m.QueueDeclareOk).queue == QUEUE + "other"
@@ -121,7 +132,7 @@ def test_channel_error_comes_in_order() -> None:
     receive_unwrap(server, m.QueueDeclare(queue=QUEUE))
     receive_unwrap(server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE))
     enable_channel_error(server)
-    receive_unwrap(server, m.QueueDeclare(queue=QUEUE + "later"))
+    receive_unwrap(server, m.QueueDeclare(queue=d.ShortStr(QUEUE + "later")))
 
     assert not error_replies_to(server, m.BasicAck)
 
@@ -179,8 +190,8 @@ def test_connection_error_comes_in_order() -> None:
 
     receive_unwrap(server, m.QueueDeclare(queue=QUEUE))
     receive_unwrap(server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE))
-    receive_unwrap(server, m.BasicQos(prefetch_size=1))
-    receive_unwrap(server, m.QueueDeclare(queue=QUEUE + "later"))
+    receive_unwrap(server, m.BasicQos(prefetch_size=d.Long(1)))
+    receive_unwrap(server, m.QueueDeclare(queue=d.ShortStr(QUEUE + "later")))
 
     # other closes are still sendable
     assert not error_replies_to(server, m.BasicQos)
@@ -199,7 +210,12 @@ def test_nowait_request_never_pends() -> None:
 
     receive_unwrap(server, m.QueueDeclare(queue=QUEUE, no_wait=True))
     receive_unwrap(
-        server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY)
+        server,
+        m.QueueBind(
+            queue=QUEUE,
+            exchange=EXCHANGE,
+            routing_key=ROUTING_KEY,
+        ),
     )
 
     assert subsets_any_sendable(server, m.QueueBindOk)
@@ -303,7 +319,10 @@ def test_pipelined_consume_after_channel_open() -> None:
     server = connected()
 
     receive_unwrap(server, m.ChannelOpen())
-    receive_unwrap(server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG))
+    receive_unwrap(
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG),
+    )
     send_unwrap(server, m.ChannelOpenOk)
     send_unwrap(server, m.BasicConsumeOk, consumer_tag=CONSUMER_TAG)
 
@@ -315,7 +334,8 @@ def test_pipelined_nowait_consume_after_declare() -> None:
 
     receive_unwrap(server, m.QueueDeclare(queue=QUEUE))
     receive_unwrap(
-        server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True)
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True),
     )
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
@@ -344,6 +364,6 @@ def test_nowait_declare_after_channel_open() -> None:
 def test_pipelined_channel_open_before_connection_open_ok() -> None:
     server = tuned()
 
-    receive_unwrap(server, m.ConnectionOpen("/"))
+    receive_unwrap(server, m.ConnectionOpen(d.ShortStr("/")))
 
     assert isinstance(server.receive(m.ChannelOpen()), Unrepresentable)

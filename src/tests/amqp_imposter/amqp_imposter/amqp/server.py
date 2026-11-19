@@ -18,7 +18,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 
-from .session import Drop, Session, SocketAction, Write
+from .session import Session, SocketAction, SocketClose, SocketWrite
 
 HOST = "127.0.0.1"
 EPHEMERAL_PORT = 0
@@ -78,9 +78,9 @@ class AmqpServer:
     ) -> bool:
         for action in actions:
             match action:
-                case Write(payload):
+                case SocketWrite(payload):
                     writer.write(payload)
-                case Drop():
+                case SocketClose():
                     with suppress(OSError):
                         await writer.drain()
                     return True

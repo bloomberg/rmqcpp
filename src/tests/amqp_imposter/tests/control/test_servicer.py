@@ -101,7 +101,7 @@ def test_transcript_line_count() -> None:
 
     reply = sv.status_reply(imposter, WHEN)
 
-    assert reply.transcript_lines == len(imposter.session.transcript())
+    assert reply.transcript_lines == len(imposter.session.transcript_lines())
 
 
 async def test_line_count_includes_dropped() -> None:
@@ -112,7 +112,7 @@ async def test_line_count_includes_dropped() -> None:
 
     reply = sv.status_reply(imposter, WHEN)
 
-    assert reply.transcript_lines > len(imposter.session.transcript())
+    assert reply.transcript_lines > len(imposter.session.transcript_lines())
 
 
 async def connect_client(
@@ -132,7 +132,9 @@ async def test_configure_drops_connected_client() -> None:
     await sv.configure(imposter, pb.SessionConfig(seed=9))
 
     assert await asyncio.wait_for(reader.read(), 2.0) == b""
-    assert transcript_events(imposter.session.transcript()) == (ev.SESSION_STARTED,)
+    assert transcript_events(imposter.session.transcript_lines()) == (
+        ev.SESSION_STARTED,
+    )
 
     writer.close()
     await imposter.amqp_server.stop()
@@ -146,7 +148,7 @@ async def test_bad_configure_keeps_connected_client() -> None:
         await sv.configure(imposter, pb.SessionConfig(seed=9, stop_weight=0))
 
     assert imposter.amqp_server.writer is not None
-    assert ev.TCP_DOWN not in transcript_events(imposter.session.transcript())
+    assert ev.TCP_DOWN not in transcript_events(imposter.session.transcript_lines())
 
     writer.close()
     await imposter.amqp_server.stop()

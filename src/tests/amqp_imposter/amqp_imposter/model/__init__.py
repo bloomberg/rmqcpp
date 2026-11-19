@@ -29,15 +29,18 @@ from .method_fields import (
     assert_concrete,
     is_concrete,
 )
-from .method_sampling import DEFAULT_MAX_SENDS
+from .method_sampling import DEFAULT_MAX_BURST_LENGTH
 from .method_scripts import Received, ScriptRule, Sent
 from .method_weights import (
     BASE_WEIGHT,
     DEFAULT_WEIGHTS,
     STOP_WEIGHT,
-    WeightedPattern,
+    WeightedSelector,
 )
-from .methods import METHOD_KINDS, Method
+from .methods import (
+    METHOD_KINDS,
+    Method,
+)
 from .model_server import ModelServer
 from .model_state import Unrepresentable
 from .negotiation_options import (
@@ -48,7 +51,7 @@ from .negotiation_options import (
 __all__ = [
     "BASE_WEIGHT",
     "DEFAULT_GEN_STATE",
-    "DEFAULT_MAX_SENDS",
+    "DEFAULT_MAX_BURST_LENGTH",
     "DEFAULT_NEGOTIATION_OPTIONS",
     "DEFAULT_WEIGHTS",
     "HOLE",
@@ -69,7 +72,7 @@ __all__ = [
     "Table",
     "TableValue",
     "Unrepresentable",
-    "WeightedPattern",
+    "WeightedSelector",
     "assert_concrete",
     "is_concrete",
 ]

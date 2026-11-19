@@ -16,6 +16,7 @@
 import pytest
 
 from amqp_imposter.model import Unrepresentable
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -111,7 +112,7 @@ def test_received_methods_discarded_after_connection_close() -> None:
     send_unwrap(server, m.ConnectionClose, reply_code=mf.ReplyCode.CONNECTION_FORCED)
     receive_unwrap(server, m.ConfirmSelect())
     receive_unwrap(server, m.ChannelOpen())
-    receive_unwrap(server, m.BasicAck(delivery_tag=99))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(99)))
     publish(server, mandatory=True)
 
     assert server.sendables() == ()

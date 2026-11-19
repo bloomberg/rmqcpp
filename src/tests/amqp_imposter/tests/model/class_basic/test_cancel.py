@@ -16,6 +16,7 @@
 import pytest
 
 from amqp_imposter.model import Unrepresentable
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import methods as m
 
 from ..helpers import (
@@ -76,7 +77,7 @@ def test_ack_after_cancel(cancel: DoTeardown) -> None:
     deliver(server, 1)
     deliver(server, 2)
     cancel(server)
-    receive_unwrap(server, m.BasicAck(delivery_tag=2, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(2), multiple=True))
 
     assert not subsets_any_sendable(server, m.ChannelClose)
 
@@ -94,7 +95,10 @@ def test_reconsume_and_client_cancel_during_server_cancel() -> None:
     server = consuming()
 
     send_cancel(server)
-    receive_unwrap(server, m.BasicConsume(queue=QUEUE, consumer_tag=OTHER_CONSUMER_TAG))
+    receive_unwrap(
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=OTHER_CONSUMER_TAG),
+    )
     receive_unwrap(server, m.BasicCancel(consumer_tag=CONSUMER_TAG))
     send_unwrap(server, m.BasicConsumeOk, consumer_tag=OTHER_CONSUMER_TAG)
     send_unwrap(server, m.BasicCancelOk, consumer_tag=CONSUMER_TAG)
@@ -107,7 +111,7 @@ def test_client_cancel_during_server_cancel_bad_tag(consumer_tag: str) -> None:
     server = consuming()
 
     send_unwrap(server, m.BasicCancel, consumer_tag=CONSUMER_TAG, no_wait=True)
-    cancelled = server.receive(m.BasicCancel(consumer_tag=consumer_tag))
+    cancelled = server.receive(m.BasicCancel(consumer_tag=d.ShortStr(consumer_tag)))
 
     assert isinstance(cancelled, Unrepresentable)
 
@@ -128,7 +132,7 @@ def test_cancel_unknown_tag(consumer_tag: str) -> None:
     # but this is a client error so let's call it Unrepresentable
     server = consuming()
 
-    cancelled = server.receive(m.BasicCancel(consumer_tag=consumer_tag))
+    cancelled = server.receive(m.BasicCancel(consumer_tag=d.ShortStr(consumer_tag)))
 
     assert isinstance(cancelled, Unrepresentable)
 
@@ -137,7 +141,10 @@ def test_reconsume_after_server_cancel() -> None:
     server = consuming()
 
     send_cancel(server)
-    receive_unwrap(server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG))
+    receive_unwrap(
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG),
+    )
     send_unwrap(server, m.BasicConsumeOk, consumer_tag=CONSUMER_TAG)
 
     assert subsets_any_sendable(server, m.BasicDeliver, consumer_tag=CONSUMER_TAG)

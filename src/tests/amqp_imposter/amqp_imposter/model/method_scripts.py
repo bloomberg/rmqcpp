@@ -34,10 +34,6 @@ class ScriptRule:
     when: Received | Sent
     then_send: m.Method
 
-    def __post_init__(self) -> None:
-        m.validate_pattern(self.when.method)
-        m.validate_pattern(self.then_send)
-
 
 def match_rules(
     script: tuple[ScriptRule, ...], when: Received | Sent

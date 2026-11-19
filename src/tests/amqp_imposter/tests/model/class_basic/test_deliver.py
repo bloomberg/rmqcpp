@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from amqp_imposter.model import Unrepresentable
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import methods as m
 
 from ..helpers import (
@@ -29,6 +30,8 @@ def test_send_delivery_tag_too_high() -> None:
     deliver(server, 1)
 
     assert isinstance(
-        server.send(m.BasicDeliver(consumer_tag=CONSUMER_TAG, delivery_tag=3)),
+        server.send(
+            m.BasicDeliver(consumer_tag=CONSUMER_TAG, delivery_tag=d.LongLong(3))
+        ),
         Unrepresentable,
     )

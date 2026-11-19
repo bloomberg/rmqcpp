@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from amqp_imposter.model import Unrepresentable
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import methods as m
 
 from ..helpers import channelled, connected, receive_unwrap
@@ -24,7 +25,10 @@ def test_illegal_receive_does_not_advance() -> None:
     before_sendable = server.sendables()
     before_gen = server.gen_state
 
-    assert isinstance(server.receive(m.ConnectionTuneOk(0, 0, 0)), Unrepresentable)
+    assert isinstance(
+        server.receive(m.ConnectionTuneOk(d.Short(0), d.Long(0), d.Short(0))),
+        Unrepresentable,
+    )
 
     assert server.sendables() == before_sendable
     assert server.gen_state == before_gen

@@ -15,32 +15,6 @@
 
 from collections.abc import Callable
 
-from ..model import method_fields as mf
-
-
-def cond_value[T](cond: bool, value: T) -> T | None:
-    return value if cond else None
-
-
-def cond_exact_field[T](cond: bool, value: T) -> mf.Exact[T]:
-    return value if cond else mf.HOLE
-
 
 def cond_map[P, T](cond: bool, value: P, f: Callable[[P], T]) -> T | None:
     return f(value) if cond else None
-
-
-def concrete_or[T, D = None](
-    value: mf.Exact[T] | mf.Arbitrary[T],
-    fallback: D = None,  # type: ignore[assignment]
-) -> T | D:
-    return value if mf.is_concrete(value) else fallback
-
-
-def concrete_map_or[T, D](
-    value: mf.Arbitrary[T | None], f: Callable[[T], D]
-) -> D | None:
-    if (concrete := concrete_or(value, None)) is not None:
-        return f(concrete)
-    else:
-        return None

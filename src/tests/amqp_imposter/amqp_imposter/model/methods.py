@@ -16,22 +16,26 @@
 from dataclasses import dataclass, fields
 from typing import Any, ClassVar, TypeIs, get_args
 
+from .domains import Long, LongLong, NonEmptyShortStr, Octet, Short, ShortStr
 from .method_fields import (
     GEN_BIT,
     GEN_EMPTY_BYTES,
+    GEN_EMPTY_PROPERTIES,
+    GEN_EMPTY_SHORTSTR,
     GEN_EMPTY_STR,
+    GEN_EMPTY_TABLE,
     GEN_EXCHANGE_TYPE,
     GEN_FALSE,
     GEN_LONG,
     GEN_MESSAGE_BODY,
     GEN_MESSAGE_PROPERTIES,
     GEN_NAME,
-    GEN_NONE,
     GEN_NONEMPTY_NAME,
     GEN_NONEMPTY_SHORTSTR,
     GEN_SHORTSTR,
     GEN_VHOST,
-    GEN_ZERO,
+    GEN_ZERO_LONG,
+    GEN_ZERO_SHORT,
     HOLE,
     Arbitrary,
     ClassId,
@@ -44,11 +48,11 @@ from .method_fields import (
 
 @dataclass(frozen=True, slots=True)
 class ConnectionStart:
-    CLASS_ID: ClassVar[int] = ClassId.CONNECTION
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONNECTION
     METHOD_ID: ClassVar[int] = 10
 
-    version_major: Exact[int] = HOLE
-    version_minor: Exact[int] = HOLE
+    version_major: Exact[Octet] = HOLE
+    version_minor: Exact[Octet] = HOLE
     mechanisms: Exact[tuple[str, ...]] = HOLE
     locales: Exact[tuple[str, ...]] = HOLE
     publisher_confirms: Exact[bool] = HOLE
@@ -58,97 +62,97 @@ class ConnectionStart:
 
 @dataclass(frozen=True, slots=True)
 class ConnectionStartOk:
-    CLASS_ID: ClassVar[int] = ClassId.CONNECTION
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONNECTION
     METHOD_ID: ClassVar[int] = 11
 
-    mechanism: Exact[str] = HOLE
-    locale: Exact[str] = HOLE
+    mechanism: Exact[ShortStr] = HOLE
+    locale: Exact[ShortStr] = HOLE
     response: Arbitrary[str] = GEN_EMPTY_STR
 
 
 @dataclass(frozen=True, slots=True)
 class ConnectionTune:
-    CLASS_ID: ClassVar[int] = ClassId.CONNECTION
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONNECTION
     METHOD_ID: ClassVar[int] = 30
 
-    channel_max: Exact[int] = HOLE
-    frame_max: Exact[int] = HOLE
-    heartbeat: Exact[int] = HOLE
+    channel_max: Exact[Short] = HOLE
+    frame_max: Exact[Long] = HOLE
+    heartbeat: Exact[Short] = HOLE
 
 
 @dataclass(frozen=True, slots=True)
 class ConnectionTuneOk:
-    CLASS_ID: ClassVar[int] = ClassId.CONNECTION
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONNECTION
     METHOD_ID: ClassVar[int] = 31
 
-    channel_max: Exact[int] = HOLE
-    frame_max: Exact[int] = HOLE
-    heartbeat: Exact[int] = HOLE
+    channel_max: Exact[Short] = HOLE
+    frame_max: Exact[Long] = HOLE
+    heartbeat: Exact[Short] = HOLE
 
 
 @dataclass(frozen=True, slots=True)
 class ConnectionOpen:
-    CLASS_ID: ClassVar[int] = ClassId.CONNECTION
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONNECTION
     METHOD_ID: ClassVar[int] = 40
 
-    vhost: Arbitrary[str] = GEN_VHOST
+    vhost: Arbitrary[ShortStr] = GEN_VHOST
 
 
 @dataclass(frozen=True, slots=True)
 class ConnectionOpenOk:
-    CLASS_ID: ClassVar[int] = ClassId.CONNECTION
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONNECTION
     METHOD_ID: ClassVar[int] = 41
 
 
 @dataclass(frozen=True, slots=True)
 class ConnectionClose:
-    CLASS_ID: ClassVar[int] = ClassId.CONNECTION
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONNECTION
     METHOD_ID: ClassVar[int] = 50
 
-    reply_code: Exact[int] = HOLE
-    reply_text: Exact[str] = HOLE
-    class_id: Exact[int] = HOLE
-    method_id: Exact[int] = HOLE
+    reply_code: Exact[Short] = HOLE
+    reply_text: Exact[ShortStr] = HOLE
+    class_id: Exact[Short] = HOLE
+    method_id: Exact[Short] = HOLE
 
 
 @dataclass(frozen=True, slots=True)
 class ConnectionCloseOk:
-    CLASS_ID: ClassVar[int] = ClassId.CONNECTION
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONNECTION
     METHOD_ID: ClassVar[int] = 51
 
 
 @dataclass(frozen=True, slots=True)
 class ChannelOpen:
-    CLASS_ID: ClassVar[int] = ClassId.CHANNEL
+    CLASS_ID: ClassVar[ClassId] = ClassId.CHANNEL
     METHOD_ID: ClassVar[int] = 10
 
 
 @dataclass(frozen=True, slots=True)
 class ChannelOpenOk:
-    CLASS_ID: ClassVar[int] = ClassId.CHANNEL
+    CLASS_ID: ClassVar[ClassId] = ClassId.CHANNEL
     METHOD_ID: ClassVar[int] = 11
 
 
 @dataclass(frozen=True, slots=True)
 class ChannelClose:
-    CLASS_ID: ClassVar[int] = ClassId.CHANNEL
+    CLASS_ID: ClassVar[ClassId] = ClassId.CHANNEL
     METHOD_ID: ClassVar[int] = 40
 
-    reply_code: Exact[int] = HOLE
-    reply_text: Exact[str] = HOLE
-    class_id: Exact[int] = HOLE
-    method_id: Exact[int] = HOLE
+    reply_code: Exact[Short] = HOLE
+    reply_text: Exact[ShortStr] = HOLE
+    class_id: Exact[Short] = HOLE
+    method_id: Exact[Short] = HOLE
 
 
 @dataclass(frozen=True, slots=True)
 class ChannelCloseOk:
-    CLASS_ID: ClassVar[int] = ClassId.CHANNEL
+    CLASS_ID: ClassVar[ClassId] = ClassId.CHANNEL
     METHOD_ID: ClassVar[int] = 41
 
 
 @dataclass(frozen=True, slots=True)
 class ConfirmSelect:
-    CLASS_ID: ClassVar[int] = ClassId.CONFIRM
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONFIRM
     METHOD_ID: ClassVar[int] = 10
 
     no_wait: Arbitrary[bool] = (
@@ -158,240 +162,240 @@ class ConfirmSelect:
 
 @dataclass(frozen=True, slots=True)
 class ConfirmSelectOk:
-    CLASS_ID: ClassVar[int] = ClassId.CONFIRM
+    CLASS_ID: ClassVar[ClassId] = ClassId.CONFIRM
     METHOD_ID: ClassVar[int] = 11
 
 
 @dataclass(frozen=True, slots=True)
 class ExchangeDeclare:
-    CLASS_ID: ClassVar[int] = ClassId.EXCHANGE
+    CLASS_ID: ClassVar[ClassId] = ClassId.EXCHANGE
     METHOD_ID: ClassVar[int] = 10
 
-    exchange: Exact[str] = HOLE
-    exchange_type: Arbitrary[str] = GEN_EXCHANGE_TYPE
+    exchange: Exact[ShortStr] = HOLE
+    exchange_type: Arbitrary[ShortStr] = GEN_EXCHANGE_TYPE
     passive: Arbitrary[bool] = GEN_FALSE
     durable: Arbitrary[bool] = GEN_FALSE
     auto_delete: Arbitrary[bool] = GEN_FALSE
     internal: Arbitrary[bool] = GEN_FALSE
     no_wait: Arbitrary[bool] = GEN_FALSE
-    arguments: Arbitrary[Table | None] = GEN_NONE
+    arguments: Arbitrary[Table] = GEN_EMPTY_TABLE
 
 
 @dataclass(frozen=True, slots=True)
 class ExchangeDeclareOk:
-    CLASS_ID: ClassVar[int] = ClassId.EXCHANGE
+    CLASS_ID: ClassVar[ClassId] = ClassId.EXCHANGE
     METHOD_ID: ClassVar[int] = 11
 
 
 @dataclass(frozen=True, slots=True)
 class ExchangeBind:
-    CLASS_ID: ClassVar[int] = ClassId.EXCHANGE
+    CLASS_ID: ClassVar[ClassId] = ClassId.EXCHANGE
     METHOD_ID: ClassVar[int] = 30
 
-    destination: Arbitrary[str] = GEN_NONEMPTY_NAME
-    source: Arbitrary[str] = GEN_NONEMPTY_NAME
-    routing_key: Arbitrary[str] = GEN_SHORTSTR
+    destination: Arbitrary[ShortStr] = GEN_NONEMPTY_NAME
+    source: Arbitrary[ShortStr] = GEN_NONEMPTY_NAME
+    routing_key: Arbitrary[ShortStr] = GEN_SHORTSTR
     no_wait: Arbitrary[bool] = GEN_FALSE
-    arguments: Arbitrary[Table | None] = GEN_NONE
+    arguments: Arbitrary[Table] = GEN_EMPTY_TABLE
 
 
 @dataclass(frozen=True, slots=True)
 class ExchangeBindOk:
-    CLASS_ID: ClassVar[int] = ClassId.EXCHANGE
+    CLASS_ID: ClassVar[ClassId] = ClassId.EXCHANGE
     METHOD_ID: ClassVar[int] = 31
 
 
 @dataclass(frozen=True, slots=True)
 class QueueDeclare:
-    CLASS_ID: ClassVar[int] = ClassId.QUEUE
+    CLASS_ID: ClassVar[ClassId] = ClassId.QUEUE
     METHOD_ID: ClassVar[int] = 10
 
-    queue: Arbitrary[str] = GEN_NONEMPTY_NAME
+    queue: Arbitrary[ShortStr] = GEN_NONEMPTY_NAME
     passive: Arbitrary[bool] = GEN_FALSE
     durable: Arbitrary[bool] = GEN_FALSE
     exclusive: Arbitrary[bool] = GEN_FALSE
     auto_delete: Arbitrary[bool] = GEN_FALSE
     no_wait: Arbitrary[bool] = GEN_FALSE
-    arguments: Arbitrary[Table | None] = GEN_NONE
+    arguments: Arbitrary[Table] = GEN_EMPTY_TABLE
 
 
 @dataclass(frozen=True, slots=True)
 class QueueDeclareOk:
-    CLASS_ID: ClassVar[int] = ClassId.QUEUE
+    CLASS_ID: ClassVar[ClassId] = ClassId.QUEUE
     METHOD_ID: ClassVar[int] = 11
 
-    queue: Arbitrary[str] = GEN_NONEMPTY_NAME  # can be anonymous
-    message_count: Arbitrary[int] = GEN_LONG
-    consumer_count: Arbitrary[int] = GEN_LONG
+    queue: Arbitrary[NonEmptyShortStr] = GEN_NONEMPTY_NAME  # can be anonymous
+    message_count: Arbitrary[Long] = GEN_LONG
+    consumer_count: Arbitrary[Long] = GEN_LONG
 
 
 @dataclass(frozen=True, slots=True)
 class QueueBind:
-    CLASS_ID: ClassVar[int] = ClassId.QUEUE
+    CLASS_ID: ClassVar[ClassId] = ClassId.QUEUE
     METHOD_ID: ClassVar[int] = 20
 
-    queue: Arbitrary[str] = GEN_NONEMPTY_NAME
-    exchange: Arbitrary[str] = GEN_NONEMPTY_NAME
-    routing_key: Arbitrary[str] = GEN_SHORTSTR
+    queue: Arbitrary[ShortStr] = GEN_NONEMPTY_NAME
+    exchange: Arbitrary[ShortStr] = GEN_NONEMPTY_NAME
+    routing_key: Arbitrary[ShortStr] = GEN_SHORTSTR
     no_wait: Arbitrary[bool] = GEN_FALSE
-    arguments: Arbitrary[Table | None] = GEN_NONE
+    arguments: Arbitrary[Table] = GEN_EMPTY_TABLE
 
 
 @dataclass(frozen=True, slots=True)
 class QueueBindOk:
-    CLASS_ID: ClassVar[int] = ClassId.QUEUE
+    CLASS_ID: ClassVar[ClassId] = ClassId.QUEUE
     METHOD_ID: ClassVar[int] = 21
 
 
 @dataclass(frozen=True, slots=True)
 class BasicQos:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 10
 
-    prefetch_count: Arbitrary[int] = GEN_ZERO
-    prefetch_size: Arbitrary[int] = GEN_ZERO  # nonzero produces "not implemented"
+    prefetch_count: Arbitrary[Short] = GEN_ZERO_SHORT
+    prefetch_size: Arbitrary[Long] = GEN_ZERO_LONG  # nonzero produces "not implemented"
     global_qos: Arbitrary[bool] = GEN_FALSE
 
 
 @dataclass(frozen=True, slots=True)
 class BasicQosOk:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 11
 
 
 @dataclass(frozen=True, slots=True)
 class BasicConsume:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 20
 
-    queue: Arbitrary[str] = GEN_NONEMPTY_NAME
-    consumer_tag: Arbitrary[str] = GEN_EMPTY_STR
+    queue: Arbitrary[ShortStr] = GEN_NONEMPTY_NAME
+    consumer_tag: Arbitrary[ShortStr] = GEN_EMPTY_SHORTSTR
     no_local: Arbitrary[bool] = GEN_FALSE
     no_ack: Arbitrary[bool] = GEN_FALSE
     no_wait: Arbitrary[bool] = GEN_FALSE
     exclusive: Arbitrary[bool] = GEN_FALSE
-    arguments: Arbitrary[Table | None] = GEN_NONE
+    arguments: Arbitrary[Table] = GEN_EMPTY_TABLE
 
 
 @dataclass(frozen=True, slots=True)
 class BasicConsumeOk:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 21
 
-    consumer_tag: Arbitrary[str] = GEN_NONEMPTY_SHORTSTR
+    consumer_tag: Arbitrary[NonEmptyShortStr] = GEN_NONEMPTY_SHORTSTR
 
 
 @dataclass(frozen=True, slots=True)
 class BasicCancel:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 30
 
-    consumer_tag: Exact[str] = HOLE
+    consumer_tag: Exact[ShortStr] = HOLE
     no_wait: Arbitrary[bool] = GEN_FALSE
 
 
 @dataclass(frozen=True, slots=True)
 class BasicCancelOk:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 31
 
-    consumer_tag: Exact[str] = HOLE
+    consumer_tag: Exact[ShortStr] = HOLE
 
 
 @dataclass(frozen=True, slots=True)
 class BasicPublish:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 40
 
-    exchange: Arbitrary[str] = GEN_NAME
-    routing_key: Arbitrary[str] = GEN_SHORTSTR
+    exchange: Arbitrary[ShortStr] = GEN_NAME
+    routing_key: Arbitrary[ShortStr] = GEN_SHORTSTR
     mandatory: Arbitrary[bool] = GEN_FALSE
     immediate: Arbitrary[bool] = GEN_FALSE  # true produces "not implemented"
-    properties: Arbitrary[MessageProperties | None] = GEN_NONE
+    properties: Arbitrary[MessageProperties] = GEN_EMPTY_PROPERTIES
     body: Arbitrary[bytes] = GEN_MESSAGE_BODY
 
 
 @dataclass(frozen=True, slots=True)
 class BasicReturn:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 50
 
-    reply_code: Exact[int] = HOLE
-    reply_text: Arbitrary[str] = GEN_NONEMPTY_SHORTSTR
-    exchange: Exact[str] = HOLE
-    routing_key: Exact[str] = HOLE
-    properties: Arbitrary[MessageProperties | None] = GEN_NONE
+    reply_code: Exact[Short] = HOLE
+    reply_text: Arbitrary[NonEmptyShortStr] = GEN_NONEMPTY_SHORTSTR
+    exchange: Exact[ShortStr] = HOLE
+    routing_key: Exact[ShortStr] = HOLE
+    properties: Arbitrary[MessageProperties] = GEN_EMPTY_PROPERTIES
     body: Arbitrary[bytes] = GEN_EMPTY_BYTES
 
 
 @dataclass(frozen=True, slots=True)
 class BasicAck:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 80
 
-    delivery_tag: Exact[int] = HOLE
+    delivery_tag: Exact[LongLong] = HOLE
     multiple: Arbitrary[bool] = GEN_FALSE
 
 
 @dataclass(frozen=True, slots=True)
 class BasicNack:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 120
 
-    delivery_tag: Exact[int] = HOLE
+    delivery_tag: Exact[LongLong] = HOLE
     multiple: Arbitrary[bool] = GEN_FALSE
     requeue: Arbitrary[bool] = GEN_FALSE
 
 
 @dataclass(frozen=True, slots=True)
 class BasicReject:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 90
 
-    delivery_tag: Exact[int] = HOLE
+    delivery_tag: Exact[LongLong] = HOLE
     requeue: Arbitrary[bool] = GEN_FALSE
 
 
 @dataclass(frozen=True, slots=True)
 class BasicDeliver:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 60
 
-    consumer_tag: Exact[str] = HOLE
-    delivery_tag: Exact[int] = HOLE
+    consumer_tag: Exact[ShortStr] = HOLE
+    delivery_tag: Exact[LongLong] = HOLE
     redelivered: Arbitrary[bool] = GEN_BIT
-    exchange: Arbitrary[str] = GEN_NONEMPTY_NAME
-    routing_key: Arbitrary[str] = GEN_SHORTSTR
-    properties: Arbitrary[MessageProperties | None] = GEN_MESSAGE_PROPERTIES
+    exchange: Arbitrary[ShortStr] = GEN_NONEMPTY_NAME
+    routing_key: Arbitrary[ShortStr] = GEN_SHORTSTR
+    properties: Arbitrary[MessageProperties] = GEN_MESSAGE_PROPERTIES
     body: Arbitrary[bytes] = GEN_MESSAGE_BODY
 
 
 @dataclass(frozen=True, slots=True)
 class BasicGet:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 70
 
-    queue: Arbitrary[str] = GEN_NONEMPTY_NAME
+    queue: Arbitrary[ShortStr] = GEN_NONEMPTY_NAME
     no_ack: Arbitrary[bool] = GEN_FALSE
 
 
 @dataclass(frozen=True, slots=True)
 class BasicGetOk:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 71
 
-    delivery_tag: Exact[int] = HOLE
+    delivery_tag: Exact[LongLong] = HOLE
     redelivered: Arbitrary[bool] = GEN_BIT
-    exchange: Arbitrary[str] = GEN_NONEMPTY_NAME
-    routing_key: Arbitrary[str] = GEN_SHORTSTR
-    message_count: Arbitrary[int] = GEN_LONG
-    properties: Arbitrary[MessageProperties | None] = GEN_MESSAGE_PROPERTIES
+    exchange: Arbitrary[ShortStr] = GEN_NONEMPTY_NAME
+    routing_key: Arbitrary[ShortStr] = GEN_SHORTSTR
+    message_count: Arbitrary[Long] = GEN_LONG
+    properties: Arbitrary[MessageProperties] = GEN_MESSAGE_PROPERTIES
     body: Arbitrary[bytes] = GEN_MESSAGE_BODY
 
 
 @dataclass(frozen=True, slots=True)
 class BasicGetEmpty:
-    CLASS_ID: ClassVar[int] = ClassId.BASIC
+    CLASS_ID: ClassVar[ClassId] = ClassId.BASIC
     METHOD_ID: ClassVar[int] = 72
 
 
@@ -450,7 +454,7 @@ def distinct_kinds(methods: tuple[Method, ...]) -> tuple[type[Method], ...]:
     return tuple(dict.fromkeys(type(method) for method in methods))
 
 
-def exact_fields(kind: type[Method]) -> tuple[str, ...]:
+def exact_fields[M: Method](kind: type[M]) -> tuple[str, ...]:
     return tuple(field.name for field in fields(kind) if field.default is HOLE)
 
 
@@ -462,13 +466,13 @@ def arbitrary_fields(method: Method) -> tuple[str, ...]:
     )
 
 
-class BadPattern(ValueError):
+class BadSelector(ValueError):
     pass
 
 
-def validate_pattern(pattern: Method) -> None:
-    if names := arbitrary_fields(pattern):
-        raise BadPattern(f"{type(pattern).__name__} cannot be matched on {names}")
+def validate_selector(selector: Method) -> None:
+    if names := arbitrary_fields(selector):
+        raise BadSelector(f"{type(selector).__name__} cannot be matched on {names}")
 
 
 def set_fields[M: Method](method: M, fields: dict[str, Any]) -> M:

@@ -22,6 +22,7 @@ from amqp_imposter.model import (
     Unrepresentable,
     constants,
 )
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -46,9 +47,9 @@ NEGOTIATION_OPTIONS = NegotiationOptions(
     publisher_confirms=False,
     basic_nack=False,
     consumer_cancel_notify=False,
-    channel_max=7,
-    frame_max=constants.FRAME_MIN_FLOOR,
-    heartbeat=60,
+    channel_max=d.Short(7),
+    frame_max=d.Long(constants.FRAME_MIN_FLOOR),
+    heartbeat=d.Short(60),
 )
 
 
@@ -116,7 +117,8 @@ def test_start_ok_contradicts_mechanism(mechanism: str) -> None:
     start_ok = start_ok_of(send_unwrap(server, m.ConnectionStart))
 
     assert isinstance(
-        server.receive(replace(start_ok, mechanism=mechanism)), Unrepresentable
+        server.receive(replace(start_ok, mechanism=d.ShortStr(mechanism))),
+        Unrepresentable,
     )
 
 
@@ -126,21 +128,15 @@ def test_start_ok_contradicts_locale() -> None:
     start_ok = start_ok_of(send_unwrap(server, m.ConnectionStart))
 
     assert isinstance(
-        server.receive(replace(start_ok, locale="fr_FR")), Unrepresentable
+        server.receive(replace(start_ok, locale=d.ShortStr("fr_FR"))), Unrepresentable
     )
 
 
-@pytest.mark.parametrize(
-    "alteration",
-    (
-        {"channel_max": NEGOTIATION_OPTIONS.channel_max + 1},
-        {"frame_max": NEGOTIATION_OPTIONS.frame_max + 1},
-        {"heartbeat": NEGOTIATION_OPTIONS.heartbeat + 1},
-    ),
-    ids=("channel_max", "frame_max", "heartbeat"),
-)
-def test_tune_ok_contradicts_tune(alteration: dict[str, int]) -> None:
+@pytest.mark.parametrize("name", ("channel_max", "frame_max", "heartbeat"))
+def test_tune_ok_contradicts_tune(name: str) -> None:
     server = tuning(NEGOTIATION_OPTIONS)
     tune_ok = tune_ok_of(send_unwrap(server, m.ConnectionTune))
+    value = getattr(tune_ok, name)
+    altered = replace(tune_ok, **{name: type(value)(value + 1)})
 
-    assert isinstance(server.receive(replace(tune_ok, **alteration)), Unrepresentable)
+    assert isinstance(server.receive(altered), Unrepresentable)

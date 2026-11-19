@@ -13,7 +13,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from google.protobuf.message import Message
+
 from ..v1 import imposter_pb2 as pb
+
+type SelectorMethod = (
+    pb.ConnectionStartSelector
+    | pb.ConnectionStartOkSelector
+    | pb.ConnectionTuneSelector
+    | pb.ConnectionTuneOkSelector
+    | pb.ConnectionOpenSelector
+    | pb.ConnectionOpenOkSelector
+    | pb.ConnectionCloseSelector
+    | pb.ConnectionCloseOkSelector
+    | pb.ChannelOpenSelector
+    | pb.ChannelOpenOkSelector
+    | pb.ChannelCloseSelector
+    | pb.ChannelCloseOkSelector
+    | pb.ConfirmSelectSelector
+    | pb.ConfirmSelectOkSelector
+    | pb.ExchangeDeclareSelector
+    | pb.ExchangeDeclareOkSelector
+    | pb.ExchangeBindSelector
+    | pb.ExchangeBindOkSelector
+    | pb.QueueDeclareSelector
+    | pb.QueueDeclareOkSelector
+    | pb.QueueBindSelector
+    | pb.QueueBindOkSelector
+    | pb.BasicQosSelector
+    | pb.BasicQosOkSelector
+    | pb.BasicConsumeSelector
+    | pb.BasicConsumeOkSelector
+    | pb.BasicCancelSelector
+    | pb.BasicCancelOkSelector
+    | pb.BasicPublishSelector
+    | pb.BasicReturnSelector
+    | pb.BasicAckSelector
+    | pb.BasicNackSelector
+    | pb.BasicRejectSelector
+    | pb.BasicDeliverSelector
+    | pb.BasicGetSelector
+    | pb.BasicGetOkSelector
+    | pb.BasicGetEmptySelector
+)
 
 type PatternMethod = (
     pb.ConnectionStartPattern
@@ -55,20 +97,27 @@ type PatternMethod = (
     | pb.BasicGetEmptyPattern
 )
 
-PATTERN_FIELD_NAMES: frozendict[type[PatternMethod], str] = frozendict(
-    (type(getattr(pb.Pattern(), field.name)), field.name)
-    for field in pb.Pattern.DESCRIPTOR.oneofs_by_name["method"].fields
-)
+
+def wrap_in_method_oneof[C: Message](container: type[C], method: Message) -> C:
+    (field_name,) = (
+        field.name
+        for field in container.DESCRIPTOR.oneofs_by_name["method"].fields
+        if field.message_type == method.DESCRIPTOR
+    )
+
+    return container(**{field_name: method})
+
+
+def selector(method: SelectorMethod) -> pb.Selector:
+    return wrap_in_method_oneof(pb.Selector, method)
 
 
 def pattern(method: PatternMethod) -> pb.Pattern:
-    wrapped = pb.Pattern()
-    getattr(wrapped, PATTERN_FIELD_NAMES[type(method)]).CopyFrom(method)
-    return wrapped
+    return wrap_in_method_oneof(pb.Pattern, method)
 
 
-def weighted(method: PatternMethod, weight: int | None = None) -> pb.Weighted:
-    return pb.Weighted(pattern=pattern(method), weight=weight)
+def weighted(method: SelectorMethod, weight: int | None = None) -> pb.Weighted:
+    return pb.Weighted(selector=selector(method), weight=weight)
 
 
 def when_receive(method: PatternMethod, then_send: PatternMethod) -> pb.Scripted:

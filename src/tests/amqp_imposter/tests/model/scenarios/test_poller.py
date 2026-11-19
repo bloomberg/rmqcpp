@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import methods as m
 
 from ..helpers import (
@@ -43,14 +44,14 @@ def test_example_poller() -> None:
 
     assert first.delivery_tag == 1
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=1))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(1)))
     get(server)
 
     second = send_get_ok(server, body=b"two")
 
     assert second.delivery_tag == 2
 
-    receive_unwrap(server, m.BasicReject(delivery_tag=2, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(2), requeue=True))
     get(server)
 
     again = lookup_unique_sendable(server, m.BasicGetOk, redelivered=True)
@@ -59,7 +60,7 @@ def test_example_poller() -> None:
     assert again.delivery_tag == 3
 
     server.send(again)
-    receive_unwrap(server, m.BasicAck(delivery_tag=3))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(3)))
     get(server)
 
     assert not subsets_any_sendable(server, m.BasicGetOk, redelivered=True)

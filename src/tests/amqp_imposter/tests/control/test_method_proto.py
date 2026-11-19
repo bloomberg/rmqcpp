@@ -14,8 +14,6 @@
 # limitations under the License.
 
 from dataclasses import fields
-from datetime import UTC, datetime
-from decimal import Decimal
 
 import pytest
 
@@ -23,6 +21,7 @@ from amqp_imposter.amqp import transcript as tr
 from amqp_imposter.control import method_proto as mp
 from amqp_imposter.control.v1 import imposter_pb2 as pb
 from amqp_imposter.imposter import ImposterError
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -31,34 +30,43 @@ from ..helpers import concrete
 SAMPLES = 10
 
 
-NESTED_TABLE = mf.Table({"inner": 1, "deeper": mf.Table({"leaf": "x"})})
+NESTED_TABLE = mf.Table(
+    {
+        d.ShortStr("inner"): d.SignedLongLong(1),
+        d.ShortStr("deeper"): mf.Table({d.ShortStr("leaf"): "x"}),
+    }
+)
 
 TABLE_VALUES: tuple[mf.TableValue, ...] = (
     True,
     False,
-    0,
-    -1,
-    2**40,
+    d.SignedLongLong(0),
+    d.SignedLongLong(-1),
+    d.SignedLongLong(2**40),
     "",
     "text",
     b"",
     b"\xde\xad\xbe\xef",
-    Decimal("1.25"),
-    Decimal("-0.001"),
-    datetime(2026, 9, 6, 12, 30, 45, 123456, tzinfo=UTC),
+    d.DecimalValue("1.25"),
+    d.DecimalValue("-0.001"),
+    d.Timestamp(1788697845),
     mf.Void(),
     NESTED_TABLE,
-    (1, "two", False),
+    (d.SignedLongLong(1), "two", False),
     (mf.Void(), NESTED_TABLE),
     (),
 )
 
 PROPERTIES: tuple[mf.MessageProperties, ...] = (
     mf.MessageProperties(),
-    mf.MessageProperties(content_type="text/plain"),
-    mf.MessageProperties(priority=0, delivery_mode=2, timestamp=0),
+    mf.MessageProperties(content_type=d.ShortStr("text/plain")),
+    mf.MessageProperties(
+        priority=d.Octet(0), delivery_mode=d.Octet(2), timestamp=d.Timestamp(0)
+    ),
     mf.MessageProperties(headers=mf.Table()),
-    mf.MessageProperties(headers=NESTED_TABLE, app_id="", user_id="u"),
+    mf.MessageProperties(
+        headers=NESTED_TABLE, app_id=d.ShortStr(""), user_id=d.ShortStr("u")
+    ),
 )
 
 
@@ -118,15 +126,15 @@ def test_table_value_types_compose_from_to(value: mf.TableValue) -> None:
 def test_table_compose_from_to() -> None:
     table = mf.Table(
         {
-            "bool": True,
-            "long": 7,
-            "string": "s",
-            "bytes": b"\x00\xff",
-            "decimal": Decimal("3.5"),
-            "timestamp": datetime(2026, 1, 1, tzinfo=UTC),
-            "void": mf.Void(),
-            "table": NESTED_TABLE,
-            "array": (1, mf.Void()),
+            d.ShortStr("bool"): True,
+            d.ShortStr("long"): d.SignedLongLong(7),
+            d.ShortStr("string"): "s",
+            d.ShortStr("bytes"): b"\x00\xff",
+            d.ShortStr("decimal"): d.DecimalValue("3.5"),
+            d.ShortStr("timestamp"): d.Timestamp(1767225600),
+            d.ShortStr("void"): mf.Void(),
+            d.ShortStr("table"): NESTED_TABLE,
+            d.ShortStr("array"): (d.SignedLongLong(1), mf.Void()),
         }
     )
     assert mp.table_from_proto(mp.table_to_proto(table)) == table
@@ -139,22 +147,6 @@ def test_empty_table_compose_from_to() -> None:
 @pytest.mark.parametrize("properties", PROPERTIES, ids=range(len(PROPERTIES)))
 def test_properties_compose_from_to(properties: mf.MessageProperties) -> None:
     assert mp.properties_from_proto(mp.properties_to_proto(properties)) == properties
-
-
-def test_empty_properties_vs_absent() -> None:
-    empty = m.BasicDeliver(
-        consumer_tag="c", delivery_tag=1, properties=mf.MessageProperties()
-    )
-    absent = m.BasicDeliver(consumer_tag="c", delivery_tag=1, properties=None)
-
-    assert mp.from_proto(mp.to_proto(empty)) != mp.from_proto(mp.to_proto(absent))
-
-
-def test_empty_arguments_vs_absent() -> None:
-    empty = m.QueueDeclare(queue="q", arguments=mf.Table())
-    absent = m.QueueDeclare(queue="q", arguments=None)
-
-    assert mp.from_proto(mp.to_proto(empty)) != mp.from_proto(mp.to_proto(absent))
 
 
 def test_line_without_method() -> None:
@@ -174,7 +166,7 @@ def test_line_without_method() -> None:
 
 
 def test_line_with_method() -> None:
-    method = m.BasicDeliver(consumer_tag="ct", delivery_tag=1)
+    method = m.BasicDeliver(consumer_tag=d.ShortStr("ct"), delivery_tag=d.LongLong(1))
     line = tr.TranscriptLine(
         index=6,
         micros=10,

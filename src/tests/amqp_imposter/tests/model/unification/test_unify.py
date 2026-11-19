@@ -16,7 +16,9 @@
 from dataclasses import replace
 from typing import get_args
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import generators as g
+from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import method_unification as mu
 from amqp_imposter.model import methods as m
 
@@ -36,17 +38,26 @@ def test_unify_myself() -> None:
 
 
 def test_unify_myself_with_nones() -> None:
-    published = m.BasicPublish(exchange="ex", routing_key="rk", properties=None)
+    published = m.BasicPublish(
+        exchange=d.ShortStr("ex"),
+        routing_key=d.ShortStr("rk"),
+        properties=mf.MessageProperties(),
+    )
 
     assert mu.unify(published, published) == published
 
 
 def test_cannot_unify_kinds() -> None:
-    assert mu.unify_any(FRESH_DELIVERY, (m.BasicAck(delivery_tag=1),)) is None
+    assert (
+        mu.unify_any(FRESH_DELIVERY, (m.BasicAck(delivery_tag=d.LongLong(1)),)) is None
+    )
 
 
 def test_cannot_unify_fields() -> None:
-    assert mu.unify(FRESH_DELIVERY, replace(FRESH_DELIVERY, delivery_tag=2)) is None
+    assert (
+        mu.unify(FRESH_DELIVERY, replace(FRESH_DELIVERY, delivery_tag=d.LongLong(2)))
+        is None
+    )
 
 
 def test_unify_prefer_given() -> None:
@@ -69,16 +80,20 @@ def test_unify_prefer_arbitrary_against() -> None:
 
 def test_unify_take_both_sides() -> None:
     unified = mu.unify(
-        replace(FRESH_DELIVERY, body=b"a"), replace(FRESH_DELIVERY, exchange="ex")
+        replace(FRESH_DELIVERY, body=b"a"),
+        replace(FRESH_DELIVERY, exchange=d.ShortStr("ex")),
     )
 
-    assert unified == replace(FRESH_DELIVERY, body=b"a", exchange="ex")
+    assert unified == replace(FRESH_DELIVERY, body=b"a", exchange=d.ShortStr("ex"))
 
 
 def test_unify_any_skip_impossible() -> None:
     entry = replace(FRESH_DELIVERY, body=b"fixed")
 
-    assert mu.unify_any(FRESH_DELIVERY, (m.BasicAck(delivery_tag=1), entry)) == entry
+    assert (
+        mu.unify_any(FRESH_DELIVERY, (m.BasicAck(delivery_tag=d.LongLong(1)), entry))
+        == entry
+    )
 
 
 def test_unify_any_greedy() -> None:
@@ -90,5 +105,8 @@ def test_unify_any_greedy() -> None:
 
 def test_unify_any_impossible() -> None:
     assert (
-        mu.unify_any(FRESH_DELIVERY, (replace(FRESH_DELIVERY, delivery_tag=2),)) is None
+        mu.unify_any(
+            FRESH_DELIVERY, (replace(FRESH_DELIVERY, delivery_tag=d.LongLong(2)),)
+        )
+        is None
     )

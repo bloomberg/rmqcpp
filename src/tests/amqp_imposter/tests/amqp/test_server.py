@@ -29,7 +29,7 @@ from amqp_imposter.amqp.transcript import TranscriptEvent as ev
 from amqp_imposter.model import methods as m
 from amqp_imposter.model.method_weights import (
     UNPROMPTED_CONNECTION_CLOSE,
-    WeightedPattern,
+    WeightedSelector,
 )
 
 from .helpers import (
@@ -64,15 +64,15 @@ def make_config(idle_millis: int = se.DEFAULT_IDLE_MILLIS) -> se.SessionConfig:
 def start_only_on_idle(idle_millis: int) -> se.SessionConfig:
     return replace(
         make_config(idle_millis),
-        weights=(WeightedPattern(m.ConnectionStart(), 0),),
-        idle_weights=(WeightedPattern(m.ConnectionStart()),),
+        weights=(WeightedSelector(m.ConnectionStart(), 0),),
+        idle_weights=(WeightedSelector(m.ConnectionStart()),),
     )
 
 
 def teardown_on_idle(idle_millis: int) -> se.SessionConfig:
     return replace(
         make_config(idle_millis),
-        idle_weights=(WeightedPattern(UNPROMPTED_CONNECTION_CLOSE),),
+        idle_weights=(WeightedSelector(UNPROMPTED_CONNECTION_CLOSE),),
     )
 
 
@@ -111,7 +111,7 @@ async def egress_of(reader: asyncio.StreamReader) -> tuple[fr.Ingress, ...]:
 
 
 def make_event_seen_cb(server: AmqpServer, event: ev) -> Callable[[], bool]:
-    return lambda: event in transcript_events(server.session.transcript())
+    return lambda: event in transcript_events(server.session.transcript_lines())
 
 
 async def connection_open_handshake_over_socket(writer: asyncio.StreamWriter) -> None:
@@ -222,7 +222,9 @@ async def test_rejecting_connections() -> None:
         reader, refused = await make_amqp_client(port)
 
         assert await asyncio.wait_for(reader.read(), 2.0) == b""
-        assert ev.TCP_CONNECTED not in transcript_events(server.session.transcript())
+        assert ev.TCP_CONNECTED not in transcript_events(
+            server.session.transcript_lines()
+        )
 
     _, accepted = await make_amqp_client(port)
     await poll_until(make_event_seen_cb(server, ev.TCP_CONNECTED))
@@ -285,7 +287,7 @@ async def test_second_client_rejected() -> None:
     await server.stop()
 
 
-async def test_drop_closes_connection() -> None:
+async def test_socket_close_ends_stream() -> None:
     server = make_amqp_server()
     port = await server.start()
     reader, writer = await make_amqp_client(port)
@@ -330,7 +332,7 @@ async def test_reconnect_after_close() -> None:
     _, writer = await make_amqp_client(port)
     await poll_until(lambda: server.writer is not None)
 
-    assert ev.TCP_REJECTED not in transcript_events(server.session.transcript())
+    assert ev.TCP_REJECTED not in transcript_events(server.session.transcript_lines())
 
     await close_writer(writer)
     await server.stop()
@@ -363,7 +365,7 @@ async def test_method_ingress_resets_idle_timer() -> None:
         await writer.drain()
         await asyncio.sleep(0.01)
 
-    assert ev.IDLE_TIMEOUT not in transcript_events(server.session.transcript())
+    assert ev.IDLE_TIMEOUT not in transcript_events(server.session.transcript_lines())
     await poll_until(make_event_seen_cb(server, ev.IDLE_TIMEOUT))
 
     await close_writer(writer)
@@ -383,7 +385,7 @@ async def test_heartbeat_does_not_reset_idle_timer() -> None:
         await writer.drain()
         await asyncio.sleep(0.01)
 
-    assert ev.IDLE_TIMEOUT in transcript_events(server.session.transcript())
+    assert ev.IDLE_TIMEOUT in transcript_events(server.session.transcript_lines())
 
     await close_writer(writer)
     await server.stop()
@@ -406,7 +408,7 @@ async def test_slow_egress_does_not_starve_ingress() -> None:
     await server.stop()
 
 
-async def test_flush_on_drop() -> None:
+async def test_flush_on_socket_close() -> None:
     server = make_amqp_server()
     port = await server.start()
     reader, writer = await make_amqp_client(port)

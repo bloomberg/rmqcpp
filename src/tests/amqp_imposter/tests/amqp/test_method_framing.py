@@ -13,13 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import replace
-from typing import Any
+import struct
+from dataclasses import fields, is_dataclass, replace
+from typing import Any, get_args, get_origin, get_type_hints
 
+import pika.frame as pf
 import pika.spec as ps
 import pytest
+from pika.compat import long
 
 from amqp_imposter.amqp import method_framing as fr
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 from tests.amqp.helpers import CONNECTION_START
@@ -32,17 +36,19 @@ FRAME_MIN = 4096
 
 B_HEARTBEAT = b"\x08\x00\x00\x00\x00\x00\x00\xce"
 
-ACK = fr.MethodOnChannel(1, m.BasicAck(delivery_tag=1, multiple=False))
+ACK = fr.MethodOnChannel(1, m.BasicAck(delivery_tag=d.LongLong(1), multiple=False))
 B_ACK = b"\x01\x00\x01\x00\x00\x00\r\x00<\x00P\x00\x00\x00\x00\x00\x00\x00\x01\x00\xce"
 
 PUBLISH = fr.MethodOnChannel(
     1,
     m.BasicPublish(
-        exchange="ex",
-        routing_key="rk",
+        exchange=d.ShortStr("ex"),
+        routing_key=d.ShortStr("rk"),
         mandatory=False,
         immediate=False,
-        properties=mf.MessageProperties(content_type="text/plain", delivery_mode=2),
+        properties=mf.MessageProperties(
+            content_type=d.ShortStr("text/plain"), delivery_mode=d.Octet(2)
+        ),
         body=b"hello",
     ),
 )
@@ -82,11 +88,11 @@ def test_encodings(egress: fr.MethodOnChannel, encoded: bytes) -> None:
 @pytest.mark.parametrize(
     "egress",
     (
-        fr.MethodOnChannel(1, m.BasicAck(delivery_tag=7, multiple=True)),
+        fr.MethodOnChannel(1, m.BasicAck(delivery_tag=d.LongLong(7), multiple=True)),
         fr.MethodOnChannel(1, m.ChannelOpenOk()),
-        fr.MethodOnChannel(0, m.ConnectionStart(version_major=0, version_minor=9, mechanisms=("PLAIN", "AMQPLAIN"), locales=("en_US",), publisher_confirms=True, basic_nack=True, consumer_cancel_notify=True,)),
-        fr.MethodOnChannel(1, m.QueueDeclare(queue="q", passive=False, durable=True, exclusive=False, auto_delete=False, no_wait=False, arguments=mf.Table({"x-max-length": 10}))),
-        fr.MethodOnChannel(1, m.BasicDeliver(consumer_tag="ct", delivery_tag=1, redelivered=False, exchange="ex", routing_key="rk", properties=mf.MessageProperties(content_type="text/plain"), body=b"hi")),
+        fr.MethodOnChannel(0, m.ConnectionStart(version_major=d.Octet(0), version_minor=d.Octet(9), mechanisms=("PLAIN", "AMQPLAIN"), locales=("en_US",), publisher_confirms=True, basic_nack=True, consumer_cancel_notify=True,)),
+        fr.MethodOnChannel(1, m.QueueDeclare(queue=d.ShortStr("q"), passive=False, durable=True, exclusive=False, auto_delete=False, no_wait=False, arguments=mf.Table({d.ShortStr("x-max-length"): d.SignedLongLong(10)}))),
+        fr.MethodOnChannel(1, m.BasicDeliver(consumer_tag=d.ShortStr("ct"), delivery_tag=d.LongLong(1), redelivered=False, exchange=d.ShortStr("ex"), routing_key=d.ShortStr("rk"), properties=mf.MessageProperties(content_type=d.ShortStr("text/plain")), body=b"hi")),
     ),
 )
 def test_compose_decode_encode(egress: fr.MethodOnChannel) -> None:
@@ -96,7 +102,9 @@ def test_compose_decode_encode(egress: fr.MethodOnChannel) -> None:
 
 
 def test_decode_in_increments() -> None:
-    other = fr.MethodOnChannel(1, m.BasicAck(delivery_tag=2, multiple=False))
+    other = fr.MethodOnChannel(
+        1, m.BasicAck(delivery_tag=d.LongLong(2), multiple=False)
+    )
     buffer = fr.encode(ACK, FRAME_MAX) + fr.encode(other, FRAME_MAX)
 
     initial_items, initial_carry = fr.decode(buffer, FRAME_MAX)
@@ -128,11 +136,11 @@ def test_frame_body_remainder() -> None:
     big = fr.MethodOnChannel(
         1,
         m.BasicDeliver(
-            consumer_tag="c",
-            delivery_tag=1,
+            consumer_tag=d.ShortStr("c"),
+            delivery_tag=d.LongLong(1),
             redelivered=False,
-            exchange="e",
-            routing_key="r",
+            exchange=d.ShortStr("e"),
+            routing_key=d.ShortStr("r"),
             properties=mf.MessageProperties(),
             body=b"x" * 5000,
         ),
@@ -152,6 +160,12 @@ def test_frame_body_remainder() -> None:
         pytest.param(
             B_PUBLISH.replace(b"text/plain\x02\xce", b"text/plain\x02\x00"),
             id="bad_header_frame_end",
+        ),
+        pytest.param(
+            pf.Method(1, ps.Queue.Declare(arguments={"h": long(0)}))
+            .marshal()
+            .replace(b"\x01hl" + bytes(8), b"\x01hd" + struct.pack(">d", 1e300)),
+            id="unrepresentable_table_value",
         ),
     ),
 )
@@ -187,12 +201,33 @@ def as_received(method: m.Method) -> m.Method:
     )
 
 
+def has_field_domains(value: Any) -> bool:
+    hints = get_type_hints(type(value))
+
+    return all(
+        isinstance(
+            getattr(value, one.name),
+            tuple(
+                get_origin(t) or t
+                for t in get_args(hints[one.name]) or (hints[one.name],)
+            ),
+        )
+        and (
+            not is_dataclass(getattr(value, one.name))
+            or has_field_domains(getattr(value, one.name))
+        )
+        for one in fields(value)
+    )
+
+
 @pytest.mark.parametrize("kind", m.METHOD_KINDS, ids=lambda k: k.__name__)
 def test_every_kind_compose_decode_encode(kind: type[m.Method]) -> None:
     egress = fr.MethodOnChannel(1, concrete(kind, SEED))
     received = fr.MethodOnChannel(egress.channel, as_received(egress.method))
+    decoded = fr.decode(fr.encode(egress, FRAME_MAX), FRAME_MAX)
 
-    assert fr.decode(fr.encode(egress, FRAME_MAX), FRAME_MAX) == ((received,), b"")
+    assert decoded == ((received,), b"")
+    assert has_field_domains(decoded[0][0].method)
 
 
 CONNECTION_START_CAPABILITIES_OFF = replace(
@@ -223,7 +258,7 @@ def test_capabilities_are_read() -> None:
 
 def test_absent_longstr_is_empty() -> None:
     assert fr.from_pika(ps.Connection.StartOk()) == m.ConnectionStartOk(
-        mechanism="PLAIN", locale="en_US", response=""
+        mechanism=d.ShortStr("PLAIN"), locale=d.ShortStr("en_US"), response=""
     )
 
 

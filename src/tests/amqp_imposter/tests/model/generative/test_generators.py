@@ -16,6 +16,7 @@
 import pytest
 
 from amqp_imposter.model import GenState
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import generators as g
 
 STATE = GenState(12345)
@@ -25,7 +26,7 @@ SAMPLES = 200
 def test_comparable() -> None:
     assert g.RandomBytes(0, 64) == g.RandomBytes(0, 64)
     assert g.RandomBytes(0, 64) != g.RandomBytes(0, 32)
-    assert g.RandomText(1, 4) != g.RandomText(1, 8)
+    assert g.RandomText(d.ShortStr, 1, 4) != g.RandomText(d.ShortStr, 1, 8)
 
 
 def test_hashable() -> None:
@@ -37,7 +38,7 @@ def test_pure() -> None:
 
 
 def test_advance() -> None:
-    _, gen_state = g.RangedInt(1, 2).generate(STATE)
+    _, gen_state = g.RangedInt(d.Octet, 1, 2).generate(STATE)
 
     assert gen_state != STATE
 
@@ -55,7 +56,10 @@ def test_advance_diverges() -> None:
 
 
 def test_int_within_range() -> None:
-    drawn = {g.RangedInt(3, 7).generate(GenState(seed))[0] for seed in range(SAMPLES)}
+    drawn = {
+        g.RangedInt(d.Octet, 3, 7).generate(GenState(seed))[0]
+        for seed in range(SAMPLES)
+    }
 
     assert drawn <= set(range(3, 8))
     assert len(drawn) > 1
@@ -72,7 +76,8 @@ def test_bytes_within_range() -> None:
 
 def test_random_text_within_length_bounds() -> None:
     lengths = {
-        len(g.RandomText(2, 5).generate(GenState(seed))[0]) for seed in range(SAMPLES)
+        len(g.RandomText(d.ShortStr, 2, 5).generate(GenState(seed))[0])
+        for seed in range(SAMPLES)
     }
 
     assert lengths <= set(range(2, 6))
@@ -93,7 +98,7 @@ def test_certain_chance() -> None:
 
 def test_bad_bounds() -> None:
     with pytest.raises(g.BadBounds):
-        g.RangedInt(5, 1)
+        g.RangedInt(d.Octet, 5, 1)
     with pytest.raises(g.BadBounds):
         g.NonzeroChance(0)
     with pytest.raises(g.BadBounds):
@@ -101,4 +106,4 @@ def test_bad_bounds() -> None:
     with pytest.raises(g.BadBounds):
         g.RandomBytes(5, 1)
     with pytest.raises(g.BadBounds):
-        g.RandomText(-1, 1)
+        g.RandomText(d.ShortStr, -1, 1)

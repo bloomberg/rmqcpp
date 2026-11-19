@@ -62,7 +62,7 @@ Something else to think about:
 
 ----------------------------------------------
 
-What if we extended the patterns from names to fields too?
+What if we extended the selectors from names to fields too?
 
 This would also allow us to specify zero default weight to `connection.close`/`channel.close` (class-id=0, method-id=0) for no broker-initated teardown.
 For another example, the following would never confirm delivery tag 2 and keep cancelling a particular consumer (more useful once we have multiple channels).
@@ -91,12 +91,12 @@ For another example, the following would never confirm delivery tag 2 and keep c
 
 Let's assume we specify values on an arbitrary field - what will that mean?
 
-Consider if this statement even makes sense: "this is the weight of `basic.deliver(message='hello')` compared to all other deliveries" -- but there are ~infinitely many deliveries!
+Consider if this statement even makes sense: "this is the weight of `basic.deliver(body='hello')` compared to all other deliveries" -- but there are ~infinitely many deliveries!
 Maybe we could somehow bias towards this string?
 
 Sidestepping that objection for a moment, let's work through an example for a simpler type: bool.
 
-requeue is an arbitrary field on acknowledgments, so suppose we're given weighted patterns in the following order:
+requeue is an arbitrary field on acknowledgments, so suppose we're given weighted selectors in the following order:
 
 ```
     basic.nack(1) = 5
@@ -141,7 +141,7 @@ would've given:
 We're effectively implementing full pattern-matching with knowledge of the domain of each type, and trying to bias towards some values.
 This would feel fiddly to use and be way too complex to implement.
 
-We could try to simplify: perhaps the first pattern that matches an arbitrary field should fix it to that value.
+We could try to simplify: perhaps the first selector that matches an arbitrary field should fix it to that value.
 But then this would be unintuitive:
 
 ```
@@ -149,4 +149,4 @@ But then this would be unintuitive:
     basic.nack(requeue=False) = 100  # no-op, but you'd think it might weight the False side of basic.nack to 100.
 ```
 
-TL;DR: only exact fields make sense in patterns.
+TL;DR: only exact fields make sense in selectors.

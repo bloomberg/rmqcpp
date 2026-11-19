@@ -15,6 +15,7 @@
 
 import pytest
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -54,7 +55,12 @@ def test_declare_bind() -> None:
     send_unwrap(server, m.QueueDeclareOk)
 
     receive_unwrap(
-        server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY)
+        server,
+        m.QueueBind(
+            queue=QUEUE,
+            exchange=EXCHANGE,
+            routing_key=ROUTING_KEY,
+        ),
     )
     send_unwrap(server, m.QueueBindOk)
 
@@ -75,7 +81,12 @@ def test_bind_without_queue() -> None:
     server = channelled()
 
     receive_unwrap(
-        server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY)
+        server,
+        m.QueueBind(
+            queue=QUEUE,
+            exchange=EXCHANGE,
+            routing_key=ROUTING_KEY,
+        ),
     )
 
     assert subsets_any_sendable(server, m.QueueBindOk)
@@ -84,7 +95,7 @@ def test_bind_without_queue() -> None:
 def test_declare_anonymous_queue() -> None:
     server = channelled()
 
-    receive_unwrap(server, m.QueueDeclare(queue=""))
+    receive_unwrap(server, m.QueueDeclare(queue=d.ShortStr("")))
 
     assert lookup_unique_sendable(server, m.QueueDeclareOk).queue
 
@@ -127,7 +138,8 @@ def test_declare_optional_errors(
     server = channelled()
 
     receive_unwrap(
-        server, m.QueueDeclare(queue=QUEUE, passive=passive, no_wait=no_wait)
+        server,
+        m.QueueDeclare(queue=QUEUE, passive=passive, no_wait=no_wait),
     )
 
     assert error_replies_to(server, m.QueueDeclare) == errors
@@ -137,7 +149,10 @@ def test_declare_optional_errors(
 def test_bind_optional_errors(no_wait: bool) -> None:
     server = channelled()
 
-    receive_unwrap(server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE, no_wait=no_wait))
+    receive_unwrap(
+        server,
+        m.QueueBind(queue=QUEUE, exchange=EXCHANGE, no_wait=no_wait),
+    )
 
     assert error_replies_to(server, m.QueueBind) == channel_errors(
         mf.ReplyCode.NOT_FOUND,
@@ -152,7 +167,10 @@ def test_no_bind_ok_if_nowait() -> None:
     receive_unwrap(
         server,
         m.QueueBind(
-            queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY, no_wait=True
+            queue=QUEUE,
+            exchange=EXCHANGE,
+            routing_key=ROUTING_KEY,
+            no_wait=True,
         ),
     )
 
@@ -164,7 +182,12 @@ def test_nowait_declare_then_bind_ok() -> None:
 
     receive_unwrap(server, m.QueueDeclare(queue=QUEUE, no_wait=True))
     receive_unwrap(
-        server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY)
+        server,
+        m.QueueBind(
+            queue=QUEUE,
+            exchange=EXCHANGE,
+            routing_key=ROUTING_KEY,
+        ),
     )
 
     assert not subsets_any_sendable(server, m.QueueDeclareOk)

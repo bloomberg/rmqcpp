@@ -21,9 +21,9 @@ from . import method_weights as mw
 from . import methods as m
 from .generators import Gen
 
-type PatternMethods = tuple[mw.WeightedPattern, tuple[m.Method, ...]]
+type SelectorMethods = tuple[mw.WeightedSelector, tuple[m.Method, ...]]
 
-DEFAULT_MAX_SENDS = 1000
+DEFAULT_MAX_BURST_LENGTH = 1000
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,7 +33,7 @@ class Stop:
 
 @dataclass(frozen=True, slots=True)
 class MethodSampler(Gen[m.Method | Stop]):
-    unified_by_weighted_pattern: tuple[PatternMethods, ...]
+    unified_by_weighted_selector: tuple[SelectorMethods, ...]
     stop_weight: int
 
     def __post_init__(self) -> None:
@@ -42,11 +42,11 @@ class MethodSampler(Gen[m.Method | Stop]):
 
     def from_randomness(self, randomness: Random) -> m.Method | Stop:
         groups: tuple[tuple[m.Method | Stop, ...], ...] = (
-            *(unified for _, unified in self.unified_by_weighted_pattern),
+            *(unified for _, unified in self.unified_by_weighted_selector),
             (Stop(),),
         )
         weights = (
-            *(wp.weight for wp, _ in self.unified_by_weighted_pattern),
+            *(ws.weight for ws, _ in self.unified_by_weighted_selector),
             self.stop_weight,
         )
 
@@ -54,40 +54,40 @@ class MethodSampler(Gen[m.Method | Stop]):
         return randomness.choice(group)
 
 
-def methods_by_weighted_pattern(
-    methods: tuple[m.Method, ...], weighted_patterns: tuple[mw.WeightedPattern, ...]
-) -> tuple[PatternMethods, ...]:
-    unified_by_pattern: list[PatternMethods] = []
+def methods_by_weighted_selector(
+    methods: tuple[m.Method, ...], weighted_selectors: tuple[mw.WeightedSelector, ...]
+) -> tuple[SelectorMethods, ...]:
+    unified_by_selector: list[SelectorMethods] = []
 
     remaining = methods
 
-    for wp in weighted_patterns:
-        # take all the methods we can match by unifying with the pattern
-        pairs = tuple((method, mu.unify(wp.pattern, method)) for method in remaining)
+    for ws in weighted_selectors:
+        # take all the methods we can match by unifying with the selector
+        pairs = tuple((method, mu.unify(ws.selector, method)) for method in remaining)
 
         # partition to those that could unify and those that couldn't
         unified = tuple(u for _, u in pairs if u is not None)
         remaining = tuple(method for method, u in pairs if u is None)
 
-        unified_by_pattern.append((wp, unified))
+        unified_by_selector.append((ws, unified))
 
-    return tuple(unified_by_pattern)
+    return tuple(unified_by_selector)
 
 
 def make_sampler(
     methods: tuple[m.Method, ...],
-    weighted_patterns: tuple[mw.WeightedPattern, ...],
+    weighted_selectors: tuple[mw.WeightedSelector, ...],
     stop_weight: int,
 ) -> MethodSampler:
-    effective_wps = (
-        *weighted_patterns,
-        *mw.implicit_weighted_patterns(m.distinct_kinds(methods)),
+    effective_wss = (
+        *weighted_selectors,
+        *mw.implicit_weighted_selectors(m.distinct_kinds(methods)),
     )
     return MethodSampler(
         tuple(
-            (wp, unified)
-            for wp, unified in methods_by_weighted_pattern(methods, effective_wps)
-            if wp.weight > 0 and unified
+            (ws, unified)
+            for ws, unified in methods_by_weighted_selector(methods, effective_wss)
+            if ws.weight > 0 and unified
         ),
         stop_weight,
     )

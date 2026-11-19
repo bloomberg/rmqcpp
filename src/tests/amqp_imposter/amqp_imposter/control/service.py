@@ -21,6 +21,7 @@ import grpc
 from grpc import aio
 from grpc_reflection.v1alpha import reflection
 
+from ..amqp.transcript import TranscriptWatchLossy
 from ..imposter import Imposter, ImposterError
 from . import config_proto as cp
 from . import method_proto as mp
@@ -38,7 +39,7 @@ def now_micros() -> int:
 def status_reply(imposter: Imposter, epoch_micros: int) -> pb.StatusReply:
     reply = pb.StatusReply(
         amqp_greeted=imposter.session.is_greeted(),
-        transcript_lines=imposter.session.lines.recorded,
+        transcript_lines=imposter.session.transcript.next_index,
         epoch_micros=epoch_micros,
         config=cp.to_proto(imposter.session.config),
     )
@@ -91,8 +92,20 @@ class ImposterServicer(pb_grpc.ImposterServicer):
         request: pb.TranscriptRequest,
         context: aio.ServicerContext[object, object],
     ) -> AsyncIterator[pb.TranscriptLine]:
-        for line in self.imposter.session.transcript():
+        for line in self.imposter.session.transcript_lines():
             yield mp.line_to_proto(line)
+
+    async def WatchTranscript(
+        self,
+        request: pb.WatchTranscriptRequest,
+        context: aio.ServicerContext[object, object],
+    ) -> AsyncIterator[pb.TranscriptLine]:
+        try:
+            async for line in self.imposter.session.transcript.watch():
+                yield mp.line_to_proto(line)
+
+        except TranscriptWatchLossy as e:
+            await context.abort(grpc.StatusCode.DATA_LOSS, str(e))
 
 
 async def serve(path: Path, imposter: Imposter) -> aio.Server:

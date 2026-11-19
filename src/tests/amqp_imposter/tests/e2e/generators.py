@@ -36,9 +36,9 @@ __all__ = [
     "distinct_names",
 ]
 
-GEN_PREFETCH_COUNT = RangedInt(1, 30)
-GEN_DELIVERIES = RangedInt(1, 50)
-GEN_MESSAGE_COUNT = RangedInt(1, 30)
+GEN_PREFETCH_COUNT = RangedInt(int, 1, 30)
+GEN_DELIVERIES = RangedInt(int, 1, 50)
+GEN_MESSAGE_COUNT = RangedInt(int, 1, 30)
 
 
 def client_randomness(seed: int) -> Random:

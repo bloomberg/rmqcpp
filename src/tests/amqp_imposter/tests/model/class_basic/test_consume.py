@@ -20,6 +20,7 @@ from amqp_imposter.model import (
     Gen,
     Unrepresentable,
 )
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import method_unification as mu
 from amqp_imposter.model import methods as m
@@ -47,7 +48,12 @@ def test_consume_error_options(no_wait: bool) -> None:
     server = channelled()
 
     receive_unwrap(
-        server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=no_wait)
+        server,
+        m.BasicConsume(
+            queue=QUEUE,
+            consumer_tag=CONSUMER_TAG,
+            no_wait=no_wait,
+        ),
     )
 
     assert error_replies_to(server, m.BasicConsume) == channel_errors(
@@ -61,7 +67,8 @@ def test_no_consume_ok_if_nowait() -> None:
     server = channelled()
 
     receive_unwrap(
-        server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True)
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True),
     )
 
     assert not subsets_any_sendable(server, m.BasicConsumeOk)
@@ -70,7 +77,7 @@ def test_no_consume_ok_if_nowait() -> None:
 def test_consume_anonymous_tag() -> None:
     server = channelled()
 
-    receive_unwrap(server, m.BasicConsume(queue=QUEUE, consumer_tag=""))
+    receive_unwrap(server, m.BasicConsume(queue=QUEUE, consumer_tag=d.ShortStr("")))
 
     assert lookup_unique_sendable(server, m.BasicConsumeOk).consumer_tag
 
@@ -79,7 +86,10 @@ def test_consume_anonymous_tag() -> None:
 def test_consume_anonymous_tag_nowait() -> None:
     server = channelled()
 
-    receive_unwrap(server, m.BasicConsume(queue=QUEUE, consumer_tag="", no_wait=True))
+    receive_unwrap(
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=d.ShortStr(""), no_wait=True),
+    )
 
     assert lookup_unique_sendable(server, m.BasicDeliver).consumer_tag
 
@@ -90,14 +100,15 @@ def test_delivery_has_cluster_id_void() -> None:
     )
 
     assert not isinstance(delivery.properties, Gen)
-    assert delivery.properties is None or delivery.properties.cluster_id == mf.Void()
+    assert delivery.properties.cluster_id == mf.Void()
 
 
 def test_nowait_consume_orthogonal_to_delivery() -> None:
     server = channelled()
 
     receive_unwrap(
-        server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True)
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True),
     )
 
     send_unwrap(server, m.BasicDeliver, consumer_tag=CONSUMER_TAG)
@@ -110,7 +121,8 @@ def test_discard_nowait_consume_error(kind: type[m.Method]) -> None:
     server = channelled()
 
     receive_unwrap(
-        server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True)
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True),
     )
     send_unwrap(server, kind, consumer_tag=CONSUMER_TAG)
 
@@ -122,14 +134,19 @@ def test_nowait_reconsume_after_nowait_cancel(declare: bool) -> None:
     server = channelled()
 
     receive_unwrap(
-        server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True)
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True),
     )
     receive_unwrap(server, m.BasicCancel(consumer_tag=CONSUMER_TAG, no_wait=True))
     if declare:
         receive_unwrap(server, m.QueueDeclare(queue=QUEUE, no_wait=True))
     receive_unwrap(
         server,
-        m.BasicConsume(queue=QUEUE, consumer_tag=OTHER_CONSUMER_TAG, no_wait=True),
+        m.BasicConsume(
+            queue=QUEUE,
+            consumer_tag=OTHER_CONSUMER_TAG,
+            no_wait=True,
+        ),
     )
 
     assert not subsets_any_sendable(server, m.BasicDeliver, consumer_tag=CONSUMER_TAG)
@@ -156,7 +173,10 @@ def test_second_consumer_on_another_queue_is_unrepresentable() -> None:
 
     assert isinstance(
         server.receive(
-            m.BasicConsume(queue=OTHER_QUEUE, consumer_tag=OTHER_CONSUMER_TAG)
+            m.BasicConsume(
+                queue=OTHER_QUEUE,
+                consumer_tag=OTHER_CONSUMER_TAG,
+            )
         ),
         Unrepresentable,
     )
@@ -176,7 +196,10 @@ def test_reused_consumer_tag_is_unrepresentable() -> None:
 def test_pipelined_second_consumer_is_unrepresentable() -> None:
     server = channelled()
 
-    receive_unwrap(server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG))
+    receive_unwrap(
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG),
+    )
 
     assert isinstance(
         server.receive(m.BasicConsume(queue=QUEUE, consumer_tag=OTHER_CONSUMER_TAG)),

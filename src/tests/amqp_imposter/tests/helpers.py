@@ -15,39 +15,40 @@
 
 from typing import Any
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import generators as g
 from amqp_imposter.model import method_unification as mu
 from amqp_imposter.model import methods as m
 
 EXACT_VALUES: dict[str, Any] = {
-    "version_major": 0,
-    "version_minor": 9,
+    "version_major": d.Octet(0),
+    "version_minor": d.Octet(9),
     "mechanisms": ("PLAIN", "AMQPLAIN"),
     "locales": ("en_US",),
     "publisher_confirms": True,
     "basic_nack": True,
     "consumer_cancel_notify": True,
-    "mechanism": "PLAIN",
-    "locale": "en_US",
-    "channel_max": 2047,
-    "frame_max": 131072,
-    "heartbeat": 60,
-    "reply_code": 406,
-    "reply_text": "FORCED",
-    "class_id": 60,
-    "method_id": 40,
-    "consumer_tag": "ctag",
-    "delivery_tag": 7,
-    "exchange": "ex",
-    "routing_key": "rk",
+    "mechanism": d.ShortStr("PLAIN"),
+    "locale": d.ShortStr("en_US"),
+    "channel_max": d.Short(2047),
+    "frame_max": d.Long(131072),
+    "heartbeat": d.Short(60),
+    "reply_code": d.Short(406),
+    "reply_text": d.ShortStr("FORCED"),
+    "class_id": d.Short(60),
+    "method_id": d.Short(40),
+    "consumer_tag": d.ShortStr("ctag"),
+    "delivery_tag": d.LongLong(7),
+    "exchange": d.ShortStr("ex"),
+    "routing_key": d.ShortStr("rk"),
 }
 
 
-def filled(kind: type[m.Method]) -> m.Method:
+def filled[M: m.Method](kind: type[M]) -> M:
     return kind(**{name: EXACT_VALUES[name] for name in m.exact_fields(kind)})
 
 
-def concrete(kind: type[m.Method], seed: int) -> m.Method:
+def concrete[M: m.Method](kind: type[M], seed: int) -> M:
     method, _ = mu.concretise(filled(kind), g.GenState(seed))
 
     return method

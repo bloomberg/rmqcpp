@@ -18,7 +18,9 @@ from ..transport import ImposterEndpoints
 from ..v1 import imposter_pb2 as pb
 from .configuration_util import (
     PatternMethod,
+    SelectorMethod,
     pattern,
+    selector,
     weighted,
     when_receive,
     when_send,
@@ -37,6 +39,7 @@ from .transcript_util import (
     format_transcript,
     format_transcript_around,
     format_transcript_line,
+    seek_transcript_line,
     transcript_line_method,
 )
 
@@ -48,6 +51,7 @@ __all__ = [
     "ImposterShutdownError",
     "ImposterStartupError",
     "PatternMethod",
+    "SelectorMethod",
     "Transcript",
     "amqp_imposter",
     "connect_imposter",
@@ -58,6 +62,8 @@ __all__ = [
     "pattern",
     "pb",
     "run_imposter",
+    "seek_transcript_line",
+    "selector",
     "transcript_line_method",
     "weighted",
     "when_receive",

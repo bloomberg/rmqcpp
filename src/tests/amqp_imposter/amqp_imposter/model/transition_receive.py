@@ -24,6 +24,7 @@ from .constants import (
     PROTOCOL_MAJOR,
     PROTOCOL_MINOR,
 )
+from .domains import NonEmptyShortStr, ShortStr
 from .method_fields import assert_concrete
 
 
@@ -79,15 +80,15 @@ def method_queue_declare_ok(method: m.QueueDeclare) -> m.QueueDeclareOk:
         # anonymous queue; owe a reply with arbitrary queue name
         return m.QueueDeclareOk()
     else:
-        return m.QueueDeclareOk(queue=queue)
+        return m.QueueDeclareOk(queue=NonEmptyShortStr(queue))
 
 
-def method_basic_consume_ok(consumer_tag: str) -> m.BasicConsumeOk:
+def method_basic_consume_ok(consumer_tag: ShortStr) -> m.BasicConsumeOk:
     if consumer_tag == "":
         # anonymous consumer; owe a reply with arbitrary consumer tag
         return m.BasicConsumeOk()
     else:
-        return m.BasicConsumeOk(consumer_tag=consumer_tag)
+        return m.BasicConsumeOk(consumer_tag=NonEmptyShortStr(consumer_tag))
 
 
 def apply_greeted(
@@ -430,8 +431,8 @@ def apply_basic_publish(
         return state
 
     if not validate_properties(properties):
-        # TODO should we send PRECONDITION_FAILED instead
-        return ms.Unrepresentable(method)
+        state = owe_error(state, mf.ReplyCode.PRECONDITION_FAILED, method)
+        return state
 
     state = ms.owe_optional_reply(state, method)
 
@@ -467,10 +468,7 @@ def validate_delivery_mode(delivery_mode: int | None) -> bool:
     return delivery_mode is None or delivery_mode in DELIVERY_MODES
 
 
-def validate_properties(properties: mf.MessageProperties | None) -> bool:
-    if properties is None:
-        return True
-
+def validate_properties(properties: mf.MessageProperties) -> bool:
     return validate_priority(properties.priority) and validate_delivery_mode(
         properties.delivery_mode
     )

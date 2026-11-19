@@ -17,7 +17,7 @@ import select
 import subprocess
 import sys
 import tempfile
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -68,6 +68,11 @@ class AmqpImposter:
     def transcript(self) -> Transcript:
         return Transcript(
             self.stub.Transcript(pb.TranscriptRequest(), timeout=TIMEOUT_CONTROL)
+        )
+
+    def watch_transcript(self, *, timeout: float) -> Iterator[pb.TranscriptLine]:
+        return iter(
+            self.stub.WatchTranscript(pb.WatchTranscriptRequest(), timeout=timeout)
         )
 
 

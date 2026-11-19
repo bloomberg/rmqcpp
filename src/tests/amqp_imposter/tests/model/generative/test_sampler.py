@@ -19,8 +19,9 @@ from amqp_imposter.model import (
     GenState,
     ModelServer,
     Unrepresentable,
-    WeightedPattern,
+    WeightedSelector,
 )
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import method_sampling as msa
 from amqp_imposter.model import method_weights as mw
@@ -53,20 +54,35 @@ OPTIONAL_ERROR_CAUSES: tuple[tuple[MakeServer, m.Method], ...] = (
     (connected, m.ChannelOpen()),
     (channelled, m.ExchangeDeclare(exchange=EXCHANGE, passive=True)),
     (channelled, m.ExchangeDeclare(exchange=EXCHANGE, no_wait=True)),
-    (channelled, m.ExchangeBind(destination=EXCHANGE, source=EXCHANGE, no_wait=True)),
+    (
+        channelled,
+        m.ExchangeBind(destination=EXCHANGE, source=EXCHANGE, no_wait=True),
+    ),
     (channelled, m.QueueDeclare(queue=QUEUE, passive=True)),
     (channelled, m.QueueDeclare(queue=QUEUE, no_wait=True)),
-    (channelled, m.QueueBind(queue=QUEUE, exchange=EXCHANGE, no_wait=True)),
-    (channelled, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True)),
+    (
+        channelled,
+        m.QueueBind(queue=QUEUE, exchange=EXCHANGE, no_wait=True),
+    ),
+    (
+        channelled,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_wait=True),
+    ),
     (channelled, m.BasicGet(queue=QUEUE)),
     (channelled, m.BasicPublish(exchange=EXCHANGE)),
 )
 FORCED_ERROR_CAUSES: tuple[tuple[MakeServer, m.Method], ...] = (
-    (consuming, m.BasicAck(delivery_tag=0, multiple=False)),
+    (consuming, m.BasicAck(delivery_tag=d.LongLong(0), multiple=False)),
     (channelled, m.ChannelOpen()),
     (connected, m.ConfirmSelect()),
-    (channelled, m.BasicQos(prefetch_size=1)),
+    (channelled, m.BasicQos(prefetch_size=d.Long(1))),
     (channelled, m.BasicPublish(exchange=EXCHANGE, immediate=True)),
+    (
+        channelled,
+        m.BasicPublish(
+            exchange=EXCHANGE, properties=mf.MessageProperties(priority=d.Octet(10))
+        ),
+    ),
 )
 
 
@@ -115,10 +131,10 @@ def test_no_default_unprompted_teardown() -> None:
 
 
 def test_no_forced_teardown() -> None:
-    teardown = (WeightedPattern(mw.UNPROMPTED_CONNECTION_CLOSE, WEIGHT),)
+    teardown = (WeightedSelector(mw.UNPROMPTED_CONNECTION_CLOSE, WEIGHT),)
 
     sent = {
-        type(connected_seeded(seed).send_gen(weighted_patterns=teardown))
+        type(connected_seeded(seed).send_gen(weighted_selectors=teardown))
         for seed in range(SAMPLES)
     }
 
@@ -152,50 +168,52 @@ def test_no_default_optional_errors(make_server: MakeServer, cause: m.Method) ->
 
 def test_enable_optional_error() -> None:
     not_found = (
-        WeightedPattern(m.ChannelClose(reply_code=mf.ReplyCode.NOT_FOUND), WEIGHT),
+        WeightedSelector(m.ChannelClose(reply_code=mf.ReplyCode.NOT_FOUND), WEIGHT),
     )
 
     sent = {
-        type(polling_seeded(seed).send_gen(weighted_patterns=not_found))
+        type(polling_seeded(seed).send_gen(weighted_selectors=not_found))
         for seed in range(SAMPLES)
     }
 
     assert m.ChannelClose in sent
 
 
-def test_pattern_too_specific() -> None:
+def test_selector_too_specific() -> None:
     server = consuming()
-    specific = WeightedPattern(m.BasicCancel(consumer_tag=CONSUMER_TAG), WEIGHT)
+    specific = WeightedSelector(m.BasicCancel(consumer_tag=CONSUMER_TAG), WEIGHT)
 
     sampler = msa.make_sampler(server.sendables(), (specific,), mw.STOP_WEIGHT)
 
     cancels = [
-        (wp.pattern, len(unified))
-        for wp, unified in sampler.unified_by_weighted_pattern
-        if isinstance(wp.pattern, m.BasicCancel)
+        (ws.selector, len(unified))
+        for ws, unified in sampler.unified_by_weighted_selector
+        if isinstance(ws.selector, m.BasicCancel)
     ]
-    assert cancels == [(specific.pattern, 1)]
+    assert cancels == [(specific.selector, 1)]
 
 
 def test_enable_unprompted_cancel() -> None:
     server = consuming()
-    unprompted_cancel = (WeightedPattern(m.BasicCancel(), WEIGHT),)
+    unprompted_cancel = (WeightedSelector(m.BasicCancel(), WEIGHT),)
 
     sampler = [
-        server.send_gen(weighted_patterns=unprompted_cancel) for _ in range(SAMPLES)
+        server.send_gen(weighted_selectors=unprompted_cancel) for _ in range(SAMPLES)
     ]
 
     assert any(isinstance(sent, m.BasicCancel) for sent in sampler)
 
 
-def test_spurious_weighted_pattern() -> None:
+def test_spurious_weighted_selector() -> None:
     server = consuming()
 
-    spurious = (WeightedPattern(m.BasicCancel(consumer_tag="other"), WEIGHT),)
+    spurious = (
+        WeightedSelector(m.BasicCancel(consumer_tag=d.ShortStr("other")), WEIGHT),
+    )
 
     sampler = msa.make_sampler(server.sendables(), spurious, mw.STOP_WEIGHT)
 
-    weights = [wp.weight for wp, _ in sampler.unified_by_weighted_pattern]
+    weights = [ws.weight for ws, _ in sampler.unified_by_weighted_selector]
     assert WEIGHT not in weights
 
 
@@ -231,10 +249,10 @@ def test_never_sample_zero() -> None:
         publish(server)
 
         never_sample_tag_2 = (
-            WeightedPattern(m.BasicAck(delivery_tag=2), 0),
-            WeightedPattern(m.BasicNack(delivery_tag=2), 0),
+            WeightedSelector(m.BasicAck(delivery_tag=d.LongLong(2)), 0),
+            WeightedSelector(m.BasicNack(delivery_tag=d.LongLong(2)), 0),
         )
-        return server.send_gen(weighted_patterns=never_sample_tag_2)
+        return server.send_gen(weighted_selectors=never_sample_tag_2)
 
     confirmed = {
         sent.delivery_tag

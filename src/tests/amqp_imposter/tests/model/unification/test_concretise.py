@@ -15,6 +15,7 @@
 
 from dataclasses import fields, replace
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import generators as g
 from amqp_imposter.model import method_unification as mu
 from amqp_imposter.model import methods as m
@@ -61,7 +62,7 @@ def test_concretise_but_one_field() -> None:
 
     # now one where an arbitrary field has already become concrete
     concrete, concrete_gen_state = mu.concretise(
-        replace(FRESH_DELIVERY, exchange="ex"), g.DEFAULT_GEN_STATE
+        replace(FRESH_DELIVERY, exchange=d.ShortStr("ex")), g.DEFAULT_GEN_STATE
     )
 
     assert concrete.exchange == "ex"

@@ -16,6 +16,7 @@
 from dataclasses import replace
 
 from amqp_imposter.model import Unrepresentable
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import methods as m
 
 from ..helpers import (
@@ -50,7 +51,8 @@ def test_send_bad_field_match() -> None:
     publish(server)
 
     assert isinstance(
-        server.send(m.BasicAck(delivery_tag=99, multiple=False)), Unrepresentable
+        server.send(m.BasicAck(delivery_tag=d.LongLong(99), multiple=False)),
+        Unrepresentable,
     )
 
 
@@ -71,7 +73,10 @@ def test_illegal_send_does_not_advance() -> None:
     before_sendable = server.sendables()
     before_gen = server.gen_state
 
-    assert isinstance(server.send(m.BasicDeliver("nobody", 99)), Unrepresentable)
+    assert isinstance(
+        server.send(m.BasicDeliver(d.ShortStr("nobody"), d.LongLong(99))),
+        Unrepresentable,
+    )
 
     assert server.sendables() == before_sendable
     # critical for anything generative to be deterministic!
@@ -93,7 +98,7 @@ def test_deliver_uses_overriden_body() -> None:
 
     fresh = match_fresh_delivery(server)
     server.send(replace(fresh, body=b"blabla"))
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
 
     again = lookup_unique_sendable(server, m.BasicDeliver, redelivered=True)
 
@@ -105,7 +110,7 @@ def test_old_redelivery_still_available() -> None:
 
     fresh = match_fresh_delivery(server)
     server.send(replace(fresh, body=b"blabla"))
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
 
     again = lookup_unique_sendable(server, m.BasicDeliver, redelivered=True)
     server.send(replace(again, body=b"something else"))

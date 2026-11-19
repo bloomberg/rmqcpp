@@ -149,10 +149,13 @@ def test_connection_close_and_cancel(seed: int) -> None:
         seed=seed,
         weights=(
             weighted(
-                pb.ConnectionClosePattern(class_id=0, method_id=0),
+                pb.ConnectionCloseSelector(class_id=0, method_id=0),
                 pb.BASE_WEIGHT // 50,
             ),
-            weighted(pb.BasicCancelPattern(), pb.BASE_WEIGHT // 10),
+            weighted(
+                pb.BasicCancelSelector(),
+                pb.BASE_WEIGHT // 10,
+            ),
         ),
     )
 
@@ -179,10 +182,13 @@ def test_channel_close_then_connection_close(seed: int) -> None:
         ),
         weights=(
             weighted(
-                pb.ChannelClosePattern(reply_text=NOT_FORCED_REPLY_TEXT),
+                pb.ChannelCloseSelector(reply_text=NOT_FORCED_REPLY_TEXT),
                 pb.BASE_WEIGHT // 10,
             ),
-            weighted(pb.BasicCancelPattern(), pb.BASE_WEIGHT // 10),
+            weighted(
+                pb.BasicCancelSelector(),
+                pb.BASE_WEIGHT // 10,
+            ),
         ),
         seed=seed,
     )
@@ -200,10 +206,13 @@ def test_channel_close_and_cancel(seed: int) -> None:
     config = pb.SessionConfig(
         weights=(
             weighted(
-                pb.ChannelClosePattern(reply_text=NOT_FORCED_REPLY_TEXT),
+                pb.ChannelCloseSelector(reply_text=NOT_FORCED_REPLY_TEXT),
                 pb.BASE_WEIGHT // 10,
             ),
-            weighted(pb.BasicCancelPattern(), pb.BASE_WEIGHT // 50),
+            weighted(
+                pb.BasicCancelSelector(),
+                pb.BASE_WEIGHT // 50,
+            ),
         ),
         seed=seed,
     )

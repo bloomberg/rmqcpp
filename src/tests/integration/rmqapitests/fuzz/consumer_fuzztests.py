@@ -199,19 +199,22 @@ def test_consumer_with_teardowns(seed: int, imposter: AmqpImposter) -> None:
     consumer = consumer_scenario(seed)
     weights = (
         weighted(
-            pb.ConnectionClosePattern(reply_text=NOT_FORCED_REPLY_TEXT),
+            pb.ConnectionCloseSelector(reply_text=NOT_FORCED_REPLY_TEXT),
             pb.BASE_WEIGHT // 20,
         ),
         weighted(
-            pb.ChannelClosePattern(reply_text=NOT_FORCED_REPLY_TEXT),
+            pb.ChannelCloseSelector(reply_text=NOT_FORCED_REPLY_TEXT),
             pb.BASE_WEIGHT // 20,
         ),
-        weighted(pb.BasicCancelPattern(), pb.BASE_WEIGHT // 20),
+        weighted(
+            pb.BasicCancelSelector(),
+            pb.BASE_WEIGHT // 20,
+        ),
     )
     # clients with backoff have long idle periods, so let them recover
     idle_weights = (
-        weighted(pb.ConnectionClosePattern(class_id=0, method_id=0), 0),
-        weighted(pb.BasicCancelPattern(), 0),
+        weighted(pb.ConnectionCloseSelector(class_id=0, method_id=0), 0),
+        weighted(pb.BasicCancelSelector(), 0),
     )
 
     imposter.configure(

@@ -16,6 +16,7 @@
 import pytest
 
 from amqp_imposter.model import DEFAULT_GEN_STATE, Gen
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import method_unification as mu
 from amqp_imposter.model import methods as m
@@ -60,7 +61,7 @@ def test_get_ok() -> None:
     assert not subsets_any_sendable(server, m.BasicGetOk)
     assert not subsets_any_sendable(server, m.BasicGetEmpty)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=1))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(1)))
 
     assert not subsets_any_sendable(server, m.ChannelClose)
 
@@ -97,7 +98,7 @@ def test_no_requeued_get_reply_unprompted() -> None:
     server = polling()
 
     send_get_ok(server, body=b"blabla")
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
 
     assert not subsets_any_sendable(server, m.BasicGetOk)
     assert not subsets_any_sendable(server, m.BasicGetEmpty)
@@ -131,7 +132,7 @@ def test_get_ok_has_cluster_id_void() -> None:
     )
 
     assert not isinstance(got.properties, Gen)
-    assert got.properties is None or got.properties.cluster_id == mf.Void()
+    assert got.properties.cluster_id == mf.Void()
 
 
 def test_get_full_prefetch() -> None:
@@ -181,7 +182,7 @@ def test_get_returns_requeued_message() -> None:
     server = polling()
 
     send_get_ok(server, body=b"blabla")
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
     get(server)
 
     again = lookup_unique_sendable(server, m.BasicGetOk, redelivered=True)
@@ -194,7 +195,7 @@ def test_get_retires_requeued_message() -> None:
     server = polling()
 
     send_get_ok(server, body=b"blabla")
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
     get(server)
     send_unwrap(server, m.BasicGetOk, redelivered=True)
     get(server)
@@ -208,7 +209,9 @@ def test_get_leaves_other_requeued_messages() -> None:
     send_get_ok(server, body=b"one")
     get(server)
     send_get_ok(server, body=b"two")
-    receive_unwrap(server, m.BasicNack(delivery_tag=2, multiple=True, requeue=True))
+    receive_unwrap(
+        server, m.BasicNack(delivery_tag=d.LongLong(2), multiple=True, requeue=True)
+    )
     get(server)
     send_unwrap(server, m.BasicGetOk, body=b"one")
     get(server)
@@ -220,7 +223,7 @@ def test_consumer_redelivers_message_requeued_from_get() -> None:
     server = polling()
 
     send_get_ok(server, body=b"blabla")
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
     consume(server)
 
     assert lookup_unique_sendable(server, m.BasicDeliver, redelivered=True).body == (
@@ -232,7 +235,7 @@ def test_get_redelivers_message_requeued_from_consumer() -> None:
     server = consuming()
 
     delivered = deliver(server, 1)
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
     get(server)
 
     again = lookup_unique_sendable(server, m.BasicGetOk, redelivered=True)
@@ -277,7 +280,7 @@ def test_multiple_ack_spans_get_and_delivery() -> None:
     get(server)
     send_unwrap(server, m.BasicGetOk, delivery_tag=2)
     deliver(server, 3)
-    receive_unwrap(server, m.BasicAck(delivery_tag=3, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(3), multiple=True))
 
     assert not subsets_any_sendable(server, m.ChannelClose)
     assert not subsets_any_sendable(server, m.BasicDeliver, redelivered=True)
@@ -290,7 +293,9 @@ def test_multiple_nack_requeues_get_and_delivery() -> None:
     get(server)
     send_unwrap(server, m.BasicGetOk, delivery_tag=2)
     deliver(server, 3)
-    receive_unwrap(server, m.BasicNack(delivery_tag=3, multiple=True, requeue=True))
+    receive_unwrap(
+        server, m.BasicNack(delivery_tag=d.LongLong(3), multiple=True, requeue=True)
+    )
 
     assert len(lookup_sendables(server, m.BasicDeliver, redelivered=True)) == 3
 
