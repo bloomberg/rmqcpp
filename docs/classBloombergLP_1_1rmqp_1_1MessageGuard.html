@@ -108,6 +108,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ab990b4ed4691fce08a97031b736e5d30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad511fe075c74eece8332f9c5ab0e8682"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqp_1_1MessageGuard.html#ad511fe075c74eece8332f9c5ab0e8682">nack</a> (bool requeue=true)=0</td></tr>
 <tr class="separator:ad511fe075c74eece8332f9c5ab0e8682"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a789118aac674d02f75b7be94ff4069bc"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqp_1_1MessageGuard.html#a789118aac674d02f75b7be94ff4069bc">reject</a> (bool requeue=true)=0</td></tr>
+<tr class="separator:a789118aac674d02f75b7be94ff4069bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a628f6f5e2577e675b800f3dc60c91659"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classBloombergLP_1_1rmqp_1_1Consumer.html">Consumer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqp_1_1MessageGuard.html#a628f6f5e2577e675b800f3dc60c91659">consumer</a> () const =0</td></tr>
 <tr class="memdesc:a628f6f5e2577e675b800f3dc60c91659"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reference to the <a class="el" href="classBloombergLP_1_1rmqp_1_1Consumer.html" title="Provide a RabbitMQ Async Consumer API.">Consumer</a>.  <a href="classBloombergLP_1_1rmqp_1_1MessageGuard.html#a628f6f5e2577e675b800f3dc60c91659">More...</a><br /></td></tr>
 <tr class="separator:a628f6f5e2577e675b800f3dc60c91659"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -284,9 +286,52 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<p >Negative acknowledge the received message. Callable only once. by default requeues the message on the broker for redelivery, if requeue is false, then the message will be either dead lettered (if a dead letter exchange is specified) or dropped if not. </p>
+<p >Return the received message to the broker without counting this delivery as a failed processing attempt (<code>basic.nack</code>). Callable only once. By default requeues the message on the broker for redelivery, if requeue is false, then the message will be either dead lettered (if a dead letter exchange is specified) or dropped if not.</p>
+<dl class="section warning"><dt>Warning</dt><dd>Consider <code>reject</code> instead. From RabbitMQ 4.3 a quorum queue's delivery-limit is measured against the broker's delivery-count, which <code>nack</code> does not increment, so a message returned with <code>nack(true)</code> never reaches the limit. See the documentation below.</dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a href="https://www.rabbitmq.com/docs/nack">https://www.rabbitmq.com/docs/nack</a> </dd>
+<dd>
+<a href="https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented">https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented</a> </dd></dl>
 
 <p>Implemented in <a class="el" href="classBloombergLP_1_1rmqa_1_1MessageGuard.html#a3406f30957f7c165e62415cb0207452e">BloombergLP::rmqa::MessageGuard</a>.</p>
+
+</div>
+</div>
+<a id="a789118aac674d02f75b7be94ff4069bc" name="a789118aac674d02f75b7be94ff4069bc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a789118aac674d02f75b7be94ff4069bc">&#9670;&nbsp;</a></span>reject()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void BloombergLP::rmqp::MessageGuard::reject </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>requeue</em> = <code>true</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p >Reject the received message, counting this delivery as a failed processing attempt (<code>basic.reject</code>). Callable only once.</p>
+<p >Use this when processing a message failed. Unlike <code>nack</code>, it increments the broker's delivery-count, so from RabbitMQ 4.3 the delivery counts towards a quorum queue's delivery-limit, where one is set, and the message is eventually dead lettered or dropped rather than redelivered forever.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">requeue</td><td>if <code>true</code> the broker returns the message to the queue for redelivery. If <code>false</code> the message is dead lettered (if a dead letter exchange is specified) or dropped if not.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section see"><dt>See also</dt><dd><a href="https://www.rabbitmq.com/docs/nack">https://www.rabbitmq.com/docs/nack</a> </dd>
+<dd>
+<a href="https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented">https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented</a> </dd></dl>
+
+<p>Implemented in <a class="el" href="classBloombergLP_1_1rmqa_1_1MessageGuard.html#aacb8cd4269609453174d28533238fd84">BloombergLP::rmqa::MessageGuard</a>.</p>
 
 </div>
 </div>

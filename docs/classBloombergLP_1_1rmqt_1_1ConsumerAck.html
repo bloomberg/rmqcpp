@@ -69,6 +69,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="classBloombergLP_1_1rmqt_1_1ConsumerAck-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">BloombergLP::rmqt::ConsumerAck Class Reference</div></div>
 </div><!--header-->
@@ -76,24 +77,132 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a3d7a2a3cc90552b6915d593c7c768255"><td class="memItemLeft" align="right" valign="top"><a id="a3d7a2a3cc90552b6915d593c7c768255" name="a3d7a2a3cc90552b6915d593c7c768255"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>Type</b> { <b>ACK</b>
-, <b>REJECT</b>
-, <b>REQUEUE</b>
+<tr class="memitem:a3d7a2a3cc90552b6915d593c7c768255"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255">Type</a> { <br />
+&#160;&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255a03da3a11f49287ebb0ed31336c67700b">ACK</a> = 0
+, <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255ad9d6e2ca593add37a8d8c45484bd0626">NACK_REQUEUE_FALSE</a> = 1
+, <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255adcd315f768648e93f19770342770a736">NACK_REQUEUE_TRUE</a> = 2
+, <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255ac4c5c7efddeb4fb10750661b6d485611">REJECT_REQUEUE_FALSE</a> = 3
+, <br />
+&#160;&#160;<a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255a2bd0ca1679f5e50291cfef09d7bcc2a5">REJECT_REQUEUE_TRUE</a> = 4
+, <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255af12e309d57207cb10eaded95050acc56">REJECT</a> = NACK_REQUEUE_FALSE
+, <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255ab3e8dd719160aec6817801e63664cc91">REQUEUE</a> = NACK_REQUEUE_TRUE
+<br />
  }</td></tr>
 <tr class="separator:a3d7a2a3cc90552b6915d593c7c768255"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ac415aaeff4412fc887696c6e1e13d3a4"><td class="memItemLeft" align="right" valign="top"><a id="ac415aaeff4412fc887696c6e1e13d3a4" name="ac415aaeff4412fc887696c6e1e13d3a4"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ConsumerAck</b> (const <a class="el" href="classBloombergLP_1_1rmqt_1_1Envelope.html">Envelope</a> &amp;envelope, Type type)</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ConsumerAck</b> (const <a class="el" href="classBloombergLP_1_1rmqt_1_1Envelope.html">Envelope</a> &amp;envelope, <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255">Type</a> type)</td></tr>
 <tr class="separator:ac415aaeff4412fc887696c6e1e13d3a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3ccfd19cadfc834d59e1dc41ceb61ed5"><td class="memItemLeft" align="right" valign="top"><a id="a3ccfd19cadfc834d59e1dc41ceb61ed5" name="a3ccfd19cadfc834d59e1dc41ceb61ed5"></a>
 const <a class="el" href="classBloombergLP_1_1rmqt_1_1Envelope.html">Envelope</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>envelope</b> () const</td></tr>
 <tr class="separator:a3ccfd19cadfc834d59e1dc41ceb61ed5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8bae86e71f81536e3a1bbe6b68e965fb"><td class="memItemLeft" align="right" valign="top"><a id="a8bae86e71f81536e3a1bbe6b68e965fb" name="a8bae86e71f81536e3a1bbe6b68e965fb"></a>
-Type&#160;</td><td class="memItemRight" valign="bottom"><b>type</b> () const</td></tr>
+<a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255">Type</a>&#160;</td><td class="memItemRight" valign="bottom"><b>type</b> () const</td></tr>
 <tr class="separator:a8bae86e71f81536e3a1bbe6b68e965fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a5878cd56dd125ac775bba758b5390785"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a5878cd56dd125ac775bba758b5390785">usesBasicReject</a> (<a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255">Type</a> type)</td></tr>
+<tr class="separator:a5878cd56dd125ac775bba758b5390785"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f934d3901b4dc9e9923d2d7f79d78f2"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a2f934d3901b4dc9e9923d2d7f79d78f2">supportsMultiple</a> (<a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255">Type</a> type)</td></tr>
+<tr class="separator:a2f934d3901b4dc9e9923d2d7f79d78f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Enumeration Documentation</h2>
+<a id="a3d7a2a3cc90552b6915d593c7c768255" name="a3d7a2a3cc90552b6915d593c7c768255"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d7a2a3cc90552b6915d593c7c768255">&#9670;&nbsp;</a></span>Type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255">BloombergLP::rmqt::ConsumerAck::Type</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >How a consumer resolved a delivery.</p>
+<p >Each value names the AMQP method it sends and the value of that method's <code>requeue</code> flag. Only <code>basic.reject</code> counts the delivery as a failed attempt; <code>basic.nack</code> does not.</p>
+<p >Values are fixed and must not be renumbered.</p>
+<dl class="section see"><dt>See also</dt><dd><a href="https://www.rabbitmq.com/docs/nack">https://www.rabbitmq.com/docs/nack</a> </dd>
+<dd>
+<a href="https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented">https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented</a> </dd></dl>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a3d7a2a3cc90552b6915d593c7c768255a03da3a11f49287ebb0ed31336c67700b" name="a3d7a2a3cc90552b6915d593c7c768255a03da3a11f49287ebb0ed31336c67700b"></a>ACK&#160;</td><td class="fielddoc"><p ><code>basic.ack</code> </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a3d7a2a3cc90552b6915d593c7c768255ad9d6e2ca593add37a8d8c45484bd0626" name="a3d7a2a3cc90552b6915d593c7c768255ad9d6e2ca593add37a8d8c45484bd0626"></a>NACK_REQUEUE_FALSE&#160;</td><td class="fielddoc"><p ><code>basic.nack</code> with requeue=false </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a3d7a2a3cc90552b6915d593c7c768255adcd315f768648e93f19770342770a736" name="a3d7a2a3cc90552b6915d593c7c768255adcd315f768648e93f19770342770a736"></a>NACK_REQUEUE_TRUE&#160;</td><td class="fielddoc"><p ><code>basic.nack</code> with requeue=true </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a3d7a2a3cc90552b6915d593c7c768255ac4c5c7efddeb4fb10750661b6d485611" name="a3d7a2a3cc90552b6915d593c7c768255ac4c5c7efddeb4fb10750661b6d485611"></a>REJECT_REQUEUE_FALSE&#160;</td><td class="fielddoc"><p ><code>basic.reject</code> with requeue=false </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a3d7a2a3cc90552b6915d593c7c768255a2bd0ca1679f5e50291cfef09d7bcc2a5" name="a3d7a2a3cc90552b6915d593c7c768255a2bd0ca1679f5e50291cfef09d7bcc2a5"></a>REJECT_REQUEUE_TRUE&#160;</td><td class="fielddoc"><p ><code>basic.reject</code> with requeue=true </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a3d7a2a3cc90552b6915d593c7c768255af12e309d57207cb10eaded95050acc56" name="a3d7a2a3cc90552b6915d593c7c768255af12e309d57207cb10eaded95050acc56"></a>REJECT&#160;</td><td class="fielddoc"><dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000004">Deprecated:</a></b></dt><dd>Use <code>NACK_REQUEUE_FALSE</code>. This name predates support for <code>basic.reject</code> and is misleading: it sends <code>basic.nack</code>, so the delivery is not counted as a failed attempt. </dd></dl>
+</td></tr>
+<tr><td class="fieldname"><a id="a3d7a2a3cc90552b6915d593c7c768255ab3e8dd719160aec6817801e63664cc91" name="a3d7a2a3cc90552b6915d593c7c768255ab3e8dd719160aec6817801e63664cc91"></a>REQUEUE&#160;</td><td class="fielddoc"><dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000005">Deprecated:</a></b></dt><dd>Use <code>NACK_REQUEUE_TRUE</code>. This name predates support for <code>basic.reject</code>. </dd></dl>
+</td></tr>
+</table>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a2f934d3901b4dc9e9923d2d7f79d78f2" name="a2f934d3901b4dc9e9923d2d7f79d78f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2f934d3901b4dc9e9923d2d7f79d78f2">&#9670;&nbsp;</a></span>supportsMultiple()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool BloombergLP::rmqt::ConsumerAck::supportsMultiple </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255">Type</a>&#160;</td>
+          <td class="paramname"><em>type</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p >RETURN <code>true</code> if the AMQP method that <code>type</code> sends carries a <code>multiple</code> flag, and so may resolve every unresolved delivery up to and including its delivery tag in one frame.</p>
+<p ><code>basic.ack</code> and <code>basic.nack</code> carry it, <code>basic.reject</code> does not, so a reject is always sent one frame per delivery. Combining rejects would resolve only the highest delivery tag and leave the rest outstanding.</p>
+<dl class="section see"><dt>See also</dt><dd><a href="https://www.rabbitmq.com/amqp-0-9-1-reference#basic.reject">https://www.rabbitmq.com/amqp-0-9-1-reference#basic.reject</a> </dd></dl>
+
+</div>
+</div>
+<a id="a5878cd56dd125ac775bba758b5390785" name="a5878cd56dd125ac775bba758b5390785"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5878cd56dd125ac775bba758b5390785">&#9670;&nbsp;</a></span>usesBasicReject()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool BloombergLP::rmqt::ConsumerAck::usesBasicReject </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255">Type</a>&#160;</td>
+          <td class="paramname"><em>type</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p >RETURN <code>true</code> if <code>type</code> sends <code>basic.reject</code> rather than <code>basic.nack</code>. Note this is <code>false</code> for the deprecated <code>REJECT</code>, which sends <code>basic.nack</code>. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>src/rmq/rmqt/<a class="el" href="rmqt__consumerack_8h_source.html">rmqt_consumerack.h</a></li>
 <li>src/rmq/rmqt/rmqt_consumerack.cpp</li>

@@ -26,5 +26,6 @@ var searchData=
   ['sharedstate_23',['SharedState',['../structBloombergLP_1_1rmqa_1_1ProducerImpl_1_1SharedState.html',1,'BloombergLP::rmqa::ProducerImpl']]],
   ['shortstring_24',['ShortString',['../classBloombergLP_1_1rmqt_1_1ShortString.html',1,'BloombergLP::rmqt']]],
   ['simpleendpoint_25',['SimpleEndpoint',['../classBloombergLP_1_1rmqt_1_1SimpleEndpoint.html',1,'BloombergLP::rmqt::SimpleEndpoint'],['../classBloombergLP_1_1rmqt_1_1SimpleEndpoint.html#a256ecbb7717e00daf83ae11042ec78fd',1,'BloombergLP::rmqt::SimpleEndpoint::SimpleEndpoint()']]],
-  ['state_26',['State',['../classBloombergLP_1_1rmqa_1_1MessageGuard.html#afc5a00269250530b9daea5a44a862bbc',1,'BloombergLP::rmqa::MessageGuard']]]
+  ['state_26',['State',['../classBloombergLP_1_1rmqa_1_1MessageGuard.html#afc5a00269250530b9daea5a44a862bbc',1,'BloombergLP::rmqa::MessageGuard']]],
+  ['supportsmultiple_27',['supportsMultiple',['../classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a2f934d3901b4dc9e9923d2d7f79d78f2',1,'BloombergLP::rmqt::ConsumerAck']]]
 ];

@@ -20,5 +20,6 @@ var searchData=
   ['setproducertracing_17',['setProducerTracing',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a0ff74746b464ec8e9172ff314a5b165b',1,'BloombergLP::rmqa::RabbitContextOptions']]],
   ['setshuffleconnectionendpoints_18',['setShuffleConnectionEndpoints',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a5c52fe0a8e4f4c1d52570882c643d25f',1,'BloombergLP::rmqa::RabbitContextOptions']]],
   ['setthreadpool_19',['setThreadpool',['../classBloombergLP_1_1rmqa_1_1RabbitContextOptions.html#a359f79d0803f8544e1eb319e3a4df6f4',1,'BloombergLP::rmqa::RabbitContextOptions::setThreadpool()'],['../classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a44c43f15145fb5683b333b3b39cfdf2a',1,'BloombergLP::rmqt::ConsumerConfig::setThreadpool()']]],
-  ['simpleendpoint_20',['SimpleEndpoint',['../classBloombergLP_1_1rmqt_1_1SimpleEndpoint.html#a256ecbb7717e00daf83ae11042ec78fd',1,'BloombergLP::rmqt::SimpleEndpoint']]]
+  ['simpleendpoint_20',['SimpleEndpoint',['../classBloombergLP_1_1rmqt_1_1SimpleEndpoint.html#a256ecbb7717e00daf83ae11042ec78fd',1,'BloombergLP::rmqt::SimpleEndpoint']]],
+  ['supportsmultiple_21',['supportsMultiple',['../classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a2f934d3901b4dc9e9923d2d7f79d78f2',1,'BloombergLP::rmqt::ConsumerAck']]]
 ];

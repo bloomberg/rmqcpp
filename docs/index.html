@@ -212,6 +212,10 @@ $(function() {
 <div class="line">    }</div>
 <div class="line">};</div>
 </div><!-- fragment --><p ><b>Important</b> &ndash; messages should be acknowledged only after completely processing them. For example, if the consumer logic sends received messages to some RabbitMQ exchange, the message should be acknowledged only after receiving the publisher confirm of the send operation. A premature call to <code>ack()</code> followed by a failure of the user's consumer logic can result in a dropped message.</p>
+<h2>Returning a message: <code>reject</code> vs <code>nack</code></h2>
+<p ><code>reject</code> and <code>nack</code> both return a delivered message to the broker, for it to discard or requeue, but from RabbitMQ 4.3 they are not counted the same way. Only <code>basic.reject</code> increments the broker's <code>delivery-count</code>, which is what a quorum queue's <code>delivery-limit</code> is measured against. Use <code>reject</code> when processing a message failed, so that a message which always fails is eventually dead lettered or dropped rather than redelivered forever. <code>nack</code> is kept because <code>basic.nack</code> is part of the protocol.</p>
+<p >If a <code>MessageGuard</code> is destroyed without <code>ack</code>, <code>nack</code> or <code>reject</code> being called, such as when the consumer callback throws, the library rejects it with requeue.</p>
+<p >See <a href="https://www.rabbitmq.com/docs/nack">Negative Acknowledgements</a> and the broker's table of <a href="https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented">when delivery count is incremented</a>.</p>
 <h1>Shutting down</h1>
 <div class="fragment"><div class="line"><span class="comment">// Close the producer. The method `waitForConfirms()` will block until all sent messages are confirmed by the broker.</span></div>
 <div class="line">producer-&gt;waitForConfirms();</div>

@@ -71,7 +71,11 @@ $(function() {
 <dt>Member <a class="el" href="classBloombergLP_1_1rmqa_1_1VHost.html#a8f973aae688c92af2442be7fcd0570a9">BloombergLP::rmqa::VHost::generateConsumerTag</a>  ()</dt>
 <dd><a class="anchor" id="_deprecated000002"></a>use <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerConfig.html#a532eb232579478b4e309a0d71c45c510" title="Util method to generate a default Consumer tag.">rmqt::ConsumerConfig::generateConsumerTag()</a>  </dd>
 <dt>Member <a class="el" href="classBloombergLP_1_1rmqp_1_1Consumer.html#ae88ba70a0502dae9a4706b59a98446bc">BloombergLP::rmqp::Consumer::cancelAndDrain</a>  (const bsls::TimeInterval &amp;timeout)=0</dt>
-<dd><a class="anchor" id="_deprecated000003"></a></dd>
+<dd><a class="anchor" id="_deprecated000003"></a> </dd>
+<dt>Member <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255af12e309d57207cb10eaded95050acc56">BloombergLP::rmqt::ConsumerAck::REJECT</a>  </dt>
+<dd><a class="anchor" id="_deprecated000004"></a>Use <code>NACK_REQUEUE_FALSE</code>. This name predates support for <code>basic.reject</code> and is misleading: it sends <code>basic.nack</code>, so the delivery is not counted as a failed attempt.  </dd>
+<dt>Member <a class="el" href="classBloombergLP_1_1rmqt_1_1ConsumerAck.html#a3d7a2a3cc90552b6915d593c7c768255ab3e8dd719160aec6817801e63664cc91">BloombergLP::rmqt::ConsumerAck::REQUEUE</a>  </dt>
+<dd><a class="anchor" id="_deprecated000005"></a>Use <code>NACK_REQUEUE_TRUE</code>. This name predates support for <code>basic.reject</code>. </dd>
 </dl>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
