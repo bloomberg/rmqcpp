@@ -11,6 +11,7 @@ add_executable(rmqamqpt_tests
     rmqamqpt_basicpublish.t.cpp
     rmqamqpt_basicqos.t.cpp
     rmqamqpt_basicqosok.t.cpp
+    rmqamqpt_basicreject.t.cpp
     rmqamqpt_basicreturn.t.cpp
     rmqamqpt_buffer.t.cpp
     rmqamqpt_channelclose.t.cpp

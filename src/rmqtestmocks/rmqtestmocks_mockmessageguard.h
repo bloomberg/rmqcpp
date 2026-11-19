@@ -34,6 +34,7 @@ class MockMessageGuard : public rmqp::MessageGuard {
     MOCK_CONST_METHOD0(envelope, const rmqt::Envelope&());
     MOCK_METHOD0(ack, void());
     MOCK_METHOD1(nack, void(bool));
+    MOCK_METHOD1(reject, void(bool));
     MOCK_CONST_METHOD0(consumer, rmqp::Consumer*());
 
     MOCK_METHOD0(transferOwnership, rmqp::TransferrableMessageGuard());

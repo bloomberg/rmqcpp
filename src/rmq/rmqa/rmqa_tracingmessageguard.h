@@ -40,8 +40,8 @@ namespace rmqa {
 /// context is created from the thread that will process the message callback,
 /// and the context will be bound to the messageGuard. The object allows
 /// acknowledging either positively or negatively, with options to requeue. If a
-/// MessageGuard object is allowed to destruct before ack/nack is called a nack
-/// with requeue is automatically signaled to the broker.
+/// MessageGuard object is allowed to destruct before ack/nack/reject is called
+/// a reject with requeue is automatically signaled to the broker.
 
 class TracingMessageGuard : public rmqa::MessageGuard {
   public:

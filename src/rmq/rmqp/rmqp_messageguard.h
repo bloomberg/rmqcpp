@@ -52,11 +52,40 @@ class MessageGuard {
     /// Should only be called _after_ the message has been fully processed
     virtual void ack() = 0;
 
-    /// Negative acknowledge the received message. Callable only once.
-    /// by default requeues the message on the broker for redelivery, if
+    /// Return the received message to the broker without counting this
+    /// delivery as a failed processing attempt (`basic.nack`). Callable only
+    /// once. By default requeues the message on the broker for redelivery, if
     /// requeue is false, then the message will be either dead lettered (if a
     /// dead letter exchange is specified) or dropped if not.
+    ///
+    /// \warning Consider `reject` instead. From RabbitMQ 4.3 a quorum queue's
+    ///          delivery-limit is measured against the broker's
+    ///          delivery-count, which `nack` does not increment, so a message
+    ///          returned with `nack(true)` never reaches the limit. See the
+    ///          documentation below.
+    ///
+    /// \see https://www.rabbitmq.com/docs/nack
+    /// \see
+    /// https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented
     virtual void nack(bool requeue = true) = 0;
+
+    /// Reject the received message, counting this delivery as a failed
+    /// processing attempt (`basic.reject`). Callable only once.
+    ///
+    /// Use this when processing a message failed. Unlike `nack`, it
+    /// increments the broker's delivery-count, so from RabbitMQ 4.3 the
+    /// delivery counts towards a quorum queue's delivery-limit, where one is
+    /// set, and the message is eventually dead lettered or dropped rather
+    /// than redelivered forever.
+    ///
+    /// \param requeue if `true` the broker returns the message to the queue
+    ///        for redelivery. If `false` the message is dead lettered (if a
+    ///        dead letter exchange is specified) or dropped if not.
+    ///
+    /// \see https://www.rabbitmq.com/docs/nack
+    /// \see
+    /// https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented
+    virtual void reject(bool requeue = true) = 0;
 
     /// Reference to the Consumer
     virtual Consumer* consumer() const = 0;

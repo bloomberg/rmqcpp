@@ -17,8 +17,14 @@
 
 #include <rmqt_envelope.h>
 
+#include <bslmf_assert.h>
+
 namespace BloombergLP {
 namespace rmqt {
+
+// Until REJECT and REQUEUE can be retired
+BSLMF_ASSERT(ConsumerAck::REJECT == ConsumerAck::NACK_REQUEUE_FALSE);
+BSLMF_ASSERT(ConsumerAck::REQUEUE == ConsumerAck::NACK_REQUEUE_TRUE);
 
 ConsumerAck::ConsumerAck(const Envelope& envelope, Type type)
 : d_envelope(envelope)
@@ -27,6 +33,30 @@ ConsumerAck::ConsumerAck(const Envelope& envelope, Type type)
 }
 
 ConsumerAck::~ConsumerAck() {}
+
+bool ConsumerAck::usesBasicReject(Type type)
+{
+    return type == REJECT_REQUEUE_FALSE || type == REJECT_REQUEUE_TRUE;
+}
+
+bool ConsumerAck::supportsMultiple(Type type) { return !usesBasicReject(type); }
+
+bsl::ostream& operator<<(bsl::ostream& os, ConsumerAck::Type type)
+{
+    switch (type) {
+        case ConsumerAck::ACK:
+            return os << "ACK";
+        case ConsumerAck::NACK_REQUEUE_FALSE:
+            return os << "NACK_REQUEUE_FALSE";
+        case ConsumerAck::NACK_REQUEUE_TRUE:
+            return os << "NACK_REQUEUE_TRUE";
+        case ConsumerAck::REJECT_REQUEUE_FALSE:
+            return os << "REJECT_REQUEUE_FALSE";
+        case ConsumerAck::REJECT_REQUEUE_TRUE:
+            return os << "REJECT_REQUEUE_TRUE";
+    }
+    return os << "UNKNOWN(" << static_cast<int>(type) << ")";
+}
 
 } // namespace rmqt
 } // namespace BloombergLP

@@ -39,8 +39,10 @@ namespace rmqa {
 /// A MessageGuard is passed to the rmqa::Consumer callback function
 /// (defined in rmqp::Consumer) for each message. The object allows
 /// acknowledging either positively or negatively, with options to requeue. If a
-/// MessageGuard object is allowed to destruct before ack/nack is called a nack
-/// with requeue is automatically signaled to the broker.
+/// MessageGuard object is allowed to destruct before ack/nack/reject is called
+/// - for example because the consumer callback threw - a reject with requeue is
+/// automatically signaled to the broker. The delivery is therefore counted as a
+/// failed attempt and is subject to the queue's delivery-limit, if one is set.
 
 class MessageGuard : public rmqp::MessageGuard {
   public:
@@ -69,8 +71,8 @@ class MessageGuard : public rmqp::MessageGuard {
     /// to (n)ack.
     MessageGuard(const MessageGuard& obj);
 
-    /// If not processed (`ack()`/`nack()` called), message will be nacked
-    /// automatically.
+    /// If not processed (`ack()`/`nack()`/`reject()` called), message will be
+    /// rejected with requeue automatically.
     ~MessageGuard() BSLS_KEYWORD_OVERRIDE;
 
     /// Access the received message
@@ -87,12 +89,42 @@ class MessageGuard : public rmqp::MessageGuard {
     /// redelivered to another consumer.
     void ack() BSLS_KEYWORD_OVERRIDE;
 
-    /// Negative acknowledge the received message. Callable only once.
+    /// Return the received message to the broker without counting this
+    /// delivery as a failed processing attempt (`basic.nack`). Callable only
+    /// once.
     /// \param requeue `true`
     /// requeues the message on the broker for redelivery , if
     /// `false`, then the message will be either dead lettered (if a
     /// dead letter exchange is specified) or dropped if not.
+    ///
+    /// \warning Consider `reject` instead. From RabbitMQ 4.3 a quorum queue's
+    ///          delivery-limit is measured against the broker's
+    ///          delivery-count, which `nack` does not increment, so a message
+    ///          returned with `nack(true)` never reaches the limit. See the
+    ///          documentation below.
+    ///
+    /// \see https://www.rabbitmq.com/docs/nack
+    /// \see
+    /// https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented
     void nack(bool requeue = true) BSLS_KEYWORD_OVERRIDE;
+
+    /// Reject the received message, counting this delivery as a failed
+    /// processing attempt (`basic.reject`). Callable only once.
+    ///
+    /// Use this when processing a message failed. Unlike `nack`, it
+    /// increments the broker's delivery-count, so from RabbitMQ 4.3 the
+    /// delivery counts towards a quorum queue's delivery-limit, where one is
+    /// set, and the message is eventually dead lettered or dropped rather
+    /// than redelivered forever.
+    ///
+    /// \param requeue `true` requeues the message on the broker for
+    /// redelivery. If `false`, the message will be either dead lettered (if a
+    /// dead letter exchange is specified) or dropped if not.
+    ///
+    /// \see https://www.rabbitmq.com/docs/nack
+    /// \see
+    /// https://www.rabbitmq.com/docs/quorum-queues#when-is-delivery-count-incremented
+    void reject(bool requeue = true) BSLS_KEYWORD_OVERRIDE;
 
     /// Pointer to the Consumer, e.g. to cancel the message flow
     virtual rmqp::Consumer* consumer() const BSLS_KEYWORD_OVERRIDE;

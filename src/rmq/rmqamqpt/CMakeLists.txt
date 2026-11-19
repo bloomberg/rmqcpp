@@ -11,6 +11,7 @@ add_library(rmqamqpt OBJECT
     rmqamqpt_basicpublish.cpp
     rmqamqpt_basicqos.cpp
     rmqamqpt_basicqosok.cpp
+    rmqamqpt_basicreject.cpp
     rmqamqpt_basicreturn.cpp
     rmqamqpt_buffer.cpp
     rmqamqpt_channelclose.cpp

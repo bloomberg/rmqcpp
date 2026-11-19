@@ -159,6 +159,9 @@ class ReceiveChannel : public Channel {
     void sendAck(uint64_t deliveryTag, bool multiple = false);
     void
     sendNack(uint64_t deliveryTag, bool requeue = true, bool multiple = false);
+    /// basic.reject has no `multiple` field, so this always resolves a single
+    /// delivery
+    void sendReject(uint64_t deliveryTag, bool requeue = true);
     void sendAckOrNack(const rmqamqpt::BasicMethod& basicMethod,
                        uint64_t deliveryTag,
                        bool multiple);
@@ -184,6 +187,18 @@ class ReceiveChannel : public Channel {
     bool d_channelPausedOnOpen;
     bsls::TimeInterval d_pauseStartTime;
     bsls::TimeInterval d_resumeStartTime;
+
+    /// Metric tags for Metrics::CONSUMER_MESSAGE_HANDLED, indexed by
+    /// rmqt::ConsumerAck::Type. Built once in the constructor so that
+    /// resolving a delivery, which happens per message on the event loop
+    /// thread, allocates nothing.
+    bsl::vector<bsl::vector<bsl::pair<bsl::string, bsl::string> > >
+        d_messageHandledTags;
+
+    /// Held rather than converted from Metrics::CONSUMER_MESSAGE_HANDLED on
+    /// every publish: it is too long for the short-string optimisation, so
+    /// each conversion would allocate
+    bsl::string d_messageHandledMetricName;
 };
 
 } // namespace rmqamqp

@@ -33,6 +33,7 @@
 #include <rmqt_message.h>
 #include <rmqt_topology.h>
 #include <rmqtestutil_mockmetricpublisher.h>
+#include <rmqtestutil_testsuite.t.h>
 
 #include <bdlf_bind.h>
 
@@ -152,8 +153,18 @@ class ReceiveChannelTests : public rmqamqp::ChannelTests {
     {
         ackOrNackMessage(rc,
                          id,
-                         requeue ? rmqt::ConsumerAck::REQUEUE
-                                 : rmqt::ConsumerAck::REJECT);
+                         requeue ? rmqt::ConsumerAck::NACK_REQUEUE_TRUE
+                                 : rmqt::ConsumerAck::NACK_REQUEUE_FALSE);
+    }
+
+    void rejectMessage(rmqamqp::ReceiveChannel& rc,
+                       const rmqt::Envelope& id,
+                       bool requeue = true)
+    {
+        ackOrNackMessage(rc,
+                         id,
+                         requeue ? rmqt::ConsumerAck::REJECT_REQUEUE_TRUE
+                                 : rmqt::ConsumerAck::REJECT_REQUEUE_FALSE);
     }
 
     void setupConsumerNoReply(rmqamqp::ReceiveChannel& rc,
@@ -813,6 +824,67 @@ TEST_F(ReceiveChannelTests, NackMessage)
     EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
 }
 
+TEST_F(ReceiveChannelTests, RejectMessage)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    EXPECT_THAT(receiveChannel->state(), Eq(rmqamqp::Channel::READY));
+
+    setupConsumer(*receiveChannel, "consumer1");
+    EXPECT_TRUE(receiveChannel->consumerIsActive());
+
+    const uint64_t deliveryTag = 41;
+    rmqt::Envelope id_reject(deliveryTag,
+                             receiveChannel->lifetimeId(),
+                             "consumer1",
+                             "exchange",
+                             "routing-key",
+                             false);
+    receiveMessage(*receiveChannel, id_reject.deliveryTag(), "consumer1");
+
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(1));
+
+    rmqamqpt::BasicReject basicReject(id_reject.deliveryTag(), true);
+    EXPECT_CALL(d_callback,
+                onAsyncWrite(
+                    ::testing::Pointee(MessageEq(rmqamqp::Message(
+                        rmqamqpt::Method(rmqamqpt::BasicMethod(basicReject))))),
+                    _))
+        .WillOnce(InvokeArgument<1>());
+
+    rejectMessage(*receiveChannel, id_reject);
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
+}
+
+TEST_F(ReceiveChannelTests, RejectMessageNoRequeue)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, "consumer1");
+
+    const uint64_t deliveryTag = 41;
+    rmqt::Envelope id_reject(deliveryTag,
+                             receiveChannel->lifetimeId(),
+                             "consumer1",
+                             "exchange",
+                             "routing-key",
+                             false);
+    receiveMessage(*receiveChannel, id_reject.deliveryTag(), "consumer1");
+
+    rmqamqpt::BasicReject basicReject(id_reject.deliveryTag(), false);
+    EXPECT_CALL(d_callback,
+                onAsyncWrite(
+                    ::testing::Pointee(MessageEq(rmqamqp::Message(
+                        rmqamqpt::Method(rmqamqpt::BasicMethod(basicReject))))),
+                    _))
+        .WillOnce(InvokeArgument<1>());
+
+    rejectMessage(*receiveChannel, id_reject, false);
+    EXPECT_THAT(receiveChannel->inFlight(), Eq(0));
+}
+
 TEST_F(ReceiveChannelTests, WrongChannelLifetimeId)
 {
     bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
@@ -968,6 +1040,144 @@ TEST_F(ReceiveChannelTests, ReceivedMsgPublishesMetric)
 
     const uint64_t deliveryTag = 40;
     receiveMessage(*receiveChannel, deliveryTag, "consumer1");
+}
+
+MATCHER_P(HasResultTag, expected, "")
+{
+    for (size_t i = 0; i < arg.size(); ++i) {
+        if (arg[i].first == Metrics::RESULT_TAG) {
+            return arg[i].second == expected;
+        }
+    }
+    return false;
+}
+
+/// The result name is a `const char*`, and the pair is named rather than
+/// deduced: Sun's `std::pair` will not decay a string literal, so
+/// `bsl::make_pair(type, "ack")` gives `second` an array type there.
+typedef bsl::pair<rmqt::ConsumerAck::Type, const char*> MetricResultParam;
+
+class MessageHandledMetricTests
+: public ReceiveChannelTests,
+  public ::testing::WithParamInterface<MetricResultParam> {};
+
+TEST_P(MessageHandledMetricTests, PublishesOnePerResolution)
+{
+    const rmqt::ConsumerAck::Type type = GetParam().first;
+    const bsl::string result(GetParam().second);
+
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, "consumer1");
+
+    const uint64_t deliveryTag = 40;
+    const rmqt::Envelope id(deliveryTag,
+                            receiveChannel->lifetimeId(),
+                            "consumer1",
+                            "exchange",
+                            "routingKey",
+                            false);
+    receiveMessage(*receiveChannel, deliveryTag, "consumer1");
+
+    // The frame itself is covered by the Ack/Nack/RejectMessage tests
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _))
+        .WillRepeatedly(InvokeArgument<1>());
+
+    EXPECT_CALL(*d_metricPublisher, publishCounter(_, _, _)).Times(AnyNumber());
+    EXPECT_CALL(*d_metricPublisher, publishDistribution(_, _, _))
+        .Times(AnyNumber());
+    EXPECT_CALL(*d_metricPublisher,
+                publishCounter(bsl::string("consumer_message_handled"),
+                               1,
+                               HasResultTag(result)));
+
+    ackOrNackMessage(*receiveChannel, id, type);
+}
+
+RMQTESTUTIL_TESTSUITE_P(
+    AllResults,
+    MessageHandledMetricTests,
+    ::testing::Values(MetricResultParam(rmqt::ConsumerAck::ACK, "ack"),
+                      MetricResultParam(rmqt::ConsumerAck::NACK_REQUEUE_FALSE,
+                                        "nack_requeue_false"),
+                      MetricResultParam(rmqt::ConsumerAck::NACK_REQUEUE_TRUE,
+                                        "nack_requeue_true"),
+                      MetricResultParam(rmqt::ConsumerAck::REJECT_REQUEUE_FALSE,
+                                        "reject_requeue_false"),
+                      MetricResultParam(rmqt::ConsumerAck::REJECT_REQUEUE_TRUE,
+                                        "reject_requeue_true")));
+
+TEST_F(ReceiveChannelTests, MessageHandledMetricPublishesPerMessage)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, "consumer1");
+
+    bsl::shared_ptr<rmqt::ConsumerAckBatch> batch =
+        bsl::make_shared<rmqt::ConsumerAckBatch>();
+
+    // Two acks and one reject, resolved in the same batch
+    for (uint64_t tag = 1; tag <= 3; ++tag) {
+        receiveMessage(*receiveChannel, tag, "consumer1");
+        batch->addAck(
+            rmqt::ConsumerAck(rmqt::Envelope(tag,
+                                             receiveChannel->lifetimeId(),
+                                             "consumer1",
+                                             "exchange",
+                                             "routingKey",
+                                             false),
+                              tag == 3 ? rmqt::ConsumerAck::REJECT_REQUEUE_TRUE
+                                       : rmqt::ConsumerAck::ACK));
+    }
+
+    EXPECT_CALL(d_callback, onAsyncWrite(_, _))
+        .WillRepeatedly(InvokeArgument<1>());
+
+    EXPECT_CALL(*d_metricPublisher, publishCounter(_, _, _)).Times(AnyNumber());
+    EXPECT_CALL(*d_metricPublisher, publishDistribution(_, _, _))
+        .Times(AnyNumber());
+    // One counter increment per message, never aggregated over the batch
+    EXPECT_CALL(*d_metricPublisher,
+                publishCounter(bsl::string("consumer_message_handled"),
+                               1,
+                               HasResultTag(bsl::string("ack"))))
+        .Times(2);
+    EXPECT_CALL(
+        *d_metricPublisher,
+        publishCounter(bsl::string("consumer_message_handled"),
+                       1,
+                       HasResultTag(bsl::string("reject_requeue_true"))));
+
+    d_ackQueue->pushBack(batch);
+    receiveChannel->consumeAckBatchFromQueue();
+}
+
+TEST_F(ReceiveChannelTests, MessageHandledMetricSkipsStaleLifetime)
+{
+    bsl::shared_ptr<ReceiveChannel> receiveChannel = makeReceiveChannel(1);
+    makeReady(*receiveChannel);
+    setupConsumer(*receiveChannel, "consumer1");
+
+    const uint64_t deliveryTag = 40;
+    receiveMessage(*receiveChannel, deliveryTag, "consumer1");
+
+    // Resolution for a channel generation which has since been reset. It is
+    // dropped before the metric is published, so nothing is counted.
+    const rmqt::Envelope stale(deliveryTag,
+                               receiveChannel->lifetimeId() - 1,
+                               "consumer1",
+                               "exchange",
+                               "routingKey",
+                               false);
+
+    EXPECT_CALL(*d_metricPublisher, publishCounter(_, _, _)).Times(AnyNumber());
+    EXPECT_CALL(*d_metricPublisher, publishDistribution(_, _, _))
+        .Times(AnyNumber());
+    EXPECT_CALL(*d_metricPublisher,
+                publishCounter(bsl::string("consumer_message_handled"), _, _))
+        .Times(0);
+
+    ackOrNackMessage(*receiveChannel, stale, rmqt::ConsumerAck::ACK);
 }
 
 TEST_F(ReceiveChannelTests, Cancel)

@@ -67,6 +67,30 @@ void publishLatencyIfTracked(
     }
 }
 
+/// Value for Metrics::RESULT_TAG describing how a message was resolved.
+/// Deliberately has no `default` case, so that adding an
+/// rmqt::ConsumerAck::Type without naming it here is a compiler warning.
+const char* resultName(rmqt::ConsumerAck::Type type)
+{
+    switch (type) {
+        case rmqt::ConsumerAck::ACK:
+            return "ack";
+        case rmqt::ConsumerAck::NACK_REQUEUE_FALSE:
+            return "nack_requeue_false";
+        case rmqt::ConsumerAck::NACK_REQUEUE_TRUE:
+            return "nack_requeue_true";
+        case rmqt::ConsumerAck::REJECT_REQUEUE_FALSE:
+            return "reject_requeue_false";
+        case rmqt::ConsumerAck::REJECT_REQUEUE_TRUE:
+            return "reject_requeue_true";
+    }
+
+    return "unknown";
+}
+
+/// Number of distinct rmqt::ConsumerAck::Type values
+const size_t HANDLED_RESULT_COUNT = rmqt::ConsumerAck::REJECT_REQUEUE_TRUE + 1;
+
 } // namespace
 
 class ReceiveChannel::Consumer {
@@ -387,14 +411,27 @@ ReceiveChannel::ReceiveChannel(
 , d_ackQueue(ackQueue)
 , d_multipleAckHandler(
       bdlf::BindUtil::bind(&ReceiveChannel::sendAck, this, _1, _2),
-      bdlf::BindUtil::bind(&ReceiveChannel::sendNack, this, _1, _2, _3))
+      bdlf::BindUtil::bind(&ReceiveChannel::sendNack, this, _1, _2, _3),
+      bdlf::BindUtil::bind(&ReceiveChannel::sendReject, this, _1, _2))
 , d_consumeFuturePair()
 , d_cancelFuturePair()
 , d_drainFuture()
 , d_channelPausedOnOpen(channelPausedOnOpen)
 , d_pauseStartTime()
 , d_resumeStartTime()
+, d_messageHandledTags()
+, d_messageHandledMetricName(Metrics::CONSUMER_MESSAGE_HANDLED)
 {
+    d_messageHandledTags.reserve(HANDLED_RESULT_COUNT);
+    for (size_t type = 0; type < HANDLED_RESULT_COUNT; ++type) {
+        bsl::vector<bsl::pair<bsl::string, bsl::string> > tags =
+            getMetricTags();
+        tags.push_back(
+            bsl::make_pair(bsl::string(Metrics::RESULT_TAG),
+                           bsl::string(resultName(
+                               static_cast<rmqt::ConsumerAck::Type>(type)))));
+        d_messageHandledTags.push_back(tags);
+    }
 }
 
 const rmqt::ConsumerConfig& ReceiveChannel::consumerConfig() const
@@ -618,6 +655,10 @@ void ReceiveChannel::consumeAckBatchFromQueue()
     for (bsl::vector<rmqt::ConsumerAck>::iterator it = valid; it < acks.end();
          ++it) {
         if (it->envelope().channelLifetimeId() == lifetimeId()) {
+            d_metricPublisher->publishCounter(d_messageHandledMetricName,
+                                              1,
+                                              d_messageHandledTags[it->type()]);
+
             // Avoid unnecessary copying to the same vector index
             if (it != valid) {
                 (*valid) = (*it);
@@ -1082,6 +1123,14 @@ void ReceiveChannel::sendNack(uint64_t deliveryTag, bool requeue, bool multiple)
                       rmqamqpt::BasicNack(deliveryTag, requeue, multiple)),
                   deliveryTag,
                   multiple);
+}
+
+void ReceiveChannel::sendReject(uint64_t deliveryTag, bool requeue)
+{
+    sendAckOrNack(
+        rmqamqpt::BasicMethod(rmqamqpt::BasicReject(deliveryTag, requeue)),
+        deliveryTag,
+        false);
 }
 
 void ReceiveChannel::sendAckOrNack(const rmqamqpt::BasicMethod& basicMethod,

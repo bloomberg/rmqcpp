@@ -1,5 +1,6 @@
 add_executable(rmqt_tests
     rmqt.m.cpp
+    rmqt_consumerack.t.cpp
     rmqt_consumerconfig.t.cpp
     rmqt_envelope.t.cpp
     rmqt_exchange.t.cpp

@@ -83,6 +83,9 @@ TEST_F(MessageGuardTest, ackCallsCallback)
     EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::ACK);
 }
 
+// The two nack tests below pin NACK_REQUEUE_*, not just "some negative
+// outcome": nack must never be silently upgraded to a reject. An application
+// asking for an uncounted return has to keep getting one.
 TEST_F(MessageGuardTest, nackRequeueCallsCallback)
 {
     rmqa::MessageGuard mg(
@@ -92,7 +95,7 @@ TEST_F(MessageGuardTest, nackRequeueCallsCallback)
         &d_consumer);
     mg.nack();
     EXPECT_TRUE(d_acked);
-    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REQUEUE);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::NACK_REQUEUE_TRUE);
 }
 
 TEST_F(MessageGuardTest, nackRejectCallsCallback)
@@ -104,7 +107,31 @@ TEST_F(MessageGuardTest, nackRejectCallsCallback)
         &d_consumer);
     mg.nack(false);
     EXPECT_TRUE(d_acked);
-    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REJECT);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::NACK_REQUEUE_FALSE);
+}
+
+TEST_F(MessageGuardTest, rejectRequeueCallsCallback)
+{
+    rmqa::MessageGuard mg(
+        rmqt::Message(),
+        rmqt::Envelope(0, 0, "consumerTag", "exchange", "routing-key", false),
+        callback(),
+        &d_consumer);
+    mg.reject();
+    EXPECT_TRUE(d_acked);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REJECT_REQUEUE_TRUE);
+}
+
+TEST_F(MessageGuardTest, rejectDiscardCallsCallback)
+{
+    rmqa::MessageGuard mg(
+        rmqt::Message(),
+        rmqt::Envelope(0, 0, "consumerTag", "exchange", "routing-key", false),
+        callback(),
+        &d_consumer);
+    mg.reject(false);
+    EXPECT_TRUE(d_acked);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REJECT_REQUEUE_FALSE);
 }
 
 TEST_F(MessageGuardTest, onlyFirstAckApplies)
@@ -134,10 +161,12 @@ TEST_F(MessageGuardTest, onlyFirstNackApplies)
     mg.ack();
     mg.nack(false);
     EXPECT_TRUE(d_acked);
-    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REQUEUE);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::NACK_REQUEUE_TRUE);
 }
 
-TEST_F(MessageGuardTest, destructorCallsNack)
+// A guard destroyed without being resolved - the uncaught exception path -
+// rejects with requeue so that the delivery counts towards delivery-limit.
+TEST_F(MessageGuardTest, destructorCallsReject)
 {
     {
         rmqa::MessageGuard mg(
@@ -148,7 +177,7 @@ TEST_F(MessageGuardTest, destructorCallsNack)
             &d_consumer);
     }
     EXPECT_TRUE(d_acked);
-    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REQUEUE);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REJECT_REQUEUE_TRUE);
 }
 
 TEST_F(MessageGuardTest, copyingInvalidatesOriginalAndNoNackCalled)
@@ -167,8 +196,10 @@ TEST_F(MessageGuardTest, copyingInvalidatesOriginalAndNoNackCalled)
             EXPECT_FALSE(d_acked);
         }
     }
+    // mg2 took ownership and was itself destroyed unresolved, so the guard
+    // rejects with requeue
     EXPECT_TRUE(d_acked);
-    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REQUEUE);
+    EXPECT_EQ(d_ack_state, rmqt::ConsumerAck::REJECT_REQUEUE_TRUE);
 }
 
 TEST_F(MessageGuardTest, copiedObjectIsvalidAndCanAck)
