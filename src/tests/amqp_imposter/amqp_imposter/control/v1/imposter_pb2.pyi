@@ -449,6 +449,72 @@ class ConnectionStart(_message.Message):
 Global___ConnectionStart: _TypeAlias = ConnectionStart  # noqa: Y015
 
 @_typing.final
+class ConnectionStartSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    VERSION_MAJOR_FIELD_NUMBER: _builtins.int
+    VERSION_MINOR_FIELD_NUMBER: _builtins.int
+    MECHANISMS_FIELD_NUMBER: _builtins.int
+    LOCALES_FIELD_NUMBER: _builtins.int
+    PUBLISHER_CONFIRMS_FIELD_NUMBER: _builtins.int
+    BASIC_NACK_FIELD_NUMBER: _builtins.int
+    CONSUMER_CANCEL_NOTIFY_FIELD_NUMBER: _builtins.int
+    version_major: _builtins.int
+    version_minor: _builtins.int
+    publisher_confirms: _builtins.bool
+    basic_nack: _builtins.bool
+    consumer_cancel_notify: _builtins.bool
+    @_builtins.property
+    def mechanisms(self) -> Global___StringList: ...
+    @_builtins.property
+    def locales(self) -> Global___StringList: ...
+    def __init__(
+        self,
+        *,
+        version_major: _builtins.int | None = ...,
+        version_minor: _builtins.int | None = ...,
+        mechanisms: Global___StringList | None = ...,
+        locales: Global___StringList | None = ...,
+        publisher_confirms: _builtins.bool | None = ...,
+        basic_nack: _builtins.bool | None = ...,
+        consumer_cancel_notify: _builtins.bool | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_basic_nack", b"_basic_nack", "_consumer_cancel_notify", b"_consumer_cancel_notify", "_locales", b"_locales", "_mechanisms", b"_mechanisms", "_publisher_confirms", b"_publisher_confirms", "_version_major", b"_version_major", "_version_minor", b"_version_minor", "basic_nack", b"basic_nack", "consumer_cancel_notify", b"consumer_cancel_notify", "locales", b"locales", "mechanisms", b"mechanisms", "publisher_confirms", b"publisher_confirms", "version_major", b"version_major", "version_minor", b"version_minor"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_basic_nack", b"_basic_nack", "_consumer_cancel_notify", b"_consumer_cancel_notify", "_locales", b"_locales", "_mechanisms", b"_mechanisms", "_publisher_confirms", b"_publisher_confirms", "_version_major", b"_version_major", "_version_minor", b"_version_minor", "basic_nack", b"basic_nack", "consumer_cancel_notify", b"consumer_cancel_notify", "locales", b"locales", "mechanisms", b"mechanisms", "publisher_confirms", b"publisher_confirms", "version_major", b"version_major", "version_minor", b"version_minor"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__basic_nack: _TypeAlias = _typing.Literal["basic_nack"]  # noqa: Y015
+    _WhichOneofArgType__basic_nack: _TypeAlias = _typing.Literal["_basic_nack", b"_basic_nack"]  # noqa: Y015
+    _WhichOneofReturnType__consumer_cancel_notify: _TypeAlias = _typing.Literal["consumer_cancel_notify"]  # noqa: Y015
+    _WhichOneofArgType__consumer_cancel_notify: _TypeAlias = _typing.Literal["_consumer_cancel_notify", b"_consumer_cancel_notify"]  # noqa: Y015
+    _WhichOneofReturnType__locales: _TypeAlias = _typing.Literal["locales"]  # noqa: Y015
+    _WhichOneofArgType__locales: _TypeAlias = _typing.Literal["_locales", b"_locales"]  # noqa: Y015
+    _WhichOneofReturnType__mechanisms: _TypeAlias = _typing.Literal["mechanisms"]  # noqa: Y015
+    _WhichOneofArgType__mechanisms: _TypeAlias = _typing.Literal["_mechanisms", b"_mechanisms"]  # noqa: Y015
+    _WhichOneofReturnType__publisher_confirms: _TypeAlias = _typing.Literal["publisher_confirms"]  # noqa: Y015
+    _WhichOneofArgType__publisher_confirms: _TypeAlias = _typing.Literal["_publisher_confirms", b"_publisher_confirms"]  # noqa: Y015
+    _WhichOneofReturnType__version_major: _TypeAlias = _typing.Literal["version_major"]  # noqa: Y015
+    _WhichOneofArgType__version_major: _TypeAlias = _typing.Literal["_version_major", b"_version_major"]  # noqa: Y015
+    _WhichOneofReturnType__version_minor: _TypeAlias = _typing.Literal["version_minor"]  # noqa: Y015
+    _WhichOneofArgType__version_minor: _TypeAlias = _typing.Literal["_version_minor", b"_version_minor"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__basic_nack) -> _WhichOneofReturnType__basic_nack | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__consumer_cancel_notify) -> _WhichOneofReturnType__consumer_cancel_notify | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__locales) -> _WhichOneofReturnType__locales | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__mechanisms) -> _WhichOneofReturnType__mechanisms | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__publisher_confirms) -> _WhichOneofReturnType__publisher_confirms | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__version_major) -> _WhichOneofReturnType__version_major | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__version_minor) -> _WhichOneofReturnType__version_minor | None: ...
+
+Global___ConnectionStartSelector: _TypeAlias = ConnectionStartSelector  # noqa: Y015
+
+@_typing.final
 class ConnectionStartPattern(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -540,7 +606,7 @@ class ConnectionStartOk(_message.Message):
 Global___ConnectionStartOk: _TypeAlias = ConnectionStartOk  # noqa: Y015
 
 @_typing.final
-class ConnectionStartOkPattern(_message.Message):
+class ConnectionStartOkSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     MECHANISM_FIELD_NUMBER: _builtins.int
@@ -565,6 +631,42 @@ class ConnectionStartOkPattern(_message.Message):
     def WhichOneof(self, oneof_group: _WhichOneofArgType__locale) -> _WhichOneofReturnType__locale | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__mechanism) -> _WhichOneofReturnType__mechanism | None: ...
+
+Global___ConnectionStartOkSelector: _TypeAlias = ConnectionStartOkSelector  # noqa: Y015
+
+@_typing.final
+class ConnectionStartOkPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    MECHANISM_FIELD_NUMBER: _builtins.int
+    LOCALE_FIELD_NUMBER: _builtins.int
+    RESPONSE_FIELD_NUMBER: _builtins.int
+    mechanism: _builtins.str
+    locale: _builtins.str
+    response: _builtins.str
+    def __init__(
+        self,
+        *,
+        mechanism: _builtins.str | None = ...,
+        locale: _builtins.str | None = ...,
+        response: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_locale", b"_locale", "_mechanism", b"_mechanism", "_response", b"_response", "locale", b"locale", "mechanism", b"mechanism", "response", b"response"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_locale", b"_locale", "_mechanism", b"_mechanism", "_response", b"_response", "locale", b"locale", "mechanism", b"mechanism", "response", b"response"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__locale: _TypeAlias = _typing.Literal["locale"]  # noqa: Y015
+    _WhichOneofArgType__locale: _TypeAlias = _typing.Literal["_locale", b"_locale"]  # noqa: Y015
+    _WhichOneofReturnType__mechanism: _TypeAlias = _typing.Literal["mechanism"]  # noqa: Y015
+    _WhichOneofArgType__mechanism: _TypeAlias = _typing.Literal["_mechanism", b"_mechanism"]  # noqa: Y015
+    _WhichOneofReturnType__response: _TypeAlias = _typing.Literal["response"]  # noqa: Y015
+    _WhichOneofArgType__response: _TypeAlias = _typing.Literal["_response", b"_response"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__locale) -> _WhichOneofReturnType__locale | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__mechanism) -> _WhichOneofReturnType__mechanism | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__response) -> _WhichOneofReturnType__response | None: ...
 
 Global___ConnectionStartOkPattern: _TypeAlias = ConnectionStartOkPattern  # noqa: Y015
 
@@ -592,6 +694,42 @@ class ConnectionTune(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConnectionTune: _TypeAlias = ConnectionTune  # noqa: Y015
+
+@_typing.final
+class ConnectionTuneSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    CHANNEL_MAX_FIELD_NUMBER: _builtins.int
+    FRAME_MAX_FIELD_NUMBER: _builtins.int
+    HEARTBEAT_FIELD_NUMBER: _builtins.int
+    channel_max: _builtins.int
+    frame_max: _builtins.int
+    heartbeat: _builtins.int
+    def __init__(
+        self,
+        *,
+        channel_max: _builtins.int | None = ...,
+        frame_max: _builtins.int | None = ...,
+        heartbeat: _builtins.int | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_channel_max", b"_channel_max", "_frame_max", b"_frame_max", "_heartbeat", b"_heartbeat", "channel_max", b"channel_max", "frame_max", b"frame_max", "heartbeat", b"heartbeat"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_channel_max", b"_channel_max", "_frame_max", b"_frame_max", "_heartbeat", b"_heartbeat", "channel_max", b"channel_max", "frame_max", b"frame_max", "heartbeat", b"heartbeat"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__channel_max: _TypeAlias = _typing.Literal["channel_max"]  # noqa: Y015
+    _WhichOneofArgType__channel_max: _TypeAlias = _typing.Literal["_channel_max", b"_channel_max"]  # noqa: Y015
+    _WhichOneofReturnType__frame_max: _TypeAlias = _typing.Literal["frame_max"]  # noqa: Y015
+    _WhichOneofArgType__frame_max: _TypeAlias = _typing.Literal["_frame_max", b"_frame_max"]  # noqa: Y015
+    _WhichOneofReturnType__heartbeat: _TypeAlias = _typing.Literal["heartbeat"]  # noqa: Y015
+    _WhichOneofArgType__heartbeat: _TypeAlias = _typing.Literal["_heartbeat", b"_heartbeat"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__channel_max) -> _WhichOneofReturnType__channel_max | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__frame_max) -> _WhichOneofReturnType__frame_max | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__heartbeat) -> _WhichOneofReturnType__heartbeat | None: ...
+
+Global___ConnectionTuneSelector: _TypeAlias = ConnectionTuneSelector  # noqa: Y015
 
 @_typing.final
 class ConnectionTunePattern(_message.Message):
@@ -655,6 +793,42 @@ class ConnectionTuneOk(_message.Message):
 Global___ConnectionTuneOk: _TypeAlias = ConnectionTuneOk  # noqa: Y015
 
 @_typing.final
+class ConnectionTuneOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    CHANNEL_MAX_FIELD_NUMBER: _builtins.int
+    FRAME_MAX_FIELD_NUMBER: _builtins.int
+    HEARTBEAT_FIELD_NUMBER: _builtins.int
+    channel_max: _builtins.int
+    frame_max: _builtins.int
+    heartbeat: _builtins.int
+    def __init__(
+        self,
+        *,
+        channel_max: _builtins.int | None = ...,
+        frame_max: _builtins.int | None = ...,
+        heartbeat: _builtins.int | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_channel_max", b"_channel_max", "_frame_max", b"_frame_max", "_heartbeat", b"_heartbeat", "channel_max", b"channel_max", "frame_max", b"frame_max", "heartbeat", b"heartbeat"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_channel_max", b"_channel_max", "_frame_max", b"_frame_max", "_heartbeat", b"_heartbeat", "channel_max", b"channel_max", "frame_max", b"frame_max", "heartbeat", b"heartbeat"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__channel_max: _TypeAlias = _typing.Literal["channel_max"]  # noqa: Y015
+    _WhichOneofArgType__channel_max: _TypeAlias = _typing.Literal["_channel_max", b"_channel_max"]  # noqa: Y015
+    _WhichOneofReturnType__frame_max: _TypeAlias = _typing.Literal["frame_max"]  # noqa: Y015
+    _WhichOneofArgType__frame_max: _TypeAlias = _typing.Literal["_frame_max", b"_frame_max"]  # noqa: Y015
+    _WhichOneofReturnType__heartbeat: _TypeAlias = _typing.Literal["heartbeat"]  # noqa: Y015
+    _WhichOneofArgType__heartbeat: _TypeAlias = _typing.Literal["_heartbeat", b"_heartbeat"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__channel_max) -> _WhichOneofReturnType__channel_max | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__frame_max) -> _WhichOneofReturnType__frame_max | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__heartbeat) -> _WhichOneofReturnType__heartbeat | None: ...
+
+Global___ConnectionTuneOkSelector: _TypeAlias = ConnectionTuneOkSelector  # noqa: Y015
+
+@_typing.final
 class ConnectionTuneOkPattern(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -710,7 +884,7 @@ class ConnectionOpen(_message.Message):
 Global___ConnectionOpen: _TypeAlias = ConnectionOpen  # noqa: Y015
 
 @_typing.final
-class ConnectionOpenPattern(_message.Message):
+class ConnectionOpenSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -721,6 +895,27 @@ class ConnectionOpenPattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ConnectionOpenSelector: _TypeAlias = ConnectionOpenSelector  # noqa: Y015
+
+@_typing.final
+class ConnectionOpenPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    VHOST_FIELD_NUMBER: _builtins.int
+    vhost: _builtins.str
+    def __init__(
+        self,
+        *,
+        vhost: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_vhost", b"_vhost", "vhost", b"vhost"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_vhost", b"_vhost", "vhost", b"vhost"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__vhost: _TypeAlias = _typing.Literal["vhost"]  # noqa: Y015
+    _WhichOneofArgType__vhost: _TypeAlias = _typing.Literal["_vhost", b"_vhost"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__vhost) -> _WhichOneofReturnType__vhost | None: ...
 
 Global___ConnectionOpenPattern: _TypeAlias = ConnectionOpenPattern  # noqa: Y015
 
@@ -738,6 +933,21 @@ class ConnectionOpenOk(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConnectionOpenOk: _TypeAlias = ConnectionOpenOk  # noqa: Y015
+
+@_typing.final
+class ConnectionOpenOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ConnectionOpenOkSelector: _TypeAlias = ConnectionOpenOkSelector  # noqa: Y015
 
 @_typing.final
 class ConnectionOpenOkPattern(_message.Message):
@@ -781,6 +991,49 @@ class ConnectionClose(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConnectionClose: _TypeAlias = ConnectionClose  # noqa: Y015
+
+@_typing.final
+class ConnectionCloseSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    REPLY_CODE_FIELD_NUMBER: _builtins.int
+    REPLY_TEXT_FIELD_NUMBER: _builtins.int
+    CLASS_ID_FIELD_NUMBER: _builtins.int
+    METHOD_ID_FIELD_NUMBER: _builtins.int
+    reply_code: _builtins.int
+    reply_text: _builtins.str
+    class_id: _builtins.int
+    method_id: _builtins.int
+    def __init__(
+        self,
+        *,
+        reply_code: _builtins.int | None = ...,
+        reply_text: _builtins.str | None = ...,
+        class_id: _builtins.int | None = ...,
+        method_id: _builtins.int | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_class_id", b"_class_id", "_method_id", b"_method_id", "_reply_code", b"_reply_code", "_reply_text", b"_reply_text", "class_id", b"class_id", "method_id", b"method_id", "reply_code", b"reply_code", "reply_text", b"reply_text"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_class_id", b"_class_id", "_method_id", b"_method_id", "_reply_code", b"_reply_code", "_reply_text", b"_reply_text", "class_id", b"class_id", "method_id", b"method_id", "reply_code", b"reply_code", "reply_text", b"reply_text"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__class_id: _TypeAlias = _typing.Literal["class_id"]  # noqa: Y015
+    _WhichOneofArgType__class_id: _TypeAlias = _typing.Literal["_class_id", b"_class_id"]  # noqa: Y015
+    _WhichOneofReturnType__method_id: _TypeAlias = _typing.Literal["method_id"]  # noqa: Y015
+    _WhichOneofArgType__method_id: _TypeAlias = _typing.Literal["_method_id", b"_method_id"]  # noqa: Y015
+    _WhichOneofReturnType__reply_code: _TypeAlias = _typing.Literal["reply_code"]  # noqa: Y015
+    _WhichOneofArgType__reply_code: _TypeAlias = _typing.Literal["_reply_code", b"_reply_code"]  # noqa: Y015
+    _WhichOneofReturnType__reply_text: _TypeAlias = _typing.Literal["reply_text"]  # noqa: Y015
+    _WhichOneofArgType__reply_text: _TypeAlias = _typing.Literal["_reply_text", b"_reply_text"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__class_id) -> _WhichOneofReturnType__class_id | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__method_id) -> _WhichOneofReturnType__method_id | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__reply_code) -> _WhichOneofReturnType__reply_code | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__reply_text) -> _WhichOneofReturnType__reply_text | None: ...
+
+Global___ConnectionCloseSelector: _TypeAlias = ConnectionCloseSelector  # noqa: Y015
 
 @_typing.final
 class ConnectionClosePattern(_message.Message):
@@ -841,6 +1094,21 @@ class ConnectionCloseOk(_message.Message):
 Global___ConnectionCloseOk: _TypeAlias = ConnectionCloseOk  # noqa: Y015
 
 @_typing.final
+class ConnectionCloseOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ConnectionCloseOkSelector: _TypeAlias = ConnectionCloseOkSelector  # noqa: Y015
+
+@_typing.final
 class ConnectionCloseOkPattern(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -871,6 +1139,21 @@ class ChannelOpen(_message.Message):
 Global___ChannelOpen: _TypeAlias = ChannelOpen  # noqa: Y015
 
 @_typing.final
+class ChannelOpenSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ChannelOpenSelector: _TypeAlias = ChannelOpenSelector  # noqa: Y015
+
+@_typing.final
 class ChannelOpenPattern(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -899,6 +1182,21 @@ class ChannelOpenOk(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ChannelOpenOk: _TypeAlias = ChannelOpenOk  # noqa: Y015
+
+@_typing.final
+class ChannelOpenOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ChannelOpenOkSelector: _TypeAlias = ChannelOpenOkSelector  # noqa: Y015
 
 @_typing.final
 class ChannelOpenOkPattern(_message.Message):
@@ -942,6 +1240,49 @@ class ChannelClose(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ChannelClose: _TypeAlias = ChannelClose  # noqa: Y015
+
+@_typing.final
+class ChannelCloseSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    REPLY_CODE_FIELD_NUMBER: _builtins.int
+    REPLY_TEXT_FIELD_NUMBER: _builtins.int
+    CLASS_ID_FIELD_NUMBER: _builtins.int
+    METHOD_ID_FIELD_NUMBER: _builtins.int
+    reply_code: _builtins.int
+    reply_text: _builtins.str
+    class_id: _builtins.int
+    method_id: _builtins.int
+    def __init__(
+        self,
+        *,
+        reply_code: _builtins.int | None = ...,
+        reply_text: _builtins.str | None = ...,
+        class_id: _builtins.int | None = ...,
+        method_id: _builtins.int | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_class_id", b"_class_id", "_method_id", b"_method_id", "_reply_code", b"_reply_code", "_reply_text", b"_reply_text", "class_id", b"class_id", "method_id", b"method_id", "reply_code", b"reply_code", "reply_text", b"reply_text"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_class_id", b"_class_id", "_method_id", b"_method_id", "_reply_code", b"_reply_code", "_reply_text", b"_reply_text", "class_id", b"class_id", "method_id", b"method_id", "reply_code", b"reply_code", "reply_text", b"reply_text"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__class_id: _TypeAlias = _typing.Literal["class_id"]  # noqa: Y015
+    _WhichOneofArgType__class_id: _TypeAlias = _typing.Literal["_class_id", b"_class_id"]  # noqa: Y015
+    _WhichOneofReturnType__method_id: _TypeAlias = _typing.Literal["method_id"]  # noqa: Y015
+    _WhichOneofArgType__method_id: _TypeAlias = _typing.Literal["_method_id", b"_method_id"]  # noqa: Y015
+    _WhichOneofReturnType__reply_code: _TypeAlias = _typing.Literal["reply_code"]  # noqa: Y015
+    _WhichOneofArgType__reply_code: _TypeAlias = _typing.Literal["_reply_code", b"_reply_code"]  # noqa: Y015
+    _WhichOneofReturnType__reply_text: _TypeAlias = _typing.Literal["reply_text"]  # noqa: Y015
+    _WhichOneofArgType__reply_text: _TypeAlias = _typing.Literal["_reply_text", b"_reply_text"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__class_id) -> _WhichOneofReturnType__class_id | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__method_id) -> _WhichOneofReturnType__method_id | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__reply_code) -> _WhichOneofReturnType__reply_code | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__reply_text) -> _WhichOneofReturnType__reply_text | None: ...
+
+Global___ChannelCloseSelector: _TypeAlias = ChannelCloseSelector  # noqa: Y015
 
 @_typing.final
 class ChannelClosePattern(_message.Message):
@@ -1002,6 +1343,21 @@ class ChannelCloseOk(_message.Message):
 Global___ChannelCloseOk: _TypeAlias = ChannelCloseOk  # noqa: Y015
 
 @_typing.final
+class ChannelCloseOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ChannelCloseOkSelector: _TypeAlias = ChannelCloseOkSelector  # noqa: Y015
+
+@_typing.final
 class ChannelCloseOkPattern(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -1036,7 +1392,7 @@ class ConfirmSelect(_message.Message):
 Global___ConfirmSelect: _TypeAlias = ConfirmSelect  # noqa: Y015
 
 @_typing.final
-class ConfirmSelectPattern(_message.Message):
+class ConfirmSelectSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -1047,6 +1403,27 @@ class ConfirmSelectPattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ConfirmSelectSelector: _TypeAlias = ConfirmSelectSelector  # noqa: Y015
+
+@_typing.final
+class ConfirmSelectPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    NO_WAIT_FIELD_NUMBER: _builtins.int
+    no_wait: _builtins.bool
+    def __init__(
+        self,
+        *,
+        no_wait: _builtins.bool | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_no_wait", b"_no_wait", "no_wait", b"no_wait"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_no_wait", b"_no_wait", "no_wait", b"no_wait"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__no_wait: _TypeAlias = _typing.Literal["no_wait"]  # noqa: Y015
+    _WhichOneofArgType__no_wait: _TypeAlias = _typing.Literal["_no_wait", b"_no_wait"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_wait) -> _WhichOneofReturnType__no_wait | None: ...
 
 Global___ConfirmSelectPattern: _TypeAlias = ConfirmSelectPattern  # noqa: Y015
 
@@ -1064,6 +1441,21 @@ class ConfirmSelectOk(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ConfirmSelectOk: _TypeAlias = ConfirmSelectOk  # noqa: Y015
+
+@_typing.final
+class ConfirmSelectOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ConfirmSelectOkSelector: _TypeAlias = ConfirmSelectOkSelector  # noqa: Y015
 
 @_typing.final
 class ConfirmSelectOkPattern(_message.Message):
@@ -1124,7 +1516,7 @@ class ExchangeDeclare(_message.Message):
 Global___ExchangeDeclare: _TypeAlias = ExchangeDeclare  # noqa: Y015
 
 @_typing.final
-class ExchangeDeclarePattern(_message.Message):
+class ExchangeDeclareSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     EXCHANGE_FIELD_NUMBER: _builtins.int
@@ -1142,6 +1534,78 @@ class ExchangeDeclarePattern(_message.Message):
     _WhichOneofArgType__exchange: _TypeAlias = _typing.Literal["_exchange", b"_exchange"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__exchange) -> _WhichOneofReturnType__exchange | None: ...
 
+Global___ExchangeDeclareSelector: _TypeAlias = ExchangeDeclareSelector  # noqa: Y015
+
+@_typing.final
+class ExchangeDeclarePattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    EXCHANGE_FIELD_NUMBER: _builtins.int
+    EXCHANGE_TYPE_FIELD_NUMBER: _builtins.int
+    PASSIVE_FIELD_NUMBER: _builtins.int
+    DURABLE_FIELD_NUMBER: _builtins.int
+    AUTO_DELETE_FIELD_NUMBER: _builtins.int
+    INTERNAL_FIELD_NUMBER: _builtins.int
+    NO_WAIT_FIELD_NUMBER: _builtins.int
+    ARGUMENTS_FIELD_NUMBER: _builtins.int
+    exchange: _builtins.str
+    exchange_type: _builtins.str
+    passive: _builtins.bool
+    durable: _builtins.bool
+    auto_delete: _builtins.bool
+    internal: _builtins.bool
+    no_wait: _builtins.bool
+    @_builtins.property
+    def arguments(self) -> Global___AmqpTable: ...
+    def __init__(
+        self,
+        *,
+        exchange: _builtins.str | None = ...,
+        exchange_type: _builtins.str | None = ...,
+        passive: _builtins.bool | None = ...,
+        durable: _builtins.bool | None = ...,
+        auto_delete: _builtins.bool | None = ...,
+        internal: _builtins.bool | None = ...,
+        no_wait: _builtins.bool | None = ...,
+        arguments: Global___AmqpTable | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_auto_delete", b"_auto_delete", "_durable", b"_durable", "_exchange", b"_exchange", "_exchange_type", b"_exchange_type", "_internal", b"_internal", "_no_wait", b"_no_wait", "_passive", b"_passive", "arguments", b"arguments", "auto_delete", b"auto_delete", "durable", b"durable", "exchange", b"exchange", "exchange_type", b"exchange_type", "internal", b"internal", "no_wait", b"no_wait", "passive", b"passive"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_auto_delete", b"_auto_delete", "_durable", b"_durable", "_exchange", b"_exchange", "_exchange_type", b"_exchange_type", "_internal", b"_internal", "_no_wait", b"_no_wait", "_passive", b"_passive", "arguments", b"arguments", "auto_delete", b"auto_delete", "durable", b"durable", "exchange", b"exchange", "exchange_type", b"exchange_type", "internal", b"internal", "no_wait", b"no_wait", "passive", b"passive"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__arguments: _TypeAlias = _typing.Literal["arguments"]  # noqa: Y015
+    _WhichOneofArgType__arguments: _TypeAlias = _typing.Literal["_arguments", b"_arguments"]  # noqa: Y015
+    _WhichOneofReturnType__auto_delete: _TypeAlias = _typing.Literal["auto_delete"]  # noqa: Y015
+    _WhichOneofArgType__auto_delete: _TypeAlias = _typing.Literal["_auto_delete", b"_auto_delete"]  # noqa: Y015
+    _WhichOneofReturnType__durable: _TypeAlias = _typing.Literal["durable"]  # noqa: Y015
+    _WhichOneofArgType__durable: _TypeAlias = _typing.Literal["_durable", b"_durable"]  # noqa: Y015
+    _WhichOneofReturnType__exchange: _TypeAlias = _typing.Literal["exchange"]  # noqa: Y015
+    _WhichOneofArgType__exchange: _TypeAlias = _typing.Literal["_exchange", b"_exchange"]  # noqa: Y015
+    _WhichOneofReturnType__exchange_type: _TypeAlias = _typing.Literal["exchange_type"]  # noqa: Y015
+    _WhichOneofArgType__exchange_type: _TypeAlias = _typing.Literal["_exchange_type", b"_exchange_type"]  # noqa: Y015
+    _WhichOneofReturnType__internal: _TypeAlias = _typing.Literal["internal"]  # noqa: Y015
+    _WhichOneofArgType__internal: _TypeAlias = _typing.Literal["_internal", b"_internal"]  # noqa: Y015
+    _WhichOneofReturnType__no_wait: _TypeAlias = _typing.Literal["no_wait"]  # noqa: Y015
+    _WhichOneofArgType__no_wait: _TypeAlias = _typing.Literal["_no_wait", b"_no_wait"]  # noqa: Y015
+    _WhichOneofReturnType__passive: _TypeAlias = _typing.Literal["passive"]  # noqa: Y015
+    _WhichOneofArgType__passive: _TypeAlias = _typing.Literal["_passive", b"_passive"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__arguments) -> _WhichOneofReturnType__arguments | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__auto_delete) -> _WhichOneofReturnType__auto_delete | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__durable) -> _WhichOneofReturnType__durable | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__exchange) -> _WhichOneofReturnType__exchange | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__exchange_type) -> _WhichOneofReturnType__exchange_type | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__internal) -> _WhichOneofReturnType__internal | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_wait) -> _WhichOneofReturnType__no_wait | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__passive) -> _WhichOneofReturnType__passive | None: ...
+
 Global___ExchangeDeclarePattern: _TypeAlias = ExchangeDeclarePattern  # noqa: Y015
 
 @_typing.final
@@ -1158,6 +1622,21 @@ class ExchangeDeclareOk(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ExchangeDeclareOk: _TypeAlias = ExchangeDeclareOk  # noqa: Y015
+
+@_typing.final
+class ExchangeDeclareOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ExchangeDeclareOkSelector: _TypeAlias = ExchangeDeclareOkSelector  # noqa: Y015
 
 @_typing.final
 class ExchangeDeclareOkPattern(_message.Message):
@@ -1209,7 +1688,7 @@ class ExchangeBind(_message.Message):
 Global___ExchangeBind: _TypeAlias = ExchangeBind  # noqa: Y015
 
 @_typing.final
-class ExchangeBindPattern(_message.Message):
+class ExchangeBindSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -1220,6 +1699,57 @@ class ExchangeBindPattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ExchangeBindSelector: _TypeAlias = ExchangeBindSelector  # noqa: Y015
+
+@_typing.final
+class ExchangeBindPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    DESTINATION_FIELD_NUMBER: _builtins.int
+    SOURCE_FIELD_NUMBER: _builtins.int
+    ROUTING_KEY_FIELD_NUMBER: _builtins.int
+    NO_WAIT_FIELD_NUMBER: _builtins.int
+    ARGUMENTS_FIELD_NUMBER: _builtins.int
+    destination: _builtins.str
+    source: _builtins.str
+    routing_key: _builtins.str
+    no_wait: _builtins.bool
+    @_builtins.property
+    def arguments(self) -> Global___AmqpTable: ...
+    def __init__(
+        self,
+        *,
+        destination: _builtins.str | None = ...,
+        source: _builtins.str | None = ...,
+        routing_key: _builtins.str | None = ...,
+        no_wait: _builtins.bool | None = ...,
+        arguments: Global___AmqpTable | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_destination", b"_destination", "_no_wait", b"_no_wait", "_routing_key", b"_routing_key", "_source", b"_source", "arguments", b"arguments", "destination", b"destination", "no_wait", b"no_wait", "routing_key", b"routing_key", "source", b"source"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_destination", b"_destination", "_no_wait", b"_no_wait", "_routing_key", b"_routing_key", "_source", b"_source", "arguments", b"arguments", "destination", b"destination", "no_wait", b"no_wait", "routing_key", b"routing_key", "source", b"source"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__arguments: _TypeAlias = _typing.Literal["arguments"]  # noqa: Y015
+    _WhichOneofArgType__arguments: _TypeAlias = _typing.Literal["_arguments", b"_arguments"]  # noqa: Y015
+    _WhichOneofReturnType__destination: _TypeAlias = _typing.Literal["destination"]  # noqa: Y015
+    _WhichOneofArgType__destination: _TypeAlias = _typing.Literal["_destination", b"_destination"]  # noqa: Y015
+    _WhichOneofReturnType__no_wait: _TypeAlias = _typing.Literal["no_wait"]  # noqa: Y015
+    _WhichOneofArgType__no_wait: _TypeAlias = _typing.Literal["_no_wait", b"_no_wait"]  # noqa: Y015
+    _WhichOneofReturnType__routing_key: _TypeAlias = _typing.Literal["routing_key"]  # noqa: Y015
+    _WhichOneofArgType__routing_key: _TypeAlias = _typing.Literal["_routing_key", b"_routing_key"]  # noqa: Y015
+    _WhichOneofReturnType__source: _TypeAlias = _typing.Literal["source"]  # noqa: Y015
+    _WhichOneofArgType__source: _TypeAlias = _typing.Literal["_source", b"_source"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__arguments) -> _WhichOneofReturnType__arguments | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__destination) -> _WhichOneofReturnType__destination | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_wait) -> _WhichOneofReturnType__no_wait | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__routing_key) -> _WhichOneofReturnType__routing_key | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__source) -> _WhichOneofReturnType__source | None: ...
 
 Global___ExchangeBindPattern: _TypeAlias = ExchangeBindPattern  # noqa: Y015
 
@@ -1237,6 +1767,21 @@ class ExchangeBindOk(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___ExchangeBindOk: _TypeAlias = ExchangeBindOk  # noqa: Y015
+
+@_typing.final
+class ExchangeBindOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___ExchangeBindOkSelector: _TypeAlias = ExchangeBindOkSelector  # noqa: Y015
 
 @_typing.final
 class ExchangeBindOkPattern(_message.Message):
@@ -1294,7 +1839,7 @@ class QueueDeclare(_message.Message):
 Global___QueueDeclare: _TypeAlias = QueueDeclare  # noqa: Y015
 
 @_typing.final
-class QueueDeclarePattern(_message.Message):
+class QueueDeclareSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -1305,6 +1850,71 @@ class QueueDeclarePattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___QueueDeclareSelector: _TypeAlias = QueueDeclareSelector  # noqa: Y015
+
+@_typing.final
+class QueueDeclarePattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    QUEUE_FIELD_NUMBER: _builtins.int
+    PASSIVE_FIELD_NUMBER: _builtins.int
+    DURABLE_FIELD_NUMBER: _builtins.int
+    EXCLUSIVE_FIELD_NUMBER: _builtins.int
+    AUTO_DELETE_FIELD_NUMBER: _builtins.int
+    NO_WAIT_FIELD_NUMBER: _builtins.int
+    ARGUMENTS_FIELD_NUMBER: _builtins.int
+    queue: _builtins.str
+    passive: _builtins.bool
+    durable: _builtins.bool
+    exclusive: _builtins.bool
+    auto_delete: _builtins.bool
+    no_wait: _builtins.bool
+    @_builtins.property
+    def arguments(self) -> Global___AmqpTable: ...
+    def __init__(
+        self,
+        *,
+        queue: _builtins.str | None = ...,
+        passive: _builtins.bool | None = ...,
+        durable: _builtins.bool | None = ...,
+        exclusive: _builtins.bool | None = ...,
+        auto_delete: _builtins.bool | None = ...,
+        no_wait: _builtins.bool | None = ...,
+        arguments: Global___AmqpTable | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_auto_delete", b"_auto_delete", "_durable", b"_durable", "_exclusive", b"_exclusive", "_no_wait", b"_no_wait", "_passive", b"_passive", "_queue", b"_queue", "arguments", b"arguments", "auto_delete", b"auto_delete", "durable", b"durable", "exclusive", b"exclusive", "no_wait", b"no_wait", "passive", b"passive", "queue", b"queue"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_auto_delete", b"_auto_delete", "_durable", b"_durable", "_exclusive", b"_exclusive", "_no_wait", b"_no_wait", "_passive", b"_passive", "_queue", b"_queue", "arguments", b"arguments", "auto_delete", b"auto_delete", "durable", b"durable", "exclusive", b"exclusive", "no_wait", b"no_wait", "passive", b"passive", "queue", b"queue"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__arguments: _TypeAlias = _typing.Literal["arguments"]  # noqa: Y015
+    _WhichOneofArgType__arguments: _TypeAlias = _typing.Literal["_arguments", b"_arguments"]  # noqa: Y015
+    _WhichOneofReturnType__auto_delete: _TypeAlias = _typing.Literal["auto_delete"]  # noqa: Y015
+    _WhichOneofArgType__auto_delete: _TypeAlias = _typing.Literal["_auto_delete", b"_auto_delete"]  # noqa: Y015
+    _WhichOneofReturnType__durable: _TypeAlias = _typing.Literal["durable"]  # noqa: Y015
+    _WhichOneofArgType__durable: _TypeAlias = _typing.Literal["_durable", b"_durable"]  # noqa: Y015
+    _WhichOneofReturnType__exclusive: _TypeAlias = _typing.Literal["exclusive"]  # noqa: Y015
+    _WhichOneofArgType__exclusive: _TypeAlias = _typing.Literal["_exclusive", b"_exclusive"]  # noqa: Y015
+    _WhichOneofReturnType__no_wait: _TypeAlias = _typing.Literal["no_wait"]  # noqa: Y015
+    _WhichOneofArgType__no_wait: _TypeAlias = _typing.Literal["_no_wait", b"_no_wait"]  # noqa: Y015
+    _WhichOneofReturnType__passive: _TypeAlias = _typing.Literal["passive"]  # noqa: Y015
+    _WhichOneofArgType__passive: _TypeAlias = _typing.Literal["_passive", b"_passive"]  # noqa: Y015
+    _WhichOneofReturnType__queue: _TypeAlias = _typing.Literal["queue"]  # noqa: Y015
+    _WhichOneofArgType__queue: _TypeAlias = _typing.Literal["_queue", b"_queue"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__arguments) -> _WhichOneofReturnType__arguments | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__auto_delete) -> _WhichOneofReturnType__auto_delete | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__durable) -> _WhichOneofReturnType__durable | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__exclusive) -> _WhichOneofReturnType__exclusive | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_wait) -> _WhichOneofReturnType__no_wait | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__passive) -> _WhichOneofReturnType__passive | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__queue) -> _WhichOneofReturnType__queue | None: ...
 
 Global___QueueDeclarePattern: _TypeAlias = QueueDeclarePattern  # noqa: Y015
 
@@ -1334,7 +1944,7 @@ class QueueDeclareOk(_message.Message):
 Global___QueueDeclareOk: _TypeAlias = QueueDeclareOk  # noqa: Y015
 
 @_typing.final
-class QueueDeclareOkPattern(_message.Message):
+class QueueDeclareOkSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -1345,6 +1955,42 @@ class QueueDeclareOkPattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___QueueDeclareOkSelector: _TypeAlias = QueueDeclareOkSelector  # noqa: Y015
+
+@_typing.final
+class QueueDeclareOkPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    QUEUE_FIELD_NUMBER: _builtins.int
+    MESSAGE_COUNT_FIELD_NUMBER: _builtins.int
+    CONSUMER_COUNT_FIELD_NUMBER: _builtins.int
+    queue: _builtins.str
+    message_count: _builtins.int
+    consumer_count: _builtins.int
+    def __init__(
+        self,
+        *,
+        queue: _builtins.str | None = ...,
+        message_count: _builtins.int | None = ...,
+        consumer_count: _builtins.int | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_consumer_count", b"_consumer_count", "_message_count", b"_message_count", "_queue", b"_queue", "consumer_count", b"consumer_count", "message_count", b"message_count", "queue", b"queue"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_consumer_count", b"_consumer_count", "_message_count", b"_message_count", "_queue", b"_queue", "consumer_count", b"consumer_count", "message_count", b"message_count", "queue", b"queue"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__consumer_count: _TypeAlias = _typing.Literal["consumer_count"]  # noqa: Y015
+    _WhichOneofArgType__consumer_count: _TypeAlias = _typing.Literal["_consumer_count", b"_consumer_count"]  # noqa: Y015
+    _WhichOneofReturnType__message_count: _TypeAlias = _typing.Literal["message_count"]  # noqa: Y015
+    _WhichOneofArgType__message_count: _TypeAlias = _typing.Literal["_message_count", b"_message_count"]  # noqa: Y015
+    _WhichOneofReturnType__queue: _TypeAlias = _typing.Literal["queue"]  # noqa: Y015
+    _WhichOneofArgType__queue: _TypeAlias = _typing.Literal["_queue", b"_queue"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__consumer_count) -> _WhichOneofReturnType__consumer_count | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__message_count) -> _WhichOneofReturnType__message_count | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__queue) -> _WhichOneofReturnType__queue | None: ...
 
 Global___QueueDeclareOkPattern: _TypeAlias = QueueDeclareOkPattern  # noqa: Y015
 
@@ -1383,7 +2029,7 @@ class QueueBind(_message.Message):
 Global___QueueBind: _TypeAlias = QueueBind  # noqa: Y015
 
 @_typing.final
-class QueueBindPattern(_message.Message):
+class QueueBindSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -1394,6 +2040,57 @@ class QueueBindPattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___QueueBindSelector: _TypeAlias = QueueBindSelector  # noqa: Y015
+
+@_typing.final
+class QueueBindPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    QUEUE_FIELD_NUMBER: _builtins.int
+    EXCHANGE_FIELD_NUMBER: _builtins.int
+    ROUTING_KEY_FIELD_NUMBER: _builtins.int
+    NO_WAIT_FIELD_NUMBER: _builtins.int
+    ARGUMENTS_FIELD_NUMBER: _builtins.int
+    queue: _builtins.str
+    exchange: _builtins.str
+    routing_key: _builtins.str
+    no_wait: _builtins.bool
+    @_builtins.property
+    def arguments(self) -> Global___AmqpTable: ...
+    def __init__(
+        self,
+        *,
+        queue: _builtins.str | None = ...,
+        exchange: _builtins.str | None = ...,
+        routing_key: _builtins.str | None = ...,
+        no_wait: _builtins.bool | None = ...,
+        arguments: Global___AmqpTable | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_exchange", b"_exchange", "_no_wait", b"_no_wait", "_queue", b"_queue", "_routing_key", b"_routing_key", "arguments", b"arguments", "exchange", b"exchange", "no_wait", b"no_wait", "queue", b"queue", "routing_key", b"routing_key"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_exchange", b"_exchange", "_no_wait", b"_no_wait", "_queue", b"_queue", "_routing_key", b"_routing_key", "arguments", b"arguments", "exchange", b"exchange", "no_wait", b"no_wait", "queue", b"queue", "routing_key", b"routing_key"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__arguments: _TypeAlias = _typing.Literal["arguments"]  # noqa: Y015
+    _WhichOneofArgType__arguments: _TypeAlias = _typing.Literal["_arguments", b"_arguments"]  # noqa: Y015
+    _WhichOneofReturnType__exchange: _TypeAlias = _typing.Literal["exchange"]  # noqa: Y015
+    _WhichOneofArgType__exchange: _TypeAlias = _typing.Literal["_exchange", b"_exchange"]  # noqa: Y015
+    _WhichOneofReturnType__no_wait: _TypeAlias = _typing.Literal["no_wait"]  # noqa: Y015
+    _WhichOneofArgType__no_wait: _TypeAlias = _typing.Literal["_no_wait", b"_no_wait"]  # noqa: Y015
+    _WhichOneofReturnType__queue: _TypeAlias = _typing.Literal["queue"]  # noqa: Y015
+    _WhichOneofArgType__queue: _TypeAlias = _typing.Literal["_queue", b"_queue"]  # noqa: Y015
+    _WhichOneofReturnType__routing_key: _TypeAlias = _typing.Literal["routing_key"]  # noqa: Y015
+    _WhichOneofArgType__routing_key: _TypeAlias = _typing.Literal["_routing_key", b"_routing_key"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__arguments) -> _WhichOneofReturnType__arguments | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__exchange) -> _WhichOneofReturnType__exchange | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_wait) -> _WhichOneofReturnType__no_wait | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__queue) -> _WhichOneofReturnType__queue | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__routing_key) -> _WhichOneofReturnType__routing_key | None: ...
 
 Global___QueueBindPattern: _TypeAlias = QueueBindPattern  # noqa: Y015
 
@@ -1411,6 +2108,21 @@ class QueueBindOk(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___QueueBindOk: _TypeAlias = QueueBindOk  # noqa: Y015
+
+@_typing.final
+class QueueBindOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___QueueBindOkSelector: _TypeAlias = QueueBindOkSelector  # noqa: Y015
 
 @_typing.final
 class QueueBindOkPattern(_message.Message):
@@ -1453,7 +2165,7 @@ class BasicQos(_message.Message):
 Global___BasicQos: _TypeAlias = BasicQos  # noqa: Y015
 
 @_typing.final
-class BasicQosPattern(_message.Message):
+class BasicQosSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -1464,6 +2176,42 @@ class BasicQosPattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___BasicQosSelector: _TypeAlias = BasicQosSelector  # noqa: Y015
+
+@_typing.final
+class BasicQosPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    PREFETCH_COUNT_FIELD_NUMBER: _builtins.int
+    PREFETCH_SIZE_FIELD_NUMBER: _builtins.int
+    GLOBAL_QOS_FIELD_NUMBER: _builtins.int
+    prefetch_count: _builtins.int
+    prefetch_size: _builtins.int
+    global_qos: _builtins.bool
+    def __init__(
+        self,
+        *,
+        prefetch_count: _builtins.int | None = ...,
+        prefetch_size: _builtins.int | None = ...,
+        global_qos: _builtins.bool | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_global_qos", b"_global_qos", "_prefetch_count", b"_prefetch_count", "_prefetch_size", b"_prefetch_size", "global_qos", b"global_qos", "prefetch_count", b"prefetch_count", "prefetch_size", b"prefetch_size"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_global_qos", b"_global_qos", "_prefetch_count", b"_prefetch_count", "_prefetch_size", b"_prefetch_size", "global_qos", b"global_qos", "prefetch_count", b"prefetch_count", "prefetch_size", b"prefetch_size"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__global_qos: _TypeAlias = _typing.Literal["global_qos"]  # noqa: Y015
+    _WhichOneofArgType__global_qos: _TypeAlias = _typing.Literal["_global_qos", b"_global_qos"]  # noqa: Y015
+    _WhichOneofReturnType__prefetch_count: _TypeAlias = _typing.Literal["prefetch_count"]  # noqa: Y015
+    _WhichOneofArgType__prefetch_count: _TypeAlias = _typing.Literal["_prefetch_count", b"_prefetch_count"]  # noqa: Y015
+    _WhichOneofReturnType__prefetch_size: _TypeAlias = _typing.Literal["prefetch_size"]  # noqa: Y015
+    _WhichOneofArgType__prefetch_size: _TypeAlias = _typing.Literal["_prefetch_size", b"_prefetch_size"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__global_qos) -> _WhichOneofReturnType__global_qos | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__prefetch_count) -> _WhichOneofReturnType__prefetch_count | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__prefetch_size) -> _WhichOneofReturnType__prefetch_size | None: ...
 
 Global___BasicQosPattern: _TypeAlias = BasicQosPattern  # noqa: Y015
 
@@ -1481,6 +2229,21 @@ class BasicQosOk(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___BasicQosOk: _TypeAlias = BasicQosOk  # noqa: Y015
+
+@_typing.final
+class BasicQosOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___BasicQosOkSelector: _TypeAlias = BasicQosOkSelector  # noqa: Y015
 
 @_typing.final
 class BasicQosOkPattern(_message.Message):
@@ -1538,7 +2301,7 @@ class BasicConsume(_message.Message):
 Global___BasicConsume: _TypeAlias = BasicConsume  # noqa: Y015
 
 @_typing.final
-class BasicConsumePattern(_message.Message):
+class BasicConsumeSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -1549,6 +2312,71 @@ class BasicConsumePattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___BasicConsumeSelector: _TypeAlias = BasicConsumeSelector  # noqa: Y015
+
+@_typing.final
+class BasicConsumePattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    QUEUE_FIELD_NUMBER: _builtins.int
+    CONSUMER_TAG_FIELD_NUMBER: _builtins.int
+    NO_LOCAL_FIELD_NUMBER: _builtins.int
+    NO_ACK_FIELD_NUMBER: _builtins.int
+    NO_WAIT_FIELD_NUMBER: _builtins.int
+    EXCLUSIVE_FIELD_NUMBER: _builtins.int
+    ARGUMENTS_FIELD_NUMBER: _builtins.int
+    queue: _builtins.str
+    consumer_tag: _builtins.str
+    no_local: _builtins.bool
+    no_ack: _builtins.bool
+    no_wait: _builtins.bool
+    exclusive: _builtins.bool
+    @_builtins.property
+    def arguments(self) -> Global___AmqpTable: ...
+    def __init__(
+        self,
+        *,
+        queue: _builtins.str | None = ...,
+        consumer_tag: _builtins.str | None = ...,
+        no_local: _builtins.bool | None = ...,
+        no_ack: _builtins.bool | None = ...,
+        no_wait: _builtins.bool | None = ...,
+        exclusive: _builtins.bool | None = ...,
+        arguments: Global___AmqpTable | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_consumer_tag", b"_consumer_tag", "_exclusive", b"_exclusive", "_no_ack", b"_no_ack", "_no_local", b"_no_local", "_no_wait", b"_no_wait", "_queue", b"_queue", "arguments", b"arguments", "consumer_tag", b"consumer_tag", "exclusive", b"exclusive", "no_ack", b"no_ack", "no_local", b"no_local", "no_wait", b"no_wait", "queue", b"queue"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_arguments", b"_arguments", "_consumer_tag", b"_consumer_tag", "_exclusive", b"_exclusive", "_no_ack", b"_no_ack", "_no_local", b"_no_local", "_no_wait", b"_no_wait", "_queue", b"_queue", "arguments", b"arguments", "consumer_tag", b"consumer_tag", "exclusive", b"exclusive", "no_ack", b"no_ack", "no_local", b"no_local", "no_wait", b"no_wait", "queue", b"queue"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__arguments: _TypeAlias = _typing.Literal["arguments"]  # noqa: Y015
+    _WhichOneofArgType__arguments: _TypeAlias = _typing.Literal["_arguments", b"_arguments"]  # noqa: Y015
+    _WhichOneofReturnType__consumer_tag: _TypeAlias = _typing.Literal["consumer_tag"]  # noqa: Y015
+    _WhichOneofArgType__consumer_tag: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag"]  # noqa: Y015
+    _WhichOneofReturnType__exclusive: _TypeAlias = _typing.Literal["exclusive"]  # noqa: Y015
+    _WhichOneofArgType__exclusive: _TypeAlias = _typing.Literal["_exclusive", b"_exclusive"]  # noqa: Y015
+    _WhichOneofReturnType__no_ack: _TypeAlias = _typing.Literal["no_ack"]  # noqa: Y015
+    _WhichOneofArgType__no_ack: _TypeAlias = _typing.Literal["_no_ack", b"_no_ack"]  # noqa: Y015
+    _WhichOneofReturnType__no_local: _TypeAlias = _typing.Literal["no_local"]  # noqa: Y015
+    _WhichOneofArgType__no_local: _TypeAlias = _typing.Literal["_no_local", b"_no_local"]  # noqa: Y015
+    _WhichOneofReturnType__no_wait: _TypeAlias = _typing.Literal["no_wait"]  # noqa: Y015
+    _WhichOneofArgType__no_wait: _TypeAlias = _typing.Literal["_no_wait", b"_no_wait"]  # noqa: Y015
+    _WhichOneofReturnType__queue: _TypeAlias = _typing.Literal["queue"]  # noqa: Y015
+    _WhichOneofArgType__queue: _TypeAlias = _typing.Literal["_queue", b"_queue"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__arguments) -> _WhichOneofReturnType__arguments | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__consumer_tag) -> _WhichOneofReturnType__consumer_tag | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__exclusive) -> _WhichOneofReturnType__exclusive | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_ack) -> _WhichOneofReturnType__no_ack | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_local) -> _WhichOneofReturnType__no_local | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_wait) -> _WhichOneofReturnType__no_wait | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__queue) -> _WhichOneofReturnType__queue | None: ...
 
 Global___BasicConsumePattern: _TypeAlias = BasicConsumePattern  # noqa: Y015
 
@@ -1572,7 +2400,7 @@ class BasicConsumeOk(_message.Message):
 Global___BasicConsumeOk: _TypeAlias = BasicConsumeOk  # noqa: Y015
 
 @_typing.final
-class BasicConsumeOkPattern(_message.Message):
+class BasicConsumeOkSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -1583,6 +2411,27 @@ class BasicConsumeOkPattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___BasicConsumeOkSelector: _TypeAlias = BasicConsumeOkSelector  # noqa: Y015
+
+@_typing.final
+class BasicConsumeOkPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    CONSUMER_TAG_FIELD_NUMBER: _builtins.int
+    consumer_tag: _builtins.str
+    def __init__(
+        self,
+        *,
+        consumer_tag: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag", "consumer_tag", b"consumer_tag"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag", "consumer_tag", b"consumer_tag"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__consumer_tag: _TypeAlias = _typing.Literal["consumer_tag"]  # noqa: Y015
+    _WhichOneofArgType__consumer_tag: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__consumer_tag) -> _WhichOneofReturnType__consumer_tag | None: ...
 
 Global___BasicConsumeOkPattern: _TypeAlias = BasicConsumeOkPattern  # noqa: Y015
 
@@ -1609,7 +2458,7 @@ class BasicCancel(_message.Message):
 Global___BasicCancel: _TypeAlias = BasicCancel  # noqa: Y015
 
 @_typing.final
-class BasicCancelPattern(_message.Message):
+class BasicCancelSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     CONSUMER_TAG_FIELD_NUMBER: _builtins.int
@@ -1626,6 +2475,35 @@ class BasicCancelPattern(_message.Message):
     _WhichOneofReturnType__consumer_tag: _TypeAlias = _typing.Literal["consumer_tag"]  # noqa: Y015
     _WhichOneofArgType__consumer_tag: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__consumer_tag) -> _WhichOneofReturnType__consumer_tag | None: ...
+
+Global___BasicCancelSelector: _TypeAlias = BasicCancelSelector  # noqa: Y015
+
+@_typing.final
+class BasicCancelPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    CONSUMER_TAG_FIELD_NUMBER: _builtins.int
+    NO_WAIT_FIELD_NUMBER: _builtins.int
+    consumer_tag: _builtins.str
+    no_wait: _builtins.bool
+    def __init__(
+        self,
+        *,
+        consumer_tag: _builtins.str | None = ...,
+        no_wait: _builtins.bool | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag", "_no_wait", b"_no_wait", "consumer_tag", b"consumer_tag", "no_wait", b"no_wait"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag", "_no_wait", b"_no_wait", "consumer_tag", b"consumer_tag", "no_wait", b"no_wait"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__consumer_tag: _TypeAlias = _typing.Literal["consumer_tag"]  # noqa: Y015
+    _WhichOneofArgType__consumer_tag: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag"]  # noqa: Y015
+    _WhichOneofReturnType__no_wait: _TypeAlias = _typing.Literal["no_wait"]  # noqa: Y015
+    _WhichOneofArgType__no_wait: _TypeAlias = _typing.Literal["_no_wait", b"_no_wait"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__consumer_tag) -> _WhichOneofReturnType__consumer_tag | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_wait) -> _WhichOneofReturnType__no_wait | None: ...
 
 Global___BasicCancelPattern: _TypeAlias = BasicCancelPattern  # noqa: Y015
 
@@ -1647,6 +2525,27 @@ class BasicCancelOk(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___BasicCancelOk: _TypeAlias = BasicCancelOk  # noqa: Y015
+
+@_typing.final
+class BasicCancelOkSelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    CONSUMER_TAG_FIELD_NUMBER: _builtins.int
+    consumer_tag: _builtins.str
+    def __init__(
+        self,
+        *,
+        consumer_tag: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag", "consumer_tag", b"consumer_tag"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag", "consumer_tag", b"consumer_tag"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__consumer_tag: _TypeAlias = _typing.Literal["consumer_tag"]  # noqa: Y015
+    _WhichOneofArgType__consumer_tag: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__consumer_tag) -> _WhichOneofReturnType__consumer_tag | None: ...
+
+Global___BasicCancelOkSelector: _TypeAlias = BasicCancelOkSelector  # noqa: Y015
 
 @_typing.final
 class BasicCancelOkPattern(_message.Message):
@@ -1707,7 +2606,7 @@ class BasicPublish(_message.Message):
 Global___BasicPublish: _TypeAlias = BasicPublish  # noqa: Y015
 
 @_typing.final
-class BasicPublishPattern(_message.Message):
+class BasicPublishSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -1718,6 +2617,64 @@ class BasicPublishPattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___BasicPublishSelector: _TypeAlias = BasicPublishSelector  # noqa: Y015
+
+@_typing.final
+class BasicPublishPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    EXCHANGE_FIELD_NUMBER: _builtins.int
+    ROUTING_KEY_FIELD_NUMBER: _builtins.int
+    MANDATORY_FIELD_NUMBER: _builtins.int
+    IMMEDIATE_FIELD_NUMBER: _builtins.int
+    PROPERTIES_FIELD_NUMBER: _builtins.int
+    BODY_FIELD_NUMBER: _builtins.int
+    exchange: _builtins.str
+    routing_key: _builtins.str
+    mandatory: _builtins.bool
+    immediate: _builtins.bool
+    body: _builtins.bytes
+    @_builtins.property
+    def properties(self) -> Global___MessageProperties: ...
+    def __init__(
+        self,
+        *,
+        exchange: _builtins.str | None = ...,
+        routing_key: _builtins.str | None = ...,
+        mandatory: _builtins.bool | None = ...,
+        immediate: _builtins.bool | None = ...,
+        properties: Global___MessageProperties | None = ...,
+        body: _builtins.bytes | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_body", b"_body", "_exchange", b"_exchange", "_immediate", b"_immediate", "_mandatory", b"_mandatory", "_properties", b"_properties", "_routing_key", b"_routing_key", "body", b"body", "exchange", b"exchange", "immediate", b"immediate", "mandatory", b"mandatory", "properties", b"properties", "routing_key", b"routing_key"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_body", b"_body", "_exchange", b"_exchange", "_immediate", b"_immediate", "_mandatory", b"_mandatory", "_properties", b"_properties", "_routing_key", b"_routing_key", "body", b"body", "exchange", b"exchange", "immediate", b"immediate", "mandatory", b"mandatory", "properties", b"properties", "routing_key", b"routing_key"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__body: _TypeAlias = _typing.Literal["body"]  # noqa: Y015
+    _WhichOneofArgType__body: _TypeAlias = _typing.Literal["_body", b"_body"]  # noqa: Y015
+    _WhichOneofReturnType__exchange: _TypeAlias = _typing.Literal["exchange"]  # noqa: Y015
+    _WhichOneofArgType__exchange: _TypeAlias = _typing.Literal["_exchange", b"_exchange"]  # noqa: Y015
+    _WhichOneofReturnType__immediate: _TypeAlias = _typing.Literal["immediate"]  # noqa: Y015
+    _WhichOneofArgType__immediate: _TypeAlias = _typing.Literal["_immediate", b"_immediate"]  # noqa: Y015
+    _WhichOneofReturnType__mandatory: _TypeAlias = _typing.Literal["mandatory"]  # noqa: Y015
+    _WhichOneofArgType__mandatory: _TypeAlias = _typing.Literal["_mandatory", b"_mandatory"]  # noqa: Y015
+    _WhichOneofReturnType__properties: _TypeAlias = _typing.Literal["properties"]  # noqa: Y015
+    _WhichOneofArgType__properties: _TypeAlias = _typing.Literal["_properties", b"_properties"]  # noqa: Y015
+    _WhichOneofReturnType__routing_key: _TypeAlias = _typing.Literal["routing_key"]  # noqa: Y015
+    _WhichOneofArgType__routing_key: _TypeAlias = _typing.Literal["_routing_key", b"_routing_key"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__body) -> _WhichOneofReturnType__body | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__exchange) -> _WhichOneofReturnType__exchange | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__immediate) -> _WhichOneofReturnType__immediate | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__mandatory) -> _WhichOneofReturnType__mandatory | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__properties) -> _WhichOneofReturnType__properties | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__routing_key) -> _WhichOneofReturnType__routing_key | None: ...
 
 Global___BasicPublishPattern: _TypeAlias = BasicPublishPattern  # noqa: Y015
 
@@ -1759,7 +2716,7 @@ class BasicReturn(_message.Message):
 Global___BasicReturn: _TypeAlias = BasicReturn  # noqa: Y015
 
 @_typing.final
-class BasicReturnPattern(_message.Message):
+class BasicReturnSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     REPLY_CODE_FIELD_NUMBER: _builtins.int
@@ -1792,6 +2749,64 @@ class BasicReturnPattern(_message.Message):
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__routing_key) -> _WhichOneofReturnType__routing_key | None: ...
 
+Global___BasicReturnSelector: _TypeAlias = BasicReturnSelector  # noqa: Y015
+
+@_typing.final
+class BasicReturnPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    REPLY_CODE_FIELD_NUMBER: _builtins.int
+    REPLY_TEXT_FIELD_NUMBER: _builtins.int
+    EXCHANGE_FIELD_NUMBER: _builtins.int
+    ROUTING_KEY_FIELD_NUMBER: _builtins.int
+    PROPERTIES_FIELD_NUMBER: _builtins.int
+    BODY_FIELD_NUMBER: _builtins.int
+    reply_code: _builtins.int
+    reply_text: _builtins.str
+    exchange: _builtins.str
+    routing_key: _builtins.str
+    body: _builtins.bytes
+    @_builtins.property
+    def properties(self) -> Global___MessageProperties: ...
+    def __init__(
+        self,
+        *,
+        reply_code: _builtins.int | None = ...,
+        reply_text: _builtins.str | None = ...,
+        exchange: _builtins.str | None = ...,
+        routing_key: _builtins.str | None = ...,
+        properties: Global___MessageProperties | None = ...,
+        body: _builtins.bytes | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_body", b"_body", "_exchange", b"_exchange", "_properties", b"_properties", "_reply_code", b"_reply_code", "_reply_text", b"_reply_text", "_routing_key", b"_routing_key", "body", b"body", "exchange", b"exchange", "properties", b"properties", "reply_code", b"reply_code", "reply_text", b"reply_text", "routing_key", b"routing_key"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_body", b"_body", "_exchange", b"_exchange", "_properties", b"_properties", "_reply_code", b"_reply_code", "_reply_text", b"_reply_text", "_routing_key", b"_routing_key", "body", b"body", "exchange", b"exchange", "properties", b"properties", "reply_code", b"reply_code", "reply_text", b"reply_text", "routing_key", b"routing_key"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__body: _TypeAlias = _typing.Literal["body"]  # noqa: Y015
+    _WhichOneofArgType__body: _TypeAlias = _typing.Literal["_body", b"_body"]  # noqa: Y015
+    _WhichOneofReturnType__exchange: _TypeAlias = _typing.Literal["exchange"]  # noqa: Y015
+    _WhichOneofArgType__exchange: _TypeAlias = _typing.Literal["_exchange", b"_exchange"]  # noqa: Y015
+    _WhichOneofReturnType__properties: _TypeAlias = _typing.Literal["properties"]  # noqa: Y015
+    _WhichOneofArgType__properties: _TypeAlias = _typing.Literal["_properties", b"_properties"]  # noqa: Y015
+    _WhichOneofReturnType__reply_code: _TypeAlias = _typing.Literal["reply_code"]  # noqa: Y015
+    _WhichOneofArgType__reply_code: _TypeAlias = _typing.Literal["_reply_code", b"_reply_code"]  # noqa: Y015
+    _WhichOneofReturnType__reply_text: _TypeAlias = _typing.Literal["reply_text"]  # noqa: Y015
+    _WhichOneofArgType__reply_text: _TypeAlias = _typing.Literal["_reply_text", b"_reply_text"]  # noqa: Y015
+    _WhichOneofReturnType__routing_key: _TypeAlias = _typing.Literal["routing_key"]  # noqa: Y015
+    _WhichOneofArgType__routing_key: _TypeAlias = _typing.Literal["_routing_key", b"_routing_key"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__body) -> _WhichOneofReturnType__body | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__exchange) -> _WhichOneofReturnType__exchange | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__properties) -> _WhichOneofReturnType__properties | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__reply_code) -> _WhichOneofReturnType__reply_code | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__reply_text) -> _WhichOneofReturnType__reply_text | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__routing_key) -> _WhichOneofReturnType__routing_key | None: ...
+
 Global___BasicReturnPattern: _TypeAlias = BasicReturnPattern  # noqa: Y015
 
 @_typing.final
@@ -1817,7 +2832,7 @@ class BasicAck(_message.Message):
 Global___BasicAck: _TypeAlias = BasicAck  # noqa: Y015
 
 @_typing.final
-class BasicAckPattern(_message.Message):
+class BasicAckSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     DELIVERY_TAG_FIELD_NUMBER: _builtins.int
@@ -1834,6 +2849,35 @@ class BasicAckPattern(_message.Message):
     _WhichOneofReturnType__delivery_tag: _TypeAlias = _typing.Literal["delivery_tag"]  # noqa: Y015
     _WhichOneofArgType__delivery_tag: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
+
+Global___BasicAckSelector: _TypeAlias = BasicAckSelector  # noqa: Y015
+
+@_typing.final
+class BasicAckPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    DELIVERY_TAG_FIELD_NUMBER: _builtins.int
+    MULTIPLE_FIELD_NUMBER: _builtins.int
+    delivery_tag: _builtins.int
+    multiple: _builtins.bool
+    def __init__(
+        self,
+        *,
+        delivery_tag: _builtins.int | None = ...,
+        multiple: _builtins.bool | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag", "_multiple", b"_multiple", "delivery_tag", b"delivery_tag", "multiple", b"multiple"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag", "_multiple", b"_multiple", "delivery_tag", b"delivery_tag", "multiple", b"multiple"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__delivery_tag: _TypeAlias = _typing.Literal["delivery_tag"]  # noqa: Y015
+    _WhichOneofArgType__delivery_tag: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag"]  # noqa: Y015
+    _WhichOneofReturnType__multiple: _TypeAlias = _typing.Literal["multiple"]  # noqa: Y015
+    _WhichOneofArgType__multiple: _TypeAlias = _typing.Literal["_multiple", b"_multiple"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__multiple) -> _WhichOneofReturnType__multiple | None: ...
 
 Global___BasicAckPattern: _TypeAlias = BasicAckPattern  # noqa: Y015
 
@@ -1863,7 +2907,7 @@ class BasicNack(_message.Message):
 Global___BasicNack: _TypeAlias = BasicNack  # noqa: Y015
 
 @_typing.final
-class BasicNackPattern(_message.Message):
+class BasicNackSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     DELIVERY_TAG_FIELD_NUMBER: _builtins.int
@@ -1880,6 +2924,42 @@ class BasicNackPattern(_message.Message):
     _WhichOneofReturnType__delivery_tag: _TypeAlias = _typing.Literal["delivery_tag"]  # noqa: Y015
     _WhichOneofArgType__delivery_tag: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
+
+Global___BasicNackSelector: _TypeAlias = BasicNackSelector  # noqa: Y015
+
+@_typing.final
+class BasicNackPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    DELIVERY_TAG_FIELD_NUMBER: _builtins.int
+    MULTIPLE_FIELD_NUMBER: _builtins.int
+    REQUEUE_FIELD_NUMBER: _builtins.int
+    delivery_tag: _builtins.int
+    multiple: _builtins.bool
+    requeue: _builtins.bool
+    def __init__(
+        self,
+        *,
+        delivery_tag: _builtins.int | None = ...,
+        multiple: _builtins.bool | None = ...,
+        requeue: _builtins.bool | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag", "_multiple", b"_multiple", "_requeue", b"_requeue", "delivery_tag", b"delivery_tag", "multiple", b"multiple", "requeue", b"requeue"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag", "_multiple", b"_multiple", "_requeue", b"_requeue", "delivery_tag", b"delivery_tag", "multiple", b"multiple", "requeue", b"requeue"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__delivery_tag: _TypeAlias = _typing.Literal["delivery_tag"]  # noqa: Y015
+    _WhichOneofArgType__delivery_tag: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag"]  # noqa: Y015
+    _WhichOneofReturnType__multiple: _TypeAlias = _typing.Literal["multiple"]  # noqa: Y015
+    _WhichOneofArgType__multiple: _TypeAlias = _typing.Literal["_multiple", b"_multiple"]  # noqa: Y015
+    _WhichOneofReturnType__requeue: _TypeAlias = _typing.Literal["requeue"]  # noqa: Y015
+    _WhichOneofArgType__requeue: _TypeAlias = _typing.Literal["_requeue", b"_requeue"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__multiple) -> _WhichOneofReturnType__multiple | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__requeue) -> _WhichOneofReturnType__requeue | None: ...
 
 Global___BasicNackPattern: _TypeAlias = BasicNackPattern  # noqa: Y015
 
@@ -1906,7 +2986,7 @@ class BasicReject(_message.Message):
 Global___BasicReject: _TypeAlias = BasicReject  # noqa: Y015
 
 @_typing.final
-class BasicRejectPattern(_message.Message):
+class BasicRejectSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     DELIVERY_TAG_FIELD_NUMBER: _builtins.int
@@ -1923,6 +3003,35 @@ class BasicRejectPattern(_message.Message):
     _WhichOneofReturnType__delivery_tag: _TypeAlias = _typing.Literal["delivery_tag"]  # noqa: Y015
     _WhichOneofArgType__delivery_tag: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
+
+Global___BasicRejectSelector: _TypeAlias = BasicRejectSelector  # noqa: Y015
+
+@_typing.final
+class BasicRejectPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    DELIVERY_TAG_FIELD_NUMBER: _builtins.int
+    REQUEUE_FIELD_NUMBER: _builtins.int
+    delivery_tag: _builtins.int
+    requeue: _builtins.bool
+    def __init__(
+        self,
+        *,
+        delivery_tag: _builtins.int | None = ...,
+        requeue: _builtins.bool | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag", "_requeue", b"_requeue", "delivery_tag", b"delivery_tag", "requeue", b"requeue"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag", "_requeue", b"_requeue", "delivery_tag", b"delivery_tag", "requeue", b"requeue"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__delivery_tag: _TypeAlias = _typing.Literal["delivery_tag"]  # noqa: Y015
+    _WhichOneofArgType__delivery_tag: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag"]  # noqa: Y015
+    _WhichOneofReturnType__requeue: _TypeAlias = _typing.Literal["requeue"]  # noqa: Y015
+    _WhichOneofArgType__requeue: _TypeAlias = _typing.Literal["_requeue", b"_requeue"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__requeue) -> _WhichOneofReturnType__requeue | None: ...
 
 Global___BasicRejectPattern: _TypeAlias = BasicRejectPattern  # noqa: Y015
 
@@ -1967,7 +3076,7 @@ class BasicDeliver(_message.Message):
 Global___BasicDeliver: _TypeAlias = BasicDeliver  # noqa: Y015
 
 @_typing.final
-class BasicDeliverPattern(_message.Message):
+class BasicDeliverSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     CONSUMER_TAG_FIELD_NUMBER: _builtins.int
@@ -1992,6 +3101,71 @@ class BasicDeliverPattern(_message.Message):
     def WhichOneof(self, oneof_group: _WhichOneofArgType__consumer_tag) -> _WhichOneofReturnType__consumer_tag | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
+
+Global___BasicDeliverSelector: _TypeAlias = BasicDeliverSelector  # noqa: Y015
+
+@_typing.final
+class BasicDeliverPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    CONSUMER_TAG_FIELD_NUMBER: _builtins.int
+    DELIVERY_TAG_FIELD_NUMBER: _builtins.int
+    REDELIVERED_FIELD_NUMBER: _builtins.int
+    EXCHANGE_FIELD_NUMBER: _builtins.int
+    ROUTING_KEY_FIELD_NUMBER: _builtins.int
+    PROPERTIES_FIELD_NUMBER: _builtins.int
+    BODY_FIELD_NUMBER: _builtins.int
+    consumer_tag: _builtins.str
+    delivery_tag: _builtins.int
+    redelivered: _builtins.bool
+    exchange: _builtins.str
+    routing_key: _builtins.str
+    body: _builtins.bytes
+    @_builtins.property
+    def properties(self) -> Global___MessageProperties: ...
+    def __init__(
+        self,
+        *,
+        consumer_tag: _builtins.str | None = ...,
+        delivery_tag: _builtins.int | None = ...,
+        redelivered: _builtins.bool | None = ...,
+        exchange: _builtins.str | None = ...,
+        routing_key: _builtins.str | None = ...,
+        properties: Global___MessageProperties | None = ...,
+        body: _builtins.bytes | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_body", b"_body", "_consumer_tag", b"_consumer_tag", "_delivery_tag", b"_delivery_tag", "_exchange", b"_exchange", "_properties", b"_properties", "_redelivered", b"_redelivered", "_routing_key", b"_routing_key", "body", b"body", "consumer_tag", b"consumer_tag", "delivery_tag", b"delivery_tag", "exchange", b"exchange", "properties", b"properties", "redelivered", b"redelivered", "routing_key", b"routing_key"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_body", b"_body", "_consumer_tag", b"_consumer_tag", "_delivery_tag", b"_delivery_tag", "_exchange", b"_exchange", "_properties", b"_properties", "_redelivered", b"_redelivered", "_routing_key", b"_routing_key", "body", b"body", "consumer_tag", b"consumer_tag", "delivery_tag", b"delivery_tag", "exchange", b"exchange", "properties", b"properties", "redelivered", b"redelivered", "routing_key", b"routing_key"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__body: _TypeAlias = _typing.Literal["body"]  # noqa: Y015
+    _WhichOneofArgType__body: _TypeAlias = _typing.Literal["_body", b"_body"]  # noqa: Y015
+    _WhichOneofReturnType__consumer_tag: _TypeAlias = _typing.Literal["consumer_tag"]  # noqa: Y015
+    _WhichOneofArgType__consumer_tag: _TypeAlias = _typing.Literal["_consumer_tag", b"_consumer_tag"]  # noqa: Y015
+    _WhichOneofReturnType__delivery_tag: _TypeAlias = _typing.Literal["delivery_tag"]  # noqa: Y015
+    _WhichOneofArgType__delivery_tag: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag"]  # noqa: Y015
+    _WhichOneofReturnType__exchange: _TypeAlias = _typing.Literal["exchange"]  # noqa: Y015
+    _WhichOneofArgType__exchange: _TypeAlias = _typing.Literal["_exchange", b"_exchange"]  # noqa: Y015
+    _WhichOneofReturnType__properties: _TypeAlias = _typing.Literal["properties"]  # noqa: Y015
+    _WhichOneofArgType__properties: _TypeAlias = _typing.Literal["_properties", b"_properties"]  # noqa: Y015
+    _WhichOneofReturnType__redelivered: _TypeAlias = _typing.Literal["redelivered"]  # noqa: Y015
+    _WhichOneofArgType__redelivered: _TypeAlias = _typing.Literal["_redelivered", b"_redelivered"]  # noqa: Y015
+    _WhichOneofReturnType__routing_key: _TypeAlias = _typing.Literal["routing_key"]  # noqa: Y015
+    _WhichOneofArgType__routing_key: _TypeAlias = _typing.Literal["_routing_key", b"_routing_key"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__body) -> _WhichOneofReturnType__body | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__consumer_tag) -> _WhichOneofReturnType__consumer_tag | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__exchange) -> _WhichOneofReturnType__exchange | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__properties) -> _WhichOneofReturnType__properties | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__redelivered) -> _WhichOneofReturnType__redelivered | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__routing_key) -> _WhichOneofReturnType__routing_key | None: ...
 
 Global___BasicDeliverPattern: _TypeAlias = BasicDeliverPattern  # noqa: Y015
 
@@ -2018,7 +3192,7 @@ class BasicGet(_message.Message):
 Global___BasicGet: _TypeAlias = BasicGet  # noqa: Y015
 
 @_typing.final
-class BasicGetPattern(_message.Message):
+class BasicGetSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     def __init__(
@@ -2029,6 +3203,35 @@ class BasicGetPattern(_message.Message):
     _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___BasicGetSelector: _TypeAlias = BasicGetSelector  # noqa: Y015
+
+@_typing.final
+class BasicGetPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    QUEUE_FIELD_NUMBER: _builtins.int
+    NO_ACK_FIELD_NUMBER: _builtins.int
+    queue: _builtins.str
+    no_ack: _builtins.bool
+    def __init__(
+        self,
+        *,
+        queue: _builtins.str | None = ...,
+        no_ack: _builtins.bool | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_no_ack", b"_no_ack", "_queue", b"_queue", "no_ack", b"no_ack", "queue", b"queue"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_no_ack", b"_no_ack", "_queue", b"_queue", "no_ack", b"no_ack", "queue", b"queue"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__no_ack: _TypeAlias = _typing.Literal["no_ack"]  # noqa: Y015
+    _WhichOneofArgType__no_ack: _TypeAlias = _typing.Literal["_no_ack", b"_no_ack"]  # noqa: Y015
+    _WhichOneofReturnType__queue: _TypeAlias = _typing.Literal["queue"]  # noqa: Y015
+    _WhichOneofArgType__queue: _TypeAlias = _typing.Literal["_queue", b"_queue"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__no_ack) -> _WhichOneofReturnType__no_ack | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__queue) -> _WhichOneofReturnType__queue | None: ...
 
 Global___BasicGetPattern: _TypeAlias = BasicGetPattern  # noqa: Y015
 
@@ -2073,7 +3276,7 @@ class BasicGetOk(_message.Message):
 Global___BasicGetOk: _TypeAlias = BasicGetOk  # noqa: Y015
 
 @_typing.final
-class BasicGetOkPattern(_message.Message):
+class BasicGetOkSelector(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     DELIVERY_TAG_FIELD_NUMBER: _builtins.int
@@ -2091,6 +3294,71 @@ class BasicGetOkPattern(_message.Message):
     _WhichOneofArgType__delivery_tag: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag"]  # noqa: Y015
     def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
 
+Global___BasicGetOkSelector: _TypeAlias = BasicGetOkSelector  # noqa: Y015
+
+@_typing.final
+class BasicGetOkPattern(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    DELIVERY_TAG_FIELD_NUMBER: _builtins.int
+    REDELIVERED_FIELD_NUMBER: _builtins.int
+    EXCHANGE_FIELD_NUMBER: _builtins.int
+    ROUTING_KEY_FIELD_NUMBER: _builtins.int
+    MESSAGE_COUNT_FIELD_NUMBER: _builtins.int
+    PROPERTIES_FIELD_NUMBER: _builtins.int
+    BODY_FIELD_NUMBER: _builtins.int
+    delivery_tag: _builtins.int
+    redelivered: _builtins.bool
+    exchange: _builtins.str
+    routing_key: _builtins.str
+    message_count: _builtins.int
+    body: _builtins.bytes
+    @_builtins.property
+    def properties(self) -> Global___MessageProperties: ...
+    def __init__(
+        self,
+        *,
+        delivery_tag: _builtins.int | None = ...,
+        redelivered: _builtins.bool | None = ...,
+        exchange: _builtins.str | None = ...,
+        routing_key: _builtins.str | None = ...,
+        message_count: _builtins.int | None = ...,
+        properties: Global___MessageProperties | None = ...,
+        body: _builtins.bytes | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_body", b"_body", "_delivery_tag", b"_delivery_tag", "_exchange", b"_exchange", "_message_count", b"_message_count", "_properties", b"_properties", "_redelivered", b"_redelivered", "_routing_key", b"_routing_key", "body", b"body", "delivery_tag", b"delivery_tag", "exchange", b"exchange", "message_count", b"message_count", "properties", b"properties", "redelivered", b"redelivered", "routing_key", b"routing_key"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_body", b"_body", "_delivery_tag", b"_delivery_tag", "_exchange", b"_exchange", "_message_count", b"_message_count", "_properties", b"_properties", "_redelivered", b"_redelivered", "_routing_key", b"_routing_key", "body", b"body", "delivery_tag", b"delivery_tag", "exchange", b"exchange", "message_count", b"message_count", "properties", b"properties", "redelivered", b"redelivered", "routing_key", b"routing_key"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType__body: _TypeAlias = _typing.Literal["body"]  # noqa: Y015
+    _WhichOneofArgType__body: _TypeAlias = _typing.Literal["_body", b"_body"]  # noqa: Y015
+    _WhichOneofReturnType__delivery_tag: _TypeAlias = _typing.Literal["delivery_tag"]  # noqa: Y015
+    _WhichOneofArgType__delivery_tag: _TypeAlias = _typing.Literal["_delivery_tag", b"_delivery_tag"]  # noqa: Y015
+    _WhichOneofReturnType__exchange: _TypeAlias = _typing.Literal["exchange"]  # noqa: Y015
+    _WhichOneofArgType__exchange: _TypeAlias = _typing.Literal["_exchange", b"_exchange"]  # noqa: Y015
+    _WhichOneofReturnType__message_count: _TypeAlias = _typing.Literal["message_count"]  # noqa: Y015
+    _WhichOneofArgType__message_count: _TypeAlias = _typing.Literal["_message_count", b"_message_count"]  # noqa: Y015
+    _WhichOneofReturnType__properties: _TypeAlias = _typing.Literal["properties"]  # noqa: Y015
+    _WhichOneofArgType__properties: _TypeAlias = _typing.Literal["_properties", b"_properties"]  # noqa: Y015
+    _WhichOneofReturnType__redelivered: _TypeAlias = _typing.Literal["redelivered"]  # noqa: Y015
+    _WhichOneofArgType__redelivered: _TypeAlias = _typing.Literal["_redelivered", b"_redelivered"]  # noqa: Y015
+    _WhichOneofReturnType__routing_key: _TypeAlias = _typing.Literal["routing_key"]  # noqa: Y015
+    _WhichOneofArgType__routing_key: _TypeAlias = _typing.Literal["_routing_key", b"_routing_key"]  # noqa: Y015
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__body) -> _WhichOneofReturnType__body | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__delivery_tag) -> _WhichOneofReturnType__delivery_tag | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__exchange) -> _WhichOneofReturnType__exchange | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__message_count) -> _WhichOneofReturnType__message_count | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__properties) -> _WhichOneofReturnType__properties | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__redelivered) -> _WhichOneofReturnType__redelivered | None: ...
+    @_typing.overload
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__routing_key) -> _WhichOneofReturnType__routing_key | None: ...
+
 Global___BasicGetOkPattern: _TypeAlias = BasicGetOkPattern  # noqa: Y015
 
 @_typing.final
@@ -2107,6 +3375,21 @@ class BasicGetEmpty(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___BasicGetEmpty: _TypeAlias = BasicGetEmpty  # noqa: Y015
+
+@_typing.final
+class BasicGetEmptySelector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___BasicGetEmptySelector: _TypeAlias = BasicGetEmptySelector  # noqa: Y015
 
 @_typing.final
 class BasicGetEmptyPattern(_message.Message):
@@ -2290,6 +3573,172 @@ class Method(_message.Message):
 Global___Method: _TypeAlias = Method  # noqa: Y015
 
 @_typing.final
+class Selector(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    CONNECTION_START_FIELD_NUMBER: _builtins.int
+    CONNECTION_START_OK_FIELD_NUMBER: _builtins.int
+    CONNECTION_TUNE_FIELD_NUMBER: _builtins.int
+    CONNECTION_TUNE_OK_FIELD_NUMBER: _builtins.int
+    CONNECTION_OPEN_FIELD_NUMBER: _builtins.int
+    CONNECTION_OPEN_OK_FIELD_NUMBER: _builtins.int
+    CONNECTION_CLOSE_FIELD_NUMBER: _builtins.int
+    CONNECTION_CLOSE_OK_FIELD_NUMBER: _builtins.int
+    CHANNEL_OPEN_FIELD_NUMBER: _builtins.int
+    CHANNEL_OPEN_OK_FIELD_NUMBER: _builtins.int
+    CHANNEL_CLOSE_FIELD_NUMBER: _builtins.int
+    CHANNEL_CLOSE_OK_FIELD_NUMBER: _builtins.int
+    CONFIRM_SELECT_FIELD_NUMBER: _builtins.int
+    CONFIRM_SELECT_OK_FIELD_NUMBER: _builtins.int
+    EXCHANGE_DECLARE_FIELD_NUMBER: _builtins.int
+    EXCHANGE_DECLARE_OK_FIELD_NUMBER: _builtins.int
+    EXCHANGE_BIND_FIELD_NUMBER: _builtins.int
+    EXCHANGE_BIND_OK_FIELD_NUMBER: _builtins.int
+    QUEUE_DECLARE_FIELD_NUMBER: _builtins.int
+    QUEUE_DECLARE_OK_FIELD_NUMBER: _builtins.int
+    QUEUE_BIND_FIELD_NUMBER: _builtins.int
+    QUEUE_BIND_OK_FIELD_NUMBER: _builtins.int
+    BASIC_QOS_FIELD_NUMBER: _builtins.int
+    BASIC_QOS_OK_FIELD_NUMBER: _builtins.int
+    BASIC_CONSUME_FIELD_NUMBER: _builtins.int
+    BASIC_CONSUME_OK_FIELD_NUMBER: _builtins.int
+    BASIC_CANCEL_FIELD_NUMBER: _builtins.int
+    BASIC_CANCEL_OK_FIELD_NUMBER: _builtins.int
+    BASIC_PUBLISH_FIELD_NUMBER: _builtins.int
+    BASIC_RETURN_FIELD_NUMBER: _builtins.int
+    BASIC_ACK_FIELD_NUMBER: _builtins.int
+    BASIC_NACK_FIELD_NUMBER: _builtins.int
+    BASIC_REJECT_FIELD_NUMBER: _builtins.int
+    BASIC_DELIVER_FIELD_NUMBER: _builtins.int
+    BASIC_GET_FIELD_NUMBER: _builtins.int
+    BASIC_GET_OK_FIELD_NUMBER: _builtins.int
+    BASIC_GET_EMPTY_FIELD_NUMBER: _builtins.int
+    @_builtins.property
+    def connection_start(self) -> Global___ConnectionStartSelector: ...
+    @_builtins.property
+    def connection_start_ok(self) -> Global___ConnectionStartOkSelector: ...
+    @_builtins.property
+    def connection_tune(self) -> Global___ConnectionTuneSelector: ...
+    @_builtins.property
+    def connection_tune_ok(self) -> Global___ConnectionTuneOkSelector: ...
+    @_builtins.property
+    def connection_open(self) -> Global___ConnectionOpenSelector: ...
+    @_builtins.property
+    def connection_open_ok(self) -> Global___ConnectionOpenOkSelector: ...
+    @_builtins.property
+    def connection_close(self) -> Global___ConnectionCloseSelector: ...
+    @_builtins.property
+    def connection_close_ok(self) -> Global___ConnectionCloseOkSelector: ...
+    @_builtins.property
+    def channel_open(self) -> Global___ChannelOpenSelector: ...
+    @_builtins.property
+    def channel_open_ok(self) -> Global___ChannelOpenOkSelector: ...
+    @_builtins.property
+    def channel_close(self) -> Global___ChannelCloseSelector: ...
+    @_builtins.property
+    def channel_close_ok(self) -> Global___ChannelCloseOkSelector: ...
+    @_builtins.property
+    def confirm_select(self) -> Global___ConfirmSelectSelector: ...
+    @_builtins.property
+    def confirm_select_ok(self) -> Global___ConfirmSelectOkSelector: ...
+    @_builtins.property
+    def exchange_declare(self) -> Global___ExchangeDeclareSelector: ...
+    @_builtins.property
+    def exchange_declare_ok(self) -> Global___ExchangeDeclareOkSelector: ...
+    @_builtins.property
+    def exchange_bind(self) -> Global___ExchangeBindSelector: ...
+    @_builtins.property
+    def exchange_bind_ok(self) -> Global___ExchangeBindOkSelector: ...
+    @_builtins.property
+    def queue_declare(self) -> Global___QueueDeclareSelector: ...
+    @_builtins.property
+    def queue_declare_ok(self) -> Global___QueueDeclareOkSelector: ...
+    @_builtins.property
+    def queue_bind(self) -> Global___QueueBindSelector: ...
+    @_builtins.property
+    def queue_bind_ok(self) -> Global___QueueBindOkSelector: ...
+    @_builtins.property
+    def basic_qos(self) -> Global___BasicQosSelector: ...
+    @_builtins.property
+    def basic_qos_ok(self) -> Global___BasicQosOkSelector: ...
+    @_builtins.property
+    def basic_consume(self) -> Global___BasicConsumeSelector: ...
+    @_builtins.property
+    def basic_consume_ok(self) -> Global___BasicConsumeOkSelector: ...
+    @_builtins.property
+    def basic_cancel(self) -> Global___BasicCancelSelector: ...
+    @_builtins.property
+    def basic_cancel_ok(self) -> Global___BasicCancelOkSelector: ...
+    @_builtins.property
+    def basic_publish(self) -> Global___BasicPublishSelector: ...
+    @_builtins.property
+    def basic_return(self) -> Global___BasicReturnSelector: ...
+    @_builtins.property
+    def basic_ack(self) -> Global___BasicAckSelector: ...
+    @_builtins.property
+    def basic_nack(self) -> Global___BasicNackSelector: ...
+    @_builtins.property
+    def basic_reject(self) -> Global___BasicRejectSelector: ...
+    @_builtins.property
+    def basic_deliver(self) -> Global___BasicDeliverSelector: ...
+    @_builtins.property
+    def basic_get(self) -> Global___BasicGetSelector: ...
+    @_builtins.property
+    def basic_get_ok(self) -> Global___BasicGetOkSelector: ...
+    @_builtins.property
+    def basic_get_empty(self) -> Global___BasicGetEmptySelector: ...
+    def __init__(
+        self,
+        *,
+        connection_start: Global___ConnectionStartSelector | None = ...,
+        connection_start_ok: Global___ConnectionStartOkSelector | None = ...,
+        connection_tune: Global___ConnectionTuneSelector | None = ...,
+        connection_tune_ok: Global___ConnectionTuneOkSelector | None = ...,
+        connection_open: Global___ConnectionOpenSelector | None = ...,
+        connection_open_ok: Global___ConnectionOpenOkSelector | None = ...,
+        connection_close: Global___ConnectionCloseSelector | None = ...,
+        connection_close_ok: Global___ConnectionCloseOkSelector | None = ...,
+        channel_open: Global___ChannelOpenSelector | None = ...,
+        channel_open_ok: Global___ChannelOpenOkSelector | None = ...,
+        channel_close: Global___ChannelCloseSelector | None = ...,
+        channel_close_ok: Global___ChannelCloseOkSelector | None = ...,
+        confirm_select: Global___ConfirmSelectSelector | None = ...,
+        confirm_select_ok: Global___ConfirmSelectOkSelector | None = ...,
+        exchange_declare: Global___ExchangeDeclareSelector | None = ...,
+        exchange_declare_ok: Global___ExchangeDeclareOkSelector | None = ...,
+        exchange_bind: Global___ExchangeBindSelector | None = ...,
+        exchange_bind_ok: Global___ExchangeBindOkSelector | None = ...,
+        queue_declare: Global___QueueDeclareSelector | None = ...,
+        queue_declare_ok: Global___QueueDeclareOkSelector | None = ...,
+        queue_bind: Global___QueueBindSelector | None = ...,
+        queue_bind_ok: Global___QueueBindOkSelector | None = ...,
+        basic_qos: Global___BasicQosSelector | None = ...,
+        basic_qos_ok: Global___BasicQosOkSelector | None = ...,
+        basic_consume: Global___BasicConsumeSelector | None = ...,
+        basic_consume_ok: Global___BasicConsumeOkSelector | None = ...,
+        basic_cancel: Global___BasicCancelSelector | None = ...,
+        basic_cancel_ok: Global___BasicCancelOkSelector | None = ...,
+        basic_publish: Global___BasicPublishSelector | None = ...,
+        basic_return: Global___BasicReturnSelector | None = ...,
+        basic_ack: Global___BasicAckSelector | None = ...,
+        basic_nack: Global___BasicNackSelector | None = ...,
+        basic_reject: Global___BasicRejectSelector | None = ...,
+        basic_deliver: Global___BasicDeliverSelector | None = ...,
+        basic_get: Global___BasicGetSelector | None = ...,
+        basic_get_ok: Global___BasicGetOkSelector | None = ...,
+        basic_get_empty: Global___BasicGetEmptySelector | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["basic_ack", b"basic_ack", "basic_cancel", b"basic_cancel", "basic_cancel_ok", b"basic_cancel_ok", "basic_consume", b"basic_consume", "basic_consume_ok", b"basic_consume_ok", "basic_deliver", b"basic_deliver", "basic_get", b"basic_get", "basic_get_empty", b"basic_get_empty", "basic_get_ok", b"basic_get_ok", "basic_nack", b"basic_nack", "basic_publish", b"basic_publish", "basic_qos", b"basic_qos", "basic_qos_ok", b"basic_qos_ok", "basic_reject", b"basic_reject", "basic_return", b"basic_return", "channel_close", b"channel_close", "channel_close_ok", b"channel_close_ok", "channel_open", b"channel_open", "channel_open_ok", b"channel_open_ok", "confirm_select", b"confirm_select", "confirm_select_ok", b"confirm_select_ok", "connection_close", b"connection_close", "connection_close_ok", b"connection_close_ok", "connection_open", b"connection_open", "connection_open_ok", b"connection_open_ok", "connection_start", b"connection_start", "connection_start_ok", b"connection_start_ok", "connection_tune", b"connection_tune", "connection_tune_ok", b"connection_tune_ok", "exchange_bind", b"exchange_bind", "exchange_bind_ok", b"exchange_bind_ok", "exchange_declare", b"exchange_declare", "exchange_declare_ok", b"exchange_declare_ok", "method", b"method", "queue_bind", b"queue_bind", "queue_bind_ok", b"queue_bind_ok", "queue_declare", b"queue_declare", "queue_declare_ok", b"queue_declare_ok"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["basic_ack", b"basic_ack", "basic_cancel", b"basic_cancel", "basic_cancel_ok", b"basic_cancel_ok", "basic_consume", b"basic_consume", "basic_consume_ok", b"basic_consume_ok", "basic_deliver", b"basic_deliver", "basic_get", b"basic_get", "basic_get_empty", b"basic_get_empty", "basic_get_ok", b"basic_get_ok", "basic_nack", b"basic_nack", "basic_publish", b"basic_publish", "basic_qos", b"basic_qos", "basic_qos_ok", b"basic_qos_ok", "basic_reject", b"basic_reject", "basic_return", b"basic_return", "channel_close", b"channel_close", "channel_close_ok", b"channel_close_ok", "channel_open", b"channel_open", "channel_open_ok", b"channel_open_ok", "confirm_select", b"confirm_select", "confirm_select_ok", b"confirm_select_ok", "connection_close", b"connection_close", "connection_close_ok", b"connection_close_ok", "connection_open", b"connection_open", "connection_open_ok", b"connection_open_ok", "connection_start", b"connection_start", "connection_start_ok", b"connection_start_ok", "connection_tune", b"connection_tune", "connection_tune_ok", b"connection_tune_ok", "exchange_bind", b"exchange_bind", "exchange_bind_ok", b"exchange_bind_ok", "exchange_declare", b"exchange_declare", "exchange_declare_ok", b"exchange_declare_ok", "method", b"method", "queue_bind", b"queue_bind", "queue_bind_ok", b"queue_bind_ok", "queue_declare", b"queue_declare", "queue_declare_ok", b"queue_declare_ok"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    _WhichOneofReturnType_method: _TypeAlias = _typing.Literal["connection_start", "connection_start_ok", "connection_tune", "connection_tune_ok", "connection_open", "connection_open_ok", "connection_close", "connection_close_ok", "channel_open", "channel_open_ok", "channel_close", "channel_close_ok", "confirm_select", "confirm_select_ok", "exchange_declare", "exchange_declare_ok", "exchange_bind", "exchange_bind_ok", "queue_declare", "queue_declare_ok", "queue_bind", "queue_bind_ok", "basic_qos", "basic_qos_ok", "basic_consume", "basic_consume_ok", "basic_cancel", "basic_cancel_ok", "basic_publish", "basic_return", "basic_ack", "basic_nack", "basic_reject", "basic_deliver", "basic_get", "basic_get_ok", "basic_get_empty"]  # noqa: Y015
+    _WhichOneofArgType_method: _TypeAlias = _typing.Literal["method", b"method"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType_method) -> _WhichOneofReturnType_method | None: ...
+
+Global___Selector: _TypeAlias = Selector  # noqa: Y015
+
+@_typing.final
 class Pattern(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -2459,20 +3908,20 @@ Global___Pattern: _TypeAlias = Pattern  # noqa: Y015
 class Weighted(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
-    PATTERN_FIELD_NUMBER: _builtins.int
+    SELECTOR_FIELD_NUMBER: _builtins.int
     WEIGHT_FIELD_NUMBER: _builtins.int
     weight: _builtins.int
     @_builtins.property
-    def pattern(self) -> Global___Pattern: ...
+    def selector(self) -> Global___Selector: ...
     def __init__(
         self,
         *,
-        pattern: Global___Pattern | None = ...,
+        selector: Global___Selector | None = ...,
         weight: _builtins.int | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_weight", b"_weight", "pattern", b"pattern", "weight", b"weight"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_weight", b"_weight", "selector", b"selector", "weight", b"weight"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_weight", b"_weight", "pattern", b"pattern", "weight", b"weight"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_weight", b"_weight", "selector", b"selector", "weight", b"weight"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__weight: _TypeAlias = _typing.Literal["weight"]  # noqa: Y015
     _WhichOneofArgType__weight: _TypeAlias = _typing.Literal["_weight", b"_weight"]  # noqa: Y015
@@ -2520,13 +3969,13 @@ class SessionConfig(_message.Message):
     IDLE_WEIGHTS_FIELD_NUMBER: _builtins.int
     SCRIPT_FIELD_NUMBER: _builtins.int
     STOP_WEIGHT_FIELD_NUMBER: _builtins.int
-    MAX_SENDS_FIELD_NUMBER: _builtins.int
+    MAX_BURST_LENGTH_FIELD_NUMBER: _builtins.int
     IDLE_MILLIS_FIELD_NUMBER: _builtins.int
     MAX_BUFFER_FIELD_NUMBER: _builtins.int
     MAX_TRANSCRIPT_LINES_FIELD_NUMBER: _builtins.int
     seed: _builtins.int
     stop_weight: _builtins.int
-    max_sends: _builtins.int
+    max_burst_length: _builtins.int
     idle_millis: _builtins.int
     max_buffer: _builtins.int
     max_transcript_lines: _builtins.int
@@ -2547,21 +3996,21 @@ class SessionConfig(_message.Message):
         idle_weights: _abc.Iterable[Global___Weighted] | None = ...,
         script: _abc.Iterable[Global___Scripted] | None = ...,
         stop_weight: _builtins.int | None = ...,
-        max_sends: _builtins.int | None = ...,
+        max_burst_length: _builtins.int | None = ...,
         idle_millis: _builtins.int | None = ...,
         max_buffer: _builtins.int | None = ...,
         max_transcript_lines: _builtins.int | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["_idle_millis", b"_idle_millis", "_max_buffer", b"_max_buffer", "_max_sends", b"_max_sends", "_max_transcript_lines", b"_max_transcript_lines", "_negotiation_options", b"_negotiation_options", "_seed", b"_seed", "_stop_weight", b"_stop_weight", "idle_millis", b"idle_millis", "max_buffer", b"max_buffer", "max_sends", b"max_sends", "max_transcript_lines", b"max_transcript_lines", "negotiation_options", b"negotiation_options", "seed", b"seed", "stop_weight", b"stop_weight"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["_idle_millis", b"_idle_millis", "_max_buffer", b"_max_buffer", "_max_burst_length", b"_max_burst_length", "_max_transcript_lines", b"_max_transcript_lines", "_negotiation_options", b"_negotiation_options", "_seed", b"_seed", "_stop_weight", b"_stop_weight", "idle_millis", b"idle_millis", "max_buffer", b"max_buffer", "max_burst_length", b"max_burst_length", "max_transcript_lines", b"max_transcript_lines", "negotiation_options", b"negotiation_options", "seed", b"seed", "stop_weight", b"stop_weight"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["_idle_millis", b"_idle_millis", "_max_buffer", b"_max_buffer", "_max_sends", b"_max_sends", "_max_transcript_lines", b"_max_transcript_lines", "_negotiation_options", b"_negotiation_options", "_seed", b"_seed", "_stop_weight", b"_stop_weight", "idle_millis", b"idle_millis", "idle_weights", b"idle_weights", "max_buffer", b"max_buffer", "max_sends", b"max_sends", "max_transcript_lines", b"max_transcript_lines", "negotiation_options", b"negotiation_options", "script", b"script", "seed", b"seed", "stop_weight", b"stop_weight", "weights", b"weights"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["_idle_millis", b"_idle_millis", "_max_buffer", b"_max_buffer", "_max_burst_length", b"_max_burst_length", "_max_transcript_lines", b"_max_transcript_lines", "_negotiation_options", b"_negotiation_options", "_seed", b"_seed", "_stop_weight", b"_stop_weight", "idle_millis", b"idle_millis", "idle_weights", b"idle_weights", "max_buffer", b"max_buffer", "max_burst_length", b"max_burst_length", "max_transcript_lines", b"max_transcript_lines", "negotiation_options", b"negotiation_options", "script", b"script", "seed", b"seed", "stop_weight", b"stop_weight", "weights", b"weights"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType__idle_millis: _TypeAlias = _typing.Literal["idle_millis"]  # noqa: Y015
     _WhichOneofArgType__idle_millis: _TypeAlias = _typing.Literal["_idle_millis", b"_idle_millis"]  # noqa: Y015
     _WhichOneofReturnType__max_buffer: _TypeAlias = _typing.Literal["max_buffer"]  # noqa: Y015
     _WhichOneofArgType__max_buffer: _TypeAlias = _typing.Literal["_max_buffer", b"_max_buffer"]  # noqa: Y015
-    _WhichOneofReturnType__max_sends: _TypeAlias = _typing.Literal["max_sends"]  # noqa: Y015
-    _WhichOneofArgType__max_sends: _TypeAlias = _typing.Literal["_max_sends", b"_max_sends"]  # noqa: Y015
+    _WhichOneofReturnType__max_burst_length: _TypeAlias = _typing.Literal["max_burst_length"]  # noqa: Y015
+    _WhichOneofArgType__max_burst_length: _TypeAlias = _typing.Literal["_max_burst_length", b"_max_burst_length"]  # noqa: Y015
     _WhichOneofReturnType__max_transcript_lines: _TypeAlias = _typing.Literal["max_transcript_lines"]  # noqa: Y015
     _WhichOneofArgType__max_transcript_lines: _TypeAlias = _typing.Literal["_max_transcript_lines", b"_max_transcript_lines"]  # noqa: Y015
     _WhichOneofReturnType__negotiation_options: _TypeAlias = _typing.Literal["negotiation_options"]  # noqa: Y015
@@ -2575,7 +4024,7 @@ class SessionConfig(_message.Message):
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__max_buffer) -> _WhichOneofReturnType__max_buffer | None: ...
     @_typing.overload
-    def WhichOneof(self, oneof_group: _WhichOneofArgType__max_sends) -> _WhichOneofReturnType__max_sends | None: ...
+    def WhichOneof(self, oneof_group: _WhichOneofArgType__max_burst_length) -> _WhichOneofReturnType__max_burst_length | None: ...
     @_typing.overload
     def WhichOneof(self, oneof_group: _WhichOneofArgType__max_transcript_lines) -> _WhichOneofReturnType__max_transcript_lines | None: ...
     @_typing.overload
@@ -2725,3 +4174,18 @@ class TranscriptRequest(_message.Message):
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___TranscriptRequest: _TypeAlias = TranscriptRequest  # noqa: Y015
+
+@_typing.final
+class WatchTranscriptRequest(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _Never  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___WatchTranscriptRequest: _TypeAlias = WatchTranscriptRequest  # noqa: Y015

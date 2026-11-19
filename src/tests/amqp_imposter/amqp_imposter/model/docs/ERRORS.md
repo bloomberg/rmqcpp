@@ -11,6 +11,7 @@ Here are the forced situational errors we've specified:
     - Acknowledgement when no-ack=Tru
     - Acknowledgement with unknown delivery tag
     - Acknowledgement for an already-acknowledged delivery tag
+    - `basic.publish` with priority outside 0-9 or delivery mode other than 1 or 2
 - CHANNEL_ERROR / `connection.close` (504)
     - `channel.open` for an already-open channel
     - Any other method on a closed channel
@@ -36,7 +37,7 @@ Exhaustively:
 An error is available until the model sends any method that would imply it has been accepted.
 
 Forced errors carry the reply text "FORCED" and unforced ones "NOT_FORCED".
-That means they can be pattern-matched by the input weights.
+That means they can be matched by weight selectors.
 
 The always-on errors are always "NOT_FORCED":
 - CONNECTION_FORCED / `connection.close` (320)

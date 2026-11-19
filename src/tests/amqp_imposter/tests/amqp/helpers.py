@@ -23,12 +23,13 @@ from amqp_imposter.amqp.transcript import (
     TranscriptEvent,
     TranscriptLine,
 )
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 from amqp_imposter.model.method_scripts import Received, ScriptRule
 from amqp_imposter.model.method_weights import (
     BASE_WEIGHT,
-    WeightedPattern,
+    WeightedSelector,
 )
 
 FRAME_MAX = 131072
@@ -41,36 +42,42 @@ STOP_WEIGHT_LIKELY = 2 * BASE_WEIGHT
 
 CONNECTION_CLOSE = m.ConnectionClose(
     mf.ReplyCode.SUCCESS,
-    "Normal shutdown",
+    d.ShortStr("Normal shutdown"),
     mf.UNPROMPTED_CLASS_ID,
     mf.UNPROMPTED_METHOD_ID,
 )
 CONNECTION_START = m.ConnectionStart(
-    version_major=0,
-    version_minor=9,
+    version_major=d.Octet(0),
+    version_minor=d.Octet(9),
     mechanisms=("PLAIN",),
     locales=("en_US",),
     publisher_confirms=True,
     basic_nack=True,
     consumer_cancel_notify=True,
 )
-CONNECTION_START_OK = m.ConnectionStartOk(mechanism="PLAIN", locale="en_US")
-CONNECTION_TUNE_OK = m.ConnectionTuneOk(channel_max=2047, frame_max=131072, heartbeat=0)
+CONNECTION_START_OK = m.ConnectionStartOk(
+    mechanism=d.ShortStr("PLAIN"), locale=d.ShortStr("en_US")
+)
+CONNECTION_TUNE_OK = m.ConnectionTuneOk(
+    channel_max=d.Short(2047), frame_max=d.Long(131072), heartbeat=d.Short(0)
+)
 CHANNEL_CLOSE = m.ChannelClose(
     reply_code=mf.ReplyCode.SUCCESS,
-    reply_text="Normal shutdown",
+    reply_text=d.ShortStr("Normal shutdown"),
     class_id=mf.UNPROMPTED_CLASS_ID,
     method_id=mf.UNPROMPTED_METHOD_ID,
 )
-BASIC_PUBLISH = m.BasicPublish(exchange="ex", routing_key="rk", body=b"x")
+BASIC_PUBLISH = m.BasicPublish(
+    exchange=d.ShortStr("ex"), routing_key=d.ShortStr("rk"), body=b"x"
+)
 BASIC_CONSUME = m.BasicConsume(
-    queue="q",
-    consumer_tag="ctag",
+    queue=d.ShortStr("q"),
+    consumer_tag=d.ShortStr("ctag"),
     no_local=False,
     no_ack=False,
     no_wait=False,
     exclusive=False,
-    arguments=None,
+    arguments=mf.Table(),
 )
 
 B_BAD_FRAME = b"\x63\x00\x01\x00\x00\x00\x01\x00\xce"
@@ -88,7 +95,7 @@ def filter_action_methods(
 
     for act in acts:
         match act:
-            case se.Write():
+            case se.SocketWrite():
                 items, _ = fr.decode(act.payload, FRAME_MAX)
                 sent.extend(
                     item for item in items if isinstance(item, fr.MethodOnChannel)
@@ -105,8 +112,8 @@ def filter_action_method_kinds(
     return [type(act.method) for act in filter_action_methods(acts)]
 
 
-def has_drop_action(acts: tuple[se.SocketAction, ...]) -> bool:
-    return any(isinstance(act, se.Drop) for act in acts)
+def has_socket_close_action(acts: tuple[se.SocketAction, ...]) -> bool:
+    return any(isinstance(act, se.SocketClose) for act in acts)
 
 
 def transcript_events(lines: tuple[TranscriptLine, ...]) -> tuple[TranscriptEvent, ...]:
@@ -133,8 +140,8 @@ def connection_open_handshake(session: se.Session) -> tuple[se.SocketAction, ...
     return tuple(acts)
 
 
-# avoid drawing the stop pattern here
-GREETING_WEIGHTS = (WeightedPattern(m.ConnectionStart(), 10**9),)
+# avoid drawing the stop selector here
+GREETING_WEIGHTS = (WeightedSelector(m.ConnectionStart(), 10**9),)
 SCRIPTED_REPLIES = (
     ScriptRule(Received(m.ConnectionStartOk()), then_send=m.ConnectionTune()),
     ScriptRule(Received(m.ConnectionOpen()), then_send=m.ConnectionOpenOk()),

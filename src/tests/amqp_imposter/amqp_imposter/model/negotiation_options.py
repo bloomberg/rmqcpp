@@ -26,6 +26,7 @@ from .constants import (
     DEFAULT_MECHANISMS,
     DEFAULT_PUBLISHER_CONFIRMS,
 )
+from .domains import Long, Short
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,9 +41,9 @@ class NegotiationOptions:
     publisher_confirms: bool = DEFAULT_PUBLISHER_CONFIRMS
     basic_nack: bool = DEFAULT_BASIC_NACK
     consumer_cancel_notify: bool = DEFAULT_CONSUMER_CANCEL_NOTIFY
-    channel_max: int = DEFAULT_CHANNEL_MAX
-    frame_max: int = DEFAULT_FRAME_MAX
-    heartbeat: int = DEFAULT_HEARTBEAT
+    channel_max: Short = DEFAULT_CHANNEL_MAX
+    frame_max: Long = DEFAULT_FRAME_MAX
+    heartbeat: Short = DEFAULT_HEARTBEAT
 
 
 DEFAULT_NEGOTIATION_OPTIONS = NegotiationOptions()

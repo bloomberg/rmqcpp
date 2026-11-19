@@ -14,9 +14,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from datetime import datetime
-from decimal import Decimal
-from enum import IntEnum
+from enum import ReprEnum
 from random import Random
 from typing import Any, ClassVar, TypeIs
 
@@ -28,16 +26,22 @@ from amqp_imposter.model.constants import (
     DEFAULT_QUEUE_TYPES,
     DEFAULT_VHOST,
     DELIVERY_MODES,
-    LONG_MAX,
     MESSAGE_BODY_MAX,
     NAME_MAX,
-    OCTET_MAX,
     PRIORITY_MAX,
     PRIORITY_MIN,
-    SHORT_MAX,
-    SHORTSTR_MAX,
 )
 
+from .domains import (
+    DecimalValue,
+    Long,
+    NonEmptyShortStr,
+    Octet,
+    Short,
+    ShortStr,
+    SignedLongLong,
+    Timestamp,
+)
 from .generators import (
     Choice,
     Constant,
@@ -76,19 +80,19 @@ class Void:
 
 type TableValue = (
     bool
-    | int
+    | SignedLongLong
     | str
     | bytes
-    | Decimal
-    | datetime
+    | DecimalValue
+    | Timestamp
     | Void
     | Table
     | tuple[TableValue, ...]
 )
-Table = frozendict[str, TableValue]
+Table = frozendict[ShortStr, TableValue]
 
 
-class ClassId(IntEnum):
+class ClassId(Short, ReprEnum):
     CONNECTION = 10
     CHANNEL = 20
     EXCHANGE = 40
@@ -97,7 +101,7 @@ class ClassId(IntEnum):
     CONFIRM = 85
 
 
-class ReplyCode(IntEnum):
+class ReplyCode(Short, ReprEnum):
     SUCCESS = 200
     CONTENT_TOO_LARGE = 311
     UNROUTABLE = 312
@@ -147,8 +151,8 @@ HARD_ERRORS = frozenset(
     }
 )
 
-FORCED_REPLY_TEXT = "FORCED"
-NOT_FORCED_REPLY_TEXT = "NOT_FORCED"
+FORCED_REPLY_TEXT = ShortStr("FORCED")
+NOT_FORCED_REPLY_TEXT = ShortStr("NOT_FORCED")
 
 UNPROMPTED_ERRORS = frozenset(
     {
@@ -156,31 +160,31 @@ UNPROMPTED_ERRORS = frozenset(
         ReplyCode.INTERNAL_ERROR,
     }
 )
-UNPROMPTED_CLASS_ID = 0
-UNPROMPTED_METHOD_ID = 0
+UNPROMPTED_CLASS_ID = Short(0)
+UNPROMPTED_METHOD_ID = Short(0)
 
 
 @dataclass(frozen=True, slots=True)
 class MessageProperties:
-    content_type: str | None = None
-    content_encoding: str | None = None
+    content_type: ShortStr | None = None
+    content_encoding: ShortStr | None = None
     headers: Table | None = None
-    delivery_mode: int | None = None
-    priority: int | None = None
-    correlation_id: str | None = None
-    reply_to: str | None = None
-    expiration: str | None = None
-    message_id: str | None = None
-    timestamp: int | None = None
-    type: str | None = None
-    user_id: str | None = None
-    app_id: str | None = None
+    delivery_mode: Octet | None = None
+    priority: Octet | None = None
+    correlation_id: ShortStr | None = None
+    reply_to: ShortStr | None = None
+    expiration: ShortStr | None = None
+    message_id: ShortStr | None = None
+    timestamp: Timestamp | None = None
+    type: ShortStr | None = None
+    user_id: ShortStr | None = None
+    app_id: ShortStr | None = None
     cluster_id: Void = Void()
 
 
 @dataclass(frozen=True, slots=True)
 class RandomTable(Gen[Table]):
-    eligible_key_gens: tuple[tuple[str, Gen[TableValue]], ...]
+    eligible_key_gens: tuple[tuple[ShortStr, Gen[TableValue]], ...]
 
     def from_randomness(self, randomness: Random) -> Table:
         key_gens = randomness.sample(
@@ -191,22 +195,27 @@ class RandomTable(Gen[Table]):
 
 
 GEN_BIT = NonzeroChance(0.5)
-GEN_OCTET = RangedInt(0, OCTET_MAX)
-GEN_SHORT = RangedInt(0, SHORT_MAX)
-GEN_LONG = RangedInt(0, LONG_MAX)
-GEN_ZERO = Constant(0)
+GEN_OCTET = RangedInt(Octet, 0, Octet.MAX)
+GEN_SHORT = RangedInt(Short, 0, Short.MAX)
+GEN_LONG = RangedInt(Long, 0, Long.MAX)
+GEN_TIMESTAMP = RangedInt(Timestamp, 0, Long.MAX)
+GEN_TABLE_LONG = RangedInt(SignedLongLong, 0, Long.MAX)
+GEN_ZERO_SHORT = Constant(Short(0))
+GEN_ZERO_LONG = Constant(Long(0))
 GEN_VHOST = Constant(DEFAULT_VHOST)
 GEN_FALSE = Constant(False)
 GEN_TRUE = Constant(True)
-GEN_NONE = Constant(None)
+GEN_EMPTY_TABLE = Constant(Table())
+GEN_EMPTY_PROPERTIES = Constant(MessageProperties())
 GEN_EMPTY_STR = Constant("")
+GEN_EMPTY_SHORTSTR = Constant(ShortStr(""))
 GEN_EMPTY_BYTES = Constant(b"")
-GEN_SHORTSTR = RandomText(0, SHORTSTR_MAX)
-GEN_NONEMPTY_SHORTSTR = RandomText(1, SHORTSTR_MAX)
-GEN_NAME = RandomText(0, NAME_MAX)
-GEN_NONEMPTY_NAME = RandomText(1, NAME_MAX)
+GEN_SHORTSTR = RandomText(ShortStr, 0, ShortStr.MAX_OCTETS)
+GEN_NONEMPTY_SHORTSTR = RandomText(NonEmptyShortStr, 1, ShortStr.MAX_OCTETS)
+GEN_NAME = RandomText(ShortStr, 0, NAME_MAX)
+GEN_NONEMPTY_NAME = RandomText(NonEmptyShortStr, 1, NAME_MAX)
 GEN_MESSAGE_BODY = RandomBytes(0, MESSAGE_BODY_MAX)
-GEN_PRIORITY = RangedInt(PRIORITY_MIN, PRIORITY_MAX)
+GEN_PRIORITY = RangedInt(Octet, PRIORITY_MIN, PRIORITY_MAX)
 GEN_DELIVERY_MODE = Choice(DELIVERY_MODES)
 GEN_OVERFLOW = Choice(DEFAULT_OVERFLOWS)
 GEN_QUEUE_TYPE = Choice(DEFAULT_QUEUE_TYPES)
@@ -215,30 +224,30 @@ GEN_CONTENT_TYPE = Choice(DEFAULT_CONTENT_TYPES)
 GEN_CONTENT_ENCODING = Choice(DEFAULT_CONTENT_ENCODINGS)
 GEN_QUEUE_ARGUMENTS = RandomTable(
     (
-        ("x-message-ttl", GEN_LONG),
-        ("x-expires", GEN_LONG),
-        ("x-max-length", GEN_LONG),
-        ("x-max-length-bytes", GEN_LONG),
-        ("x-overflow", GEN_OVERFLOW),
-        ("x-dead-letter-exchange", GEN_NAME),
-        ("x-dead-letter-routing-key", GEN_SHORTSTR),
-        ("x-queue-type", GEN_QUEUE_TYPE),
-        ("x-single-active-consumer", GEN_BIT),
-        ("x-delivery-limit", GEN_LONG),
+        (ShortStr("x-message-ttl"), GEN_TABLE_LONG),
+        (ShortStr("x-expires"), GEN_TABLE_LONG),
+        (ShortStr("x-max-length"), GEN_TABLE_LONG),
+        (ShortStr("x-max-length-bytes"), GEN_TABLE_LONG),
+        (ShortStr("x-overflow"), GEN_OVERFLOW),
+        (ShortStr("x-dead-letter-exchange"), GEN_NAME),
+        (ShortStr("x-dead-letter-routing-key"), GEN_SHORTSTR),
+        (ShortStr("x-queue-type"), GEN_QUEUE_TYPE),
+        (ShortStr("x-single-active-consumer"), GEN_BIT),
+        (ShortStr("x-delivery-limit"), GEN_TABLE_LONG),
     )
 )
 GEN_MESSAGE_HEADERS = RandomTable(
     (
-        ("x-machina", GEN_LONG),
-        ("x-first-death-queue", GEN_NAME),
-        ("x-first-death-exchange", GEN_NAME),
+        (ShortStr("x-machina"), GEN_TABLE_LONG),
+        (ShortStr("x-first-death-queue"), GEN_NAME),
+        (ShortStr("x-first-death-exchange"), GEN_NAME),
     )
 )
 
 
 @dataclass(frozen=True, slots=True)
-class RandomMessageProperties(Gen[MessageProperties | None]):
-    ELIGIBLE_KEY_GENS: ClassVar[tuple[tuple[str, Gen[TableValue]], ...]] = (
+class RandomMessageProperties(Gen[MessageProperties]):
+    ELIGIBLE_KEY_GENS: ClassVar[tuple[tuple[str, Gen[object]], ...]] = (
         ("content_type", GEN_CONTENT_TYPE),
         ("content_encoding", GEN_CONTENT_ENCODING),
         ("headers", GEN_MESSAGE_HEADERS),
@@ -248,13 +257,13 @@ class RandomMessageProperties(Gen[MessageProperties | None]):
         ("reply_to", GEN_NONEMPTY_NAME),
         ("expiration", GEN_NONEMPTY_SHORTSTR),
         ("message_id", GEN_NONEMPTY_SHORTSTR),
-        ("timestamp", GEN_LONG),
+        ("timestamp", GEN_TIMESTAMP),
         ("type", GEN_NONEMPTY_SHORTSTR),
         ("user_id", GEN_NONEMPTY_NAME),
         ("app_id", GEN_NONEMPTY_NAME),
     )
 
-    def from_randomness(self, randomness: Random) -> MessageProperties | None:
+    def from_randomness(self, randomness: Random) -> MessageProperties:
         key_gens = randomness.sample(
             self.ELIGIBLE_KEY_GENS,
             randomness.randint(0, len(self.ELIGIBLE_KEY_GENS)),

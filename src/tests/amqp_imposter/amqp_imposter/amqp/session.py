@@ -21,12 +21,12 @@ from ..model import method_fields as mf
 from ..model import methods as m
 from ..model import model_state as ms
 from ..model.generators import DEFAULT_GEN_STATE
-from ..model.method_sampling import DEFAULT_MAX_SENDS
+from ..model.method_sampling import DEFAULT_MAX_BURST_LENGTH
 from ..model.method_scripts import ScriptRule
 from ..model.method_weights import (
     DEFAULT_WEIGHTS,
     STOP_WEIGHT,
-    WeightedPattern,
+    WeightedSelector,
 )
 from ..model.model_server import ModelServer
 from ..model.negotiation_options import (
@@ -35,7 +35,7 @@ from ..model.negotiation_options import (
 )
 from . import method_framing as fr
 from .transcript import (
-    DEFAULT_MAX_TRANSCRIPT_LINES,
+    DEFAULT_TRANSCRIPT_LINES_MAX,
     Transcript,
     TranscriptEvent,
     TranscriptLine,
@@ -53,35 +53,39 @@ REASON_NOT_GREETED = "no protocol header was given"
 REASON_CONNECTION_NOT_ON_GLOBAL = "a connection method must be on the global channel"
 REASON_CHANNEL_ON_GLOBAL = "a channel method cannot be on the global channel"
 REASON_SIMULTANOUS_CHANNELS = "another channel is already open"
-REASON_UNREPRESENTABLE = "the model cannot represent this method"
+REASON_UNREPRESENTABLE = "the model does not represent the requested state transition"
 REASON_NO_AMQP_CONNECTION = "the connection is closed"
 
 
 @dataclass(frozen=True, slots=True)
 class SessionConfig:
     seed: int = DEFAULT_GEN_STATE.seed
-    negotiation_options: NegotiationOptions = DEFAULT_NEGOTIATION_OPTIONS
+
     script: tuple[ScriptRule, ...] = ()
-    weights: tuple[WeightedPattern, ...] = DEFAULT_WEIGHTS
-    idle_weights: tuple[WeightedPattern, ...] = ()
-    idle_millis: int = DEFAULT_IDLE_MILLIS
+
+    weights: tuple[WeightedSelector, ...] = DEFAULT_WEIGHTS
     stop_weight: int = STOP_WEIGHT
-    max_sends: int = DEFAULT_MAX_SENDS
+    idle_weights: tuple[WeightedSelector, ...] = ()
+    idle_millis: int = DEFAULT_IDLE_MILLIS
+
+    negotiation_options: NegotiationOptions = DEFAULT_NEGOTIATION_OPTIONS
+
     max_buffer: int = DEFAULT_MAX_BUFFER
-    max_transcript_lines: int = DEFAULT_MAX_TRANSCRIPT_LINES
+    max_burst_length: int = DEFAULT_MAX_BURST_LENGTH
+    max_transcript_lines: int = DEFAULT_TRANSCRIPT_LINES_MAX
 
 
 @dataclass(frozen=True, slots=True)
-class Write:
+class SocketWrite:
     payload: bytes
 
 
 @dataclass(frozen=True, slots=True)
-class Drop:
+class SocketClose:
     reason: str = ""
 
 
-type SocketAction = Write | Drop
+type SocketAction = SocketWrite | SocketClose
 
 DEFAULT_SESSION_CONFIG = SessionConfig()
 
@@ -89,16 +93,22 @@ DEFAULT_SESSION_CONFIG = SessionConfig()
 @dataclass(slots=True)
 class Session:
     config: SessionConfig = DEFAULT_SESSION_CONFIG
-    model: ModelServer = field(init=False)
-    lines: Transcript = field(init=False)
+
+    # wire
     buffer: bytes = field(init=False, default=b"")
     channel: int | None = field(init=False, default=None)
+
+    # model state
+    model: ModelServer = field(init=False)
     greeted: bool = field(init=False, default=False)
+
+    # transcription
+    transcript: Transcript = field(init=False)
+    when_started_ns: int = field(init=False, default=0)
     total_ingress_methods: int = field(init=False, default=0)
-    started_ns: int = field(init=False, default=0)
 
     def __post_init__(self) -> None:
-        self.reset(self.config)
+        self.start(self.config)
 
     def fresh_model(self, gen_state: g.GenState) -> ModelServer:
         return ModelServer(
@@ -112,8 +122,8 @@ class Session:
         detail: str = "",
         wire_bytes: bytes = b"",
     ) -> None:
-        self.lines.add(
-            micros=(time.monotonic_ns() - self.started_ns) // 1_000,
+        self.transcript.add(
+            micros=(time.monotonic_ns() - self.when_started_ns) // 1_000,
             epoch_micros=time.time_ns() // 1_000,
             event=event,
             method=method,
@@ -122,17 +132,23 @@ class Session:
         )
 
     def reset(self, config: SessionConfig | None = None) -> None:
-        self.config = self.config if config is None else config
+        self.transcript.finish()
+
+        # reset and optionally reconfigure
+        self.start(self.config if config is None else config)
+
+    def start(self, config: SessionConfig) -> None:
+        self.config = config
         self.model = self.fresh_model(g.GenState(self.config.seed))
-        self.lines = Transcript(max_lines=self.config.max_transcript_lines)
+        self.transcript = Transcript(lines_max=self.config.max_transcript_lines)
         self.buffer = b""
         self.channel = None
         self.greeted = False
-        self.started_ns = time.monotonic_ns()
+        self.when_started_ns = time.monotonic_ns()
         self.transcribe(TranscriptEvent.SESSION_STARTED)
 
-    def transcript(self) -> tuple[TranscriptLine, ...]:
-        return tuple(self.lines.lines)
+    def transcript_lines(self) -> tuple[TranscriptLine, ...]:
+        return tuple(self.transcript.lines)
 
     def is_greeted(self) -> bool:
         return self.greeted
@@ -145,7 +161,7 @@ class Session:
         self.transcribe(
             TranscriptEvent.TCP_REJECTED, detail=REASON_SIMULTANEOUS_CONNECTION
         )
-        return (Drop(REASON_SIMULTANEOUS_CONNECTION),)
+        return (SocketClose(REASON_SIMULTANEOUS_CONNECTION),)
 
     def on_disconnected(self) -> tuple[SocketAction, ...]:
         self.transcribe(TranscriptEvent.TCP_DOWN)
@@ -173,7 +189,7 @@ class Session:
         for item in items:
             actions.extend(self.on_item(item))
 
-            if any(isinstance(action, Drop) for action in actions):
+            if any(isinstance(action, SocketClose) for action in actions):
                 break
 
         return tuple(actions)
@@ -187,7 +203,7 @@ class Session:
                 return ()
             case fr.Undecodable(reason):
                 self.transcribe(TranscriptEvent.FRAME_MALFORMED, detail=reason)
-                return (Drop(reason),)
+                return (SocketClose(reason),)
             case fr.MethodOnChannel(channel, method):
                 return self.on_method(channel, method)
 
@@ -197,7 +213,7 @@ class Session:
                 TranscriptEvent.METHOD_UNREPRESENTABLE,
                 detail=REASON_DUPE_PROTOCOL_HEADER,
             )
-            return (Drop(REASON_DUPE_PROTOCOL_HEADER),)
+            return (SocketClose(REASON_DUPE_PROTOCOL_HEADER),)
 
         if wire_bytes != fr.PROTOCOL_HEADER_091:
             self.transcribe(
@@ -205,7 +221,10 @@ class Session:
                 detail=REASON_UNSUPPORTED_PROTOCOL,
                 wire_bytes=wire_bytes,
             )
-            return (Write(fr.PROTOCOL_HEADER_091), Drop(REASON_UNSUPPORTED_PROTOCOL))
+            return (
+                SocketWrite(fr.PROTOCOL_HEADER_091),
+                SocketClose(REASON_UNSUPPORTED_PROTOCOL),
+            )
 
         self.transcribe(TranscriptEvent.PROTOCOL_HEADER, wire_bytes=wire_bytes)
 
@@ -213,7 +232,7 @@ class Session:
             self.transcribe(
                 TranscriptEvent.METHOD_UNREPRESENTABLE, detail=REASON_UNREPRESENTABLE
             )
-            return (Drop(REASON_UNREPRESENTABLE),)
+            return (SocketClose(REASON_UNREPRESENTABLE),)
 
         self.greeted = True
         methods = self.sample_method_burst(self.config.weights)
@@ -245,7 +264,7 @@ class Session:
                 method=method,
                 detail=reason,
             )
-            return (Drop(reason),)
+            return (SocketClose(reason),)
 
         match self.model.receive(method):
             case ms.Unrepresentable():
@@ -254,7 +273,7 @@ class Session:
                     method=method,
                     detail=REASON_UNREPRESENTABLE,
                 )
-                return (Drop(REASON_UNREPRESENTABLE),)
+                return (SocketClose(REASON_UNREPRESENTABLE),)
 
             case concrete_method:
                 self.transcribe(TranscriptEvent.METHOD_INGRESS, method=concrete_method)
@@ -265,20 +284,21 @@ class Session:
 
                 methods = self.sample_method_burst(self.config.weights)
                 actions = self.egress(methods)
-                self.release_channel()
 
-                return (
-                    (*actions, Drop(REASON_NO_AMQP_CONNECTION))
-                    if self.finished()
-                    else actions
-                )
+                # maybe release the real channel according to the model state
+                self.maybe_release_channel()
+
+                if self.finished():
+                    return (*actions, SocketClose(REASON_NO_AMQP_CONNECTION))
+
+                return actions
 
     def finished(self) -> bool:
         return self.greeted and isinstance(
             self.model.model_state.connection_state, ms.ClosedConnectionState
         )
 
-    def release_channel(self) -> None:
+    def maybe_release_channel(self) -> None:
         match self.model.model_state.connection_state:
             case ms.OpenConnectionState(channel_state=ms.OpenChannelState()):
                 return
@@ -294,13 +314,13 @@ class Session:
         return self.channel
 
     def sample_method_burst(
-        self, weighted_patterns: tuple[WeightedPattern, ...]
+        self, weighted_selectors: tuple[WeightedSelector, ...]
     ) -> list[m.Method]:
         return self.model.send_gens(
             self.config.script,
-            weighted_patterns,
+            weighted_selectors,
             self.config.stop_weight,
-            self.config.max_sends,
+            self.config.max_burst_length,
         )
 
     def egress(self, methods: list[m.Method]) -> tuple[SocketAction, ...]:
@@ -316,4 +336,4 @@ class Session:
             )
             payload += encoded
 
-        return (Write(payload),) if payload else ()
+        return (SocketWrite(payload),) if payload else ()

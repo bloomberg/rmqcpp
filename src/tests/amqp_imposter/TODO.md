@@ -2,7 +2,6 @@
 
 Enhancements
 - Also redeliver across a disconnect
-- `then_send` script clauses should be able to fix Arbitrary fields to a desired value
 - Fully adhere to the negotiated capabilities
 - Support anonymous consumer when the `Basic.Consume` is `no-wait`
 - Extend table generator to produce nesting

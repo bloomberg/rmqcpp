@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import methods as m
 
 from ..helpers import (
@@ -36,9 +37,12 @@ from ..helpers import (
 def test_example_consumer() -> None:
     server = channelled()
 
-    receive_unwrap(server, m.BasicQos(prefetch_count=2))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(2)))
     send_unwrap(server, m.BasicQosOk)
-    receive_unwrap(server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG))
+    receive_unwrap(
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG),
+    )
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
     assert not subsets_any_sendable(server, m.BasicCancel)
@@ -56,19 +60,19 @@ def test_example_consumer() -> None:
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=1))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(1)))
 
     send_unwrap(server, m.BasicDeliver, delivery_tag=3)
-    receive_unwrap(server, m.BasicQos(prefetch_count=1))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(1)))
     send_unwrap(server, m.BasicQosOk)
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=2))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(2)))
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=3))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(3)))
 
     assert lookup_unique_sendable(server, m.BasicDeliver).delivery_tag == 4
 
@@ -77,23 +81,23 @@ def test_example_resilient_consumer() -> None:
     server = consuming()
 
     deliver(server, 1)
-    receive_unwrap(server, m.BasicAck(delivery_tag=1))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(1)))
     deliver(server, 2)
 
     # no wait, cancel is effective immediately
     send_unwrap(server, m.BasicCancel, consumer_tag=CONSUMER_TAG, no_wait=True)
-    receive_unwrap(server, m.BasicAck(delivery_tag=2))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(2)))
     consume(server)
 
     third = deliver(server, 3)
-    receive_unwrap(server, m.BasicAck(delivery_tag=2))  # double ack
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(2)))  # double ack
     send_channel_error(server)
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
     receive_unwrap(server, m.ChannelCloseOk())
     reopen_channel(server)
-    receive_unwrap(server, m.BasicQos(prefetch_count=1))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(1)))
     send_unwrap(server, m.BasicQosOk)
     consume(server)
 
@@ -103,20 +107,23 @@ def test_example_resilient_consumer() -> None:
     assert redelivery.delivery_tag == 1
 
     server.send(redelivery)
-    receive_unwrap(server, m.BasicAck(delivery_tag=1))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(1)))
 
 
 def test_example_reconsumer() -> None:
     server = consuming()
 
     send_unwrap(server, m.BasicDeliver, delivery_tag=1)
-    receive_unwrap(server, m.BasicAck(delivery_tag=1))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(1)))
     receive_unwrap(server, m.BasicCancel(consumer_tag=CONSUMER_TAG))
     send_unwrap(server, m.BasicCancelOk, consumer_tag=CONSUMER_TAG)
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicConsume(queue=QUEUE, consumer_tag=OTHER_CONSUMER_TAG))
+    receive_unwrap(
+        server,
+        m.BasicConsume(queue=QUEUE, consumer_tag=OTHER_CONSUMER_TAG),
+    )
     send_unwrap(server, m.BasicConsumeOk, consumer_tag=OTHER_CONSUMER_TAG)
 
     assert not subsets_any_sendable(server, m.BasicDeliver, consumer_tag=CONSUMER_TAG)
@@ -133,4 +140,4 @@ def test_example_reconsumer() -> None:
     assert not subsets_any_sendable(server, m.BasicDeliver)
     assert not subsets_any_sendable(server, m.BasicCancel)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=2))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(2)))

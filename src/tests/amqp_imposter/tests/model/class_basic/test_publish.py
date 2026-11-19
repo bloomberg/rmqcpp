@@ -16,6 +16,7 @@
 import pytest
 
 from amqp_imposter.model import Unrepresentable
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -60,7 +61,10 @@ from ..helpers import (
 def test_publish_error_options(exchange: str, errors: set[ErrorReply]) -> None:
     server = channelled()
 
-    receive_unwrap(server, m.BasicPublish(exchange=exchange, routing_key=ROUTING_KEY))
+    receive_unwrap(
+        server,
+        m.BasicPublish(exchange=d.ShortStr(exchange), routing_key=ROUTING_KEY),
+    )
 
     assert error_replies_to(server, m.BasicPublish) == errors
 
@@ -167,7 +171,11 @@ def test_immediate_not_implemented() -> None:
 
     receive_unwrap(
         server,
-        m.BasicPublish(exchange=EXCHANGE, routing_key=ROUTING_KEY, immediate=True),
+        m.BasicPublish(
+            exchange=EXCHANGE,
+            routing_key=ROUTING_KEY,
+            immediate=True,
+        ),
     )
 
     assert error_replies_to(server, m.BasicPublish) == connection_errors(

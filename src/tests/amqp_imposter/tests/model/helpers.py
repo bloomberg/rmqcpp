@@ -26,35 +26,45 @@ from amqp_imposter.model import (
     Unrepresentable,
     assert_concrete,
 )
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
-EXCHANGE = "ex"
-ROUTING_KEY = "rk"
-QUEUE = "q"
-OTHER_QUEUE = "q-other"
-CONSUMER_TAG = "ctag-1"
-OTHER_CONSUMER_TAG = "ctag-2"
+EXCHANGE = d.ShortStr("ex")
+ROUTING_KEY = d.ShortStr("rk")
+QUEUE = d.ShortStr("q")
+OTHER_QUEUE = d.ShortStr("q-other")
+CONSUMER_TAG = d.ShortStr("ctag-1")
+OTHER_CONSUMER_TAG = d.ShortStr("ctag-2")
 
-MESSAGE_HEADERS = mf.Table({"x-origin": "imposter", "x-retry": 1})
-QUEUE_ARGUMENTS = mf.Table({"x-max-length": 10, "x-queue-type": "quorum"})
+MESSAGE_HEADERS = mf.Table(
+    {d.ShortStr("x-origin"): "imposter", d.ShortStr("x-retry"): d.SignedLongLong(1)}
+)
+QUEUE_ARGUMENTS = mf.Table(
+    {
+        d.ShortStr("x-max-length"): d.SignedLongLong(10),
+        d.ShortStr("x-queue-type"): "quorum",
+    }
+)
 MESSAGE_PROPERTIES = mf.MessageProperties(
-    content_type="text/plain", message_id="m-1", headers=MESSAGE_HEADERS
+    content_type=d.ShortStr("text/plain"),
+    message_id=d.ShortStr("m-1"),
+    headers=MESSAGE_HEADERS,
 )
 
 GRACEFUL_CHANNEL_CLOSE = m.ChannelClose(
     mf.ReplyCode.SUCCESS,
-    "Normal shutdown",
+    d.ShortStr("Normal shutdown"),
     mf.UNPROMPTED_CLASS_ID,
     mf.UNPROMPTED_METHOD_ID,
 )
 GRACEFUL_CONNECTION_CLOSE = m.ConnectionClose(
     mf.ReplyCode.SUCCESS,
-    "Normal shutdown",
+    d.ShortStr("Normal shutdown"),
     mf.UNPROMPTED_CLASS_ID,
     mf.UNPROMPTED_METHOD_ID,
 )
-FRESH_DELIVERY = m.BasicDeliver(consumer_tag=CONSUMER_TAG, delivery_tag=1)
+FRESH_DELIVERY = m.BasicDeliver(consumer_tag=CONSUMER_TAG, delivery_tag=d.LongLong(1))
 
 ACKNOWLEDGEMENT_TYPES = (m.BasicAck, m.BasicNack, m.BasicReject)
 
@@ -142,7 +152,7 @@ def message_content(
 ) -> tuple[
     Arbitrary[str] | Exact[str],
     Arbitrary[str] | Exact[str],
-    Arbitrary[mf.MessageProperties | None],
+    Arbitrary[mf.MessageProperties],
     Arbitrary[bytes],
 ]:
     return (message.exchange, message.routing_key, message.properties, message.body)
@@ -157,7 +167,9 @@ def greeted(options: NegotiationOptions = DEFAULT_NEGOTIATION_OPTIONS) -> ModelS
 def start_ok_of(start: m.ConnectionStart) -> m.ConnectionStartOk:
     mechanisms = assert_concrete(start.mechanisms)
     locales = assert_concrete(start.locales)
-    return m.ConnectionStartOk(mechanism=mechanisms[0], locale=locales[0])
+    return m.ConnectionStartOk(
+        mechanism=d.ShortStr(mechanisms[0]), locale=d.ShortStr(locales[0])
+    )
 
 
 def tune_ok_of(tune: m.ConnectionTune) -> m.ConnectionTuneOk:
@@ -212,14 +224,19 @@ def confirming() -> ModelServer:
 
 def consume(server: ModelServer, no_ack: bool = False) -> None:
     receive_unwrap(
-        server, m.BasicConsume(queue=QUEUE, consumer_tag=CONSUMER_TAG, no_ack=no_ack)
+        server,
+        m.BasicConsume(
+            queue=QUEUE,
+            consumer_tag=CONSUMER_TAG,
+            no_ack=no_ack,
+        ),
     )
     send_unwrap(server, m.BasicConsumeOk)
 
 
 def consuming(prefetch_count: int = 1, no_ack: bool = False) -> ModelServer:
     server = channelled()
-    receive_unwrap(server, m.BasicQos(prefetch_count=prefetch_count))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(prefetch_count)))
     send_unwrap(server, m.BasicQosOk)
     consume(server, no_ack=no_ack)
     return server
@@ -310,7 +327,7 @@ def receive_cancel(server: ModelServer) -> None:
 
 
 def enable_channel_error(server: ModelServer) -> None:
-    receive_unwrap(server, m.BasicAck(delivery_tag=0))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(0)))
 
 
 def send_channel_error(server: ModelServer) -> m.ChannelClose:

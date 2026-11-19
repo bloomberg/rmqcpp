@@ -86,7 +86,7 @@ class ModelServer:
     def send_gen(
         self,
         script: tuple[scr.ScriptRule, ...] = (),
-        weighted_patterns: tuple[mw.WeightedPattern, ...] = mw.DEFAULT_WEIGHTS,
+        weighted_selectors: tuple[mw.WeightedSelector, ...] = mw.DEFAULT_WEIGHTS,
         stop_weight: int = mw.STOP_WEIGHT,
     ) -> m.Method | msa.Stop:
         rules = (
@@ -109,7 +109,7 @@ class ModelServer:
                     assert not isinstance(concrete, ms.Unrepresentable), concrete
                     return concrete
 
-        sampler = msa.make_sampler(self.sendables(), weighted_patterns, stop_weight)
+        sampler = msa.make_sampler(self.sendables(), weighted_selectors, stop_weight)
         sampled, self.gen_state = sampler.generate(self.gen_state)
 
         match sampled:
@@ -124,14 +124,14 @@ class ModelServer:
     def send_gens(
         self,
         script: tuple[scr.ScriptRule, ...] = (),
-        weighted_patterns: tuple[mw.WeightedPattern, ...] = mw.DEFAULT_WEIGHTS,
+        weighted_selectors: tuple[mw.WeightedSelector, ...] = mw.DEFAULT_WEIGHTS,
         stop_weight: int = mw.STOP_WEIGHT,
-        max_sends: int = msa.DEFAULT_MAX_SENDS,
+        max_burst_length: int = msa.DEFAULT_MAX_BURST_LENGTH,
     ) -> list[m.Method]:
         methods: list[m.Method] = []
 
-        while len(methods) < max_sends:
-            match self.send_gen(script, weighted_patterns, stop_weight):
+        while len(methods) < max_burst_length:
+            match self.send_gen(script, weighted_selectors, stop_weight):
                 case msa.Stop():
                     break
 

@@ -163,17 +163,17 @@ def test_producer_with_teardowns(seed: int, imposter: AmqpImposter) -> None:
     producer = producer_scenario(seed)
     weights = (
         weighted(
-            pb.ConnectionClosePattern(reply_text=NOT_FORCED_REPLY_TEXT),
+            pb.ConnectionCloseSelector(reply_text=NOT_FORCED_REPLY_TEXT),
             pb.BASE_WEIGHT // 20,
         ),
         weighted(
-            pb.ChannelClosePattern(reply_text=NOT_FORCED_REPLY_TEXT),
+            pb.ChannelCloseSelector(reply_text=NOT_FORCED_REPLY_TEXT),
             pb.BASE_WEIGHT // 20,
         ),
     )
 
     # clients with backoff have long idle periods, so let them recover
-    idle_weights = (weighted(pb.ConnectionClosePattern(class_id=0, method_id=0), 0),)
+    idle_weights = (weighted(pb.ConnectionCloseSelector(class_id=0, method_id=0), 0),)
 
     imposter.configure(
         pb.SessionConfig(
@@ -199,13 +199,16 @@ def test_producer_with_returns(seed: int, imposter: AmqpImposter) -> None:
         when_receive(pb.BasicPublishPattern(), then_send=pb.BasicReturnPattern()),
     )
     weights = (
-        weighted(pb.BasicAckPattern(), pb.BASE_WEIGHT // 2),
         weighted(
-            pb.ConnectionClosePattern(class_id=0, method_id=0),
+            pb.BasicAckSelector(),
+            pb.BASE_WEIGHT // 2,
+        ),
+        weighted(
+            pb.ConnectionCloseSelector(class_id=0, method_id=0),
             pb.BASE_WEIGHT // 20,
         ),
     )
-    idle_weights = (weighted(pb.ConnectionClosePattern(class_id=0, method_id=0), 0),)
+    idle_weights = (weighted(pb.ConnectionCloseSelector(class_id=0, method_id=0), 0),)
 
     imposter.configure(
         pb.SessionConfig(

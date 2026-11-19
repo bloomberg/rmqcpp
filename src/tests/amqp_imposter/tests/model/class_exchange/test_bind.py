@@ -15,6 +15,7 @@
 
 import pytest
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -31,7 +32,7 @@ from ..helpers import (
     subsets_any_sendable,
 )
 
-SOURCE_EXCHANGE = EXCHANGE + "source"
+SOURCE_EXCHANGE = d.ShortStr(EXCHANGE + "source")
 
 
 def test_no_bind_ok_before_bind() -> None:
@@ -50,7 +51,9 @@ def test_declare_bind() -> None:
     receive_unwrap(
         server,
         m.ExchangeBind(
-            destination=EXCHANGE, source=SOURCE_EXCHANGE, routing_key=ROUTING_KEY
+            destination=EXCHANGE,
+            source=SOURCE_EXCHANGE,
+            routing_key=ROUTING_KEY,
         ),
     )
     send_unwrap(server, m.ExchangeBindOk)
@@ -66,7 +69,11 @@ def test_exchange_bind_cyclical() -> None:
 
     receive_unwrap(
         server,
-        m.ExchangeBind(destination=EXCHANGE, source=EXCHANGE, routing_key=ROUTING_KEY),
+        m.ExchangeBind(
+            destination=EXCHANGE,
+            source=EXCHANGE,
+            routing_key=ROUTING_KEY,
+        ),
     )
     send_unwrap(server, m.ExchangeBindOk)
 
@@ -79,7 +86,9 @@ def test_bind_without_exchanges() -> None:
     receive_unwrap(
         server,
         m.ExchangeBind(
-            destination=EXCHANGE, source=SOURCE_EXCHANGE, routing_key=ROUTING_KEY
+            destination=EXCHANGE,
+            source=SOURCE_EXCHANGE,
+            routing_key=ROUTING_KEY,
         ),
     )
 
@@ -108,7 +117,11 @@ def test_bind_optional_errors(no_wait: bool) -> None:
 
     receive_unwrap(
         server,
-        m.ExchangeBind(destination=EXCHANGE, source=SOURCE_EXCHANGE, no_wait=no_wait),
+        m.ExchangeBind(
+            destination=EXCHANGE,
+            source=SOURCE_EXCHANGE,
+            no_wait=no_wait,
+        ),
     )
 
     assert error_replies_to(server, m.ExchangeBind) == channel_errors(

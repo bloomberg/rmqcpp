@@ -19,7 +19,7 @@ from amqp_imposter.amqp import transcript as tr
 
 
 def make_transcript(max_lines: int, count: int) -> tr.Transcript:
-    transcript = tr.Transcript(max_lines=max_lines)
+    transcript = tr.Transcript(lines_max=max_lines)
 
     for _ in range(count):
         transcript.add(
@@ -31,7 +31,7 @@ def make_transcript(max_lines: int, count: int) -> tr.Transcript:
 
 
 def test_indices() -> None:
-    transcript = make_transcript(max_lines=tr.DEFAULT_MAX_TRANSCRIPT_LINES, count=3)
+    transcript = make_transcript(max_lines=tr.DEFAULT_TRANSCRIPT_LINES_MAX, count=3)
 
     assert [line.index for line in transcript.lines] == [0, 1, 2]
 
@@ -39,7 +39,7 @@ def test_indices() -> None:
 def test_recorded() -> None:
     transcript = make_transcript(max_lines=2, count=5)
 
-    assert transcript.recorded == 5
+    assert transcript.next_index == 5
 
 
 def test_drop_oldest() -> None:
@@ -49,15 +49,31 @@ def test_drop_oldest() -> None:
 
 
 def test_under_cap() -> None:
-    transcript = make_transcript(max_lines=tr.DEFAULT_MAX_TRANSCRIPT_LINES, count=50)
+    transcript = make_transcript(max_lines=tr.DEFAULT_TRANSCRIPT_LINES_MAX, count=50)
 
     assert len(transcript.lines) == 50
 
 
-@pytest.mark.parametrize("max_lines", (1, 3, 10, tr.DEFAULT_MAX_TRANSCRIPT_LINES))
+@pytest.mark.parametrize("max_lines", (1, 3, 10, tr.DEFAULT_TRANSCRIPT_LINES_MAX))
 def test_first_index(max_lines: int) -> None:
     transcript = make_transcript(max_lines=max_lines, count=10)
 
     first = transcript.lines[0].index
 
-    assert first == transcript.recorded - len(transcript.lines)
+    assert first == transcript.next_index - len(transcript.lines)
+
+
+@pytest.mark.parametrize(
+    ("max_lines", "index", "expected"),
+    (
+        (10, 0, [0, 1, 2, 3, 4]),
+        (10, 3, [3, 4]),
+        (10, 5, []),
+        (2, 0, [3, 4]),
+        (2, 4, [4]),
+    ),
+)
+def test_lines_after(max_lines: int, index: int, expected: list[int]) -> None:
+    transcript = make_transcript(max_lines=max_lines, count=5)
+
+    assert [line.index for line in transcript.lines_after(index)] == expected

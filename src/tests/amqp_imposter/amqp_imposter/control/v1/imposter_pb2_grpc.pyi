@@ -49,6 +49,7 @@ class ImposterStub:
     Status: _grpc.UnaryUnaryMultiCallable[_imposter_pb2.StatusRequest, _imposter_pb2.StatusReply]
     Reset: _grpc.UnaryUnaryMultiCallable[_imposter_pb2.ResetRequest, _imposter_pb2.StatusReply]
     Transcript: _grpc.UnaryStreamMultiCallable[_imposter_pb2.TranscriptRequest, _imposter_pb2.TranscriptLine]
+    WatchTranscript: _grpc.UnaryStreamMultiCallable[_imposter_pb2.WatchTranscriptRequest, _imposter_pb2.TranscriptLine]
 
 @_typing.type_check_only
 class ImposterAsyncStub(ImposterStub):
@@ -57,6 +58,7 @@ class ImposterAsyncStub(ImposterStub):
     Status: _aio.UnaryUnaryMultiCallable[_imposter_pb2.StatusRequest, _imposter_pb2.StatusReply]  # type: ignore[assignment]
     Reset: _aio.UnaryUnaryMultiCallable[_imposter_pb2.ResetRequest, _imposter_pb2.StatusReply]  # type: ignore[assignment]
     Transcript: _aio.UnaryStreamMultiCallable[_imposter_pb2.TranscriptRequest, _imposter_pb2.TranscriptLine]  # type: ignore[assignment]
+    WatchTranscript: _aio.UnaryStreamMultiCallable[_imposter_pb2.WatchTranscriptRequest, _imposter_pb2.TranscriptLine]  # type: ignore[assignment]
 
 class ImposterServicer(metaclass=_abc_1.ABCMeta):
     @_abc_1.abstractmethod
@@ -84,6 +86,13 @@ class ImposterServicer(metaclass=_abc_1.ABCMeta):
     def Transcript(
         self,
         request: _imposter_pb2.TranscriptRequest,
+        context: _ServicerContext,
+    ) -> _typing.Union[_abc.Iterator[_imposter_pb2.TranscriptLine], _abc.AsyncIterator[_imposter_pb2.TranscriptLine]]: ...
+
+    @_abc_1.abstractmethod
+    def WatchTranscript(
+        self,
+        request: _imposter_pb2.WatchTranscriptRequest,
         context: _ServicerContext,
     ) -> _typing.Union[_abc.Iterator[_imposter_pb2.TranscriptLine], _abc.AsyncIterator[_imposter_pb2.TranscriptLine]]: ...
 

@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from amqp_imposter.model import ModelServer
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import methods as m
 
 from ..helpers import (
@@ -86,12 +87,12 @@ def test_unordered_single_acks() -> None:
     server = unconfirmed(UNCONFIRMED)
 
     for delivery_tag in range(UNCONFIRMED, UNCONFIRMED // 2, -1):
-        server.send(m.BasicAck(delivery_tag=delivery_tag))
+        server.send(m.BasicAck(delivery_tag=d.LongLong(delivery_tag)))
 
     assert delivery_tags(server, m.BasicAck) == confirmable(1, UNCONFIRMED // 2)
 
     for delivery_tag in range(UNCONFIRMED // 2, 0, -1):
-        server.send(m.BasicAck(delivery_tag=delivery_tag))
+        server.send(m.BasicAck(delivery_tag=d.LongLong(delivery_tag)))
 
     assert delivery_tags(server, m.BasicAck) == set()
     assert delivery_tags(server, m.BasicNack) == set()
@@ -118,7 +119,7 @@ def test_publish_confirm_repeat() -> None:
             delivery_tag, delivery_tag
         )
 
-        server.send(m.BasicAck(delivery_tag=delivery_tag))
+        server.send(m.BasicAck(delivery_tag=d.LongLong(delivery_tag)))
 
     assert delivery_tags(server, m.BasicAck) == set()
 

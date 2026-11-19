@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from amqp_imposter.model import Unrepresentable
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -38,7 +39,7 @@ HIGH_PREFETCH = 1_000
 def test_qos_ok_prompts_nothing() -> None:
     server = channelled()
 
-    receive_unwrap(server, m.BasicQos(prefetch_count=1))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(1)))
     send_unwrap(server, m.BasicQosOk)
 
     assert not subsets_any_sendable(server, m.BasicQosOk)
@@ -55,14 +56,15 @@ def test_global_qos_precedes_prefetch_size() -> None:
     server = channelled()
 
     assert isinstance(
-        server.receive(m.BasicQos(prefetch_size=1, global_qos=True)), Unrepresentable
+        server.receive(m.BasicQos(prefetch_size=d.Long(1), global_qos=True)),
+        Unrepresentable,
     )
 
 
 def test_channel_qos_bounds_deliveries() -> None:
     server = channelled()
 
-    receive_unwrap(server, m.BasicQos(prefetch_count=1, global_qos=False))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(1), global_qos=False))
     send_unwrap(server, m.BasicQosOk)
     consume(server)
     deliver(server, 1)
@@ -73,7 +75,7 @@ def test_channel_qos_bounds_deliveries() -> None:
 def test_prefetch_size_is_not_implemented() -> None:
     server = channelled()
 
-    receive_unwrap(server, m.BasicQos(prefetch_size=1))
+    receive_unwrap(server, m.BasicQos(prefetch_size=d.Long(1)))
 
     assert error_replies_to(server, m.BasicQos) == connection_errors(
         mf.ReplyCode.NOT_IMPLEMENTED
@@ -102,7 +104,7 @@ def test_qos_only_after_consume() -> None:
     server = consuming_no_qos()
 
     deliver(server, 1)
-    receive_unwrap(server, m.BasicQos(prefetch_count=1))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(1)))
 
     assert subsets_any_sendable(server, m.BasicDeliver)
 
@@ -116,7 +118,7 @@ def test_zero_prefetch_unblocks_a_full_channel() -> None:
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicQos(prefetch_count=0))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(0)))
     send_unwrap(server, m.BasicQosOk)
 
     assert subsets_any_sendable(server, m.BasicDeliver)
@@ -126,7 +128,7 @@ def test_prefetch_after_zero_blocks() -> None:
     server = consuming_zero_prefetch_count()
 
     deliver(server, 1)
-    receive_unwrap(server, m.BasicQos(prefetch_count=1))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(1)))
     send_unwrap(server, m.BasicQosOk)
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
@@ -139,7 +141,7 @@ def test_repeat_qos_raises_the_bound() -> None:
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicQos(prefetch_count=2))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(2)))
     send_unwrap(server, m.BasicQosOk)
 
     deliver(server, 2)

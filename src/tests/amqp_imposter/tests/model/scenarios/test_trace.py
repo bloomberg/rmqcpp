@@ -14,8 +14,8 @@
 # limitations under the License.
 
 from amqp_imposter.model import ModelServer, NegotiationOptions
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import methods as m
-from amqp_imposter.model.constants import CHANNEL_MAX_CEIL
 
 from ..helpers import (
     CONSUMER_TAG,
@@ -33,7 +33,8 @@ from ..helpers import (
 )
 
 PREFETCH_COUNT = 10
-NEGOTIATION_OPTIONS = NegotiationOptions(channel_max=CHANNEL_MAX_CEIL)
+CHANNEL_MAX = d.Short(d.Short.MAX)
+NEGOTIATION_OPTIONS = NegotiationOptions(channel_max=CHANNEL_MAX)
 
 
 def traced_connect(server: ModelServer) -> None:
@@ -43,7 +44,7 @@ def traced_connect(server: ModelServer) -> None:
     tune = send_unwrap(server, m.ConnectionTune)
 
     receive_unwrap(
-        server, m.ConnectionTuneOk(CHANNEL_MAX_CEIL, tune.frame_max, tune.heartbeat)
+        server, m.ConnectionTuneOk(CHANNEL_MAX, tune.frame_max, tune.heartbeat)
     )
     receive_unwrap(server, m.ConnectionOpen())
     send_unwrap(server, m.ConnectionOpenOk)
@@ -56,11 +57,20 @@ def traced_declare(server: ModelServer) -> None:
     send_unwrap(server, m.QueueDeclareOk, queue=QUEUE)
     receive_unwrap(
         server,
-        m.ExchangeDeclare(exchange=EXCHANGE, exchange_type="direct", durable=True),
+        m.ExchangeDeclare(
+            exchange=EXCHANGE,
+            exchange_type=d.ShortStr("direct"),
+            durable=True,
+        ),
     )
     send_unwrap(server, m.ExchangeDeclareOk)
     receive_unwrap(
-        server, m.QueueBind(queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY)
+        server,
+        m.QueueBind(
+            queue=QUEUE,
+            exchange=EXCHANGE,
+            routing_key=ROUTING_KEY,
+        ),
     )
     send_unwrap(server, m.QueueBindOk)
 
@@ -73,7 +83,7 @@ def traced_produce(server: ModelServer) -> None:
 
 
 def traced_consume(server: ModelServer) -> None:
-    receive_unwrap(server, m.BasicQos(prefetch_count=PREFETCH_COUNT))
+    receive_unwrap(server, m.BasicQos(prefetch_count=d.Short(PREFETCH_COUNT)))
     send_unwrap(server, m.BasicQosOk)
     consume(server)
 

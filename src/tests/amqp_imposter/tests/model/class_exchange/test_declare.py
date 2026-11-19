@@ -58,7 +58,8 @@ def test_declare_optional_errors(
     server = channelled()
 
     receive_unwrap(
-        server, m.ExchangeDeclare(exchange=EXCHANGE, passive=passive, no_wait=no_wait)
+        server,
+        m.ExchangeDeclare(exchange=EXCHANGE, passive=passive, no_wait=no_wait),
     )
 
     assert error_replies_to(server, m.ExchangeDeclare) == errors
@@ -109,7 +110,8 @@ def test_declare_auto_delete_and_internal() -> None:
     server = channelled()
 
     receive_unwrap(
-        server, m.ExchangeDeclare(exchange=EXCHANGE, auto_delete=True, internal=True)
+        server,
+        m.ExchangeDeclare(exchange=EXCHANGE, auto_delete=True, internal=True),
     )
 
     assert subsets_any_sendable(server, m.ExchangeDeclareOk)
@@ -119,7 +121,8 @@ def test_declare_with_arguments() -> None:
     server = channelled()
 
     receive_unwrap(
-        server, m.ExchangeDeclare(exchange=EXCHANGE, arguments=QUEUE_ARGUMENTS)
+        server,
+        m.ExchangeDeclare(exchange=EXCHANGE, arguments=QUEUE_ARGUMENTS),
     )
 
     assert subsets_any_sendable(server, m.ExchangeDeclareOk)

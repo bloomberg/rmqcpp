@@ -73,7 +73,8 @@ class Choice[T](Gen[T]):
 
 
 @dataclass(frozen=True, slots=True)
-class RangedInt(Gen[int]):
+class RangedInt[T: int](Gen[T]):
+    domain: type[T]
     min_value: int
     max_value: int
 
@@ -81,8 +82,8 @@ class RangedInt(Gen[int]):
         if self.min_value > self.max_value:
             raise BadBounds(f"bad range: [{self.min_value}, {self.max_value}]")
 
-    def from_randomness(self, randomness: Random) -> int:
-        return randomness.randint(self.min_value, self.max_value)
+    def from_randomness(self, randomness: Random) -> T:
+        return self.domain(randomness.randint(self.min_value, self.max_value))
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,7 +114,8 @@ class RandomBytes(Gen[bytes]):
 
 
 @dataclass(frozen=True, slots=True)
-class RandomText(Gen[str]):
+class RandomText[T: str](Gen[T]):
+    domain: type[T]
     min_length: int
     max_length: int
 
@@ -121,7 +123,7 @@ class RandomText(Gen[str]):
         if self.min_length < 0 or self.min_length > self.max_length:
             raise BadBounds(f"bad range: [{self.min_length}, {self.max_length}]")
 
-    def from_randomness(self, randomness: Random) -> str:
+    def from_randomness(self, randomness: Random) -> T:
         length = randomness.randint(self.min_length, self.max_length)
         blob = randomness.randbytes(length).hex()
-        return blob[:length]
+        return self.domain(blob[:length])

@@ -88,7 +88,7 @@ async def test_transcript_stream(socket_path: Path) -> None:
         lines = await transcript_lines(channel)
 
         assert [line.index for line in lines] == [
-            line.index for line in imposter.session.transcript()
+            line.index for line in imposter.session.transcript_lines()
         ]
 
 
@@ -103,6 +103,46 @@ async def test_long_transcript_stream(socket_path: Path) -> None:
         lines = await transcript_lines(channel)
 
         assert len(lines) > LONG_TRANSCRIPT
+
+
+async def test_watch_transcript(socket_path: Path) -> None:
+    imposter = make_imposter()
+
+    async with running(imposter, socket_path) as channel:
+        stub = pb_grpc.ImposterStub(channel)
+        await stub.Configure(
+            pb.ConfigureRequest(config=pb.SessionConfig(max_transcript_lines=2))
+        )
+        watch = stub.WatchTranscript(pb.WatchTranscriptRequest())
+        lines = aiter(watch)
+
+        assert (await anext(lines)).event == pb.TRANSCRIPT_EVENT_SESSION_STARTED
+
+        imposter.session.on_connected()
+
+        assert (await anext(lines)).event == pb.TRANSCRIPT_EVENT_TCP_CONNECTED
+
+        imposter.session.on_disconnected()
+        await stub.Configure(
+            pb.ConfigureRequest(config=pb.SessionConfig(max_transcript_lines=2))
+        )
+
+        assert [line.index async for line in lines] == [2]
+        assert await watch.code() == grpc.StatusCode.OK
+
+        lagging_watch = stub.WatchTranscript(pb.WatchTranscriptRequest())
+        lagging_lines = aiter(lagging_watch)
+
+        assert (await anext(lagging_lines)).index == 0
+
+        imposter.session.on_connected()
+        imposter.session.on_disconnected()
+        imposter.session.on_connected()
+
+        with pytest.raises(aio.AioRpcError):
+            await anext(lagging_lines)
+
+        assert await lagging_watch.code() == grpc.StatusCode.DATA_LOSS
 
 
 async def test_bad_configure_is_invalid_argument(socket_path: Path) -> None:

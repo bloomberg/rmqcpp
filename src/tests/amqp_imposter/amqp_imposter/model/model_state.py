@@ -19,6 +19,7 @@ from dataclasses import dataclass, replace
 from . import error_replies as er
 from . import method_fields as mf
 from . import methods as m
+from .domains import LongLong, ShortStr
 from .helpers.revealing_line import (
     Opaque,
     Revealed,
@@ -28,6 +29,9 @@ from .helpers.revealing_line import (
 )
 from .negotiation_options import DEFAULT_NEGOTIATION_OPTIONS, NegotiationOptions
 
+FIRST_CONFIRM_SEQ = LongLong(1)
+FIRST_DELIVERY_TAG = LongLong(1)
+
 
 @dataclass(frozen=True, slots=True)
 class Unrepresentable:
@@ -36,9 +40,9 @@ class Unrepresentable:
 
 @dataclass(frozen=True, slots=True)
 class MessageState:
-    exchange: str
-    routing_key: str
-    properties: mf.MessageProperties | None
+    exchange: ShortStr
+    routing_key: ShortStr
+    properties: mf.MessageProperties
     body: bytes
 
 
@@ -64,26 +68,26 @@ type RoutingState = (
 
 @dataclass(frozen=True, slots=True)
 class PublishState:
-    confirm_seq: int | None  # if not confirming
+    confirm_seq: LongLong | None  # if not confirming
     routing_state: RoutingState
     message_state: MessageState
 
 
 @dataclass(frozen=True, slots=True)
 class DeliveryState:
-    delivery_tag: int
+    delivery_tag: LongLong
     message_state: MessageState
 
 
 @dataclass(frozen=True, slots=True)
 class ActiveConsumerState:
-    consumer_tag: str
+    consumer_tag: ShortStr
     no_ack: bool
 
 
 @dataclass(frozen=True, slots=True)
 class CancelledConsumerState:
-    consumer_tag: str
+    consumer_tag: ShortStr
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,7 +105,7 @@ class NotConfirmingState:
 
 @dataclass(frozen=True, slots=True)
 class ConfirmingState:
-    next_confirm_seq: int = 1
+    next_confirm_seq: LongLong = FIRST_CONFIRM_SEQ
 
 
 type ConfirmState = NotConfirmingState | ConfirmingState
@@ -140,7 +144,7 @@ class OpenChannelState:
 
     prefetch_count: int = 0
 
-    next_delivery_tag: int = 1
+    next_delivery_tag: LongLong = FIRST_DELIVERY_TAG
 
 
 @dataclass(frozen=True, slots=True)
@@ -352,7 +356,7 @@ def has_prefetch_space(
     )
 
 
-def maybe_make_confirm_seq(channel_state: OpenChannelState) -> int | None:
+def maybe_make_confirm_seq(channel_state: OpenChannelState) -> LongLong | None:
     match channel_state.confirm_state:
         case ConfirmingState(next_confirm_seq):
             return next_confirm_seq
@@ -363,12 +367,12 @@ def maybe_make_confirm_seq(channel_state: OpenChannelState) -> int | None:
 def advanced_confirm_state(confirm_state: ConfirmState) -> ConfirmState:
     match confirm_state:
         case ConfirmingState(next_confirm_seq):
-            return ConfirmingState(next_confirm_seq + 1)
+            return ConfirmingState(LongLong(next_confirm_seq + 1))
         case NotConfirmingState():
             return confirm_state
 
 
-def confirm_seqs(publish_states: tuple[PublishState, ...]) -> tuple[int, ...]:
+def confirm_seqs(publish_states: tuple[PublishState, ...]) -> tuple[LongLong, ...]:
     return tuple(
         publish_state.confirm_seq
         for publish_state in publish_states
@@ -533,7 +537,7 @@ def maybe_track_delivery(
     no_ack: bool,
     delivery_state: DeliveryState,
 ) -> ModelState:
-    next_delivery_tag = channel_state.next_delivery_tag + 1
+    next_delivery_tag = LongLong(channel_state.next_delivery_tag + 1)
     unacked_states = (
         channel_state.unacked_states
         if no_ack
@@ -742,7 +746,7 @@ def to_active_consumer_state(
     connection_state: OpenConnectionState,
     channel_state: OpenChannelState,
     consumer_state: CancelledConsumerState | NoConsumerState,
-    consumer_tag: str,
+    consumer_tag: ShortStr,
     no_ack: bool,
 ) -> ModelState:
     channel_state = replace(

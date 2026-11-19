@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import methods as m
 
 from ..helpers import (
@@ -34,7 +35,9 @@ def test_many_unacked_in_bag() -> None:
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=PREFETCH_COUNT, multiple=True))
+    receive_unwrap(
+        server, m.BasicAck(delivery_tag=d.LongLong(PREFETCH_COUNT), multiple=True)
+    )
 
     assert match_fresh_delivery(server).delivery_tag == PREFETCH_COUNT + 1
 
@@ -58,7 +61,9 @@ def test_many_requeue_deliveries_in_bag() -> None:
         deliver(server, delivery_tag)
 
     for delivery_tag in range(1, REQUEUED + 1):
-        receive_unwrap(server, m.BasicNack(delivery_tag=delivery_tag, requeue=True))
+        receive_unwrap(
+            server, m.BasicNack(delivery_tag=d.LongLong(delivery_tag), requeue=True)
+        )
 
     assert len(lookup_sendables(server, m.BasicDeliver, redelivered=True)) == REQUEUED
 
@@ -66,7 +71,7 @@ def test_many_requeue_deliveries_in_bag() -> None:
 def test_partial_ack() -> None:
     server = prefetch_count_filled(PREFETCH_COUNT)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=500, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(500), multiple=True))
 
     for delivery_tag in range(PREFETCH_COUNT + 1, PREFETCH_COUNT + 501):
         deliver(server, delivery_tag)

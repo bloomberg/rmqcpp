@@ -54,6 +54,11 @@ class ImposterStub:
                 request_serializer=amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.TranscriptRequest.SerializeToString,
                 response_deserializer=amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.TranscriptLine.FromString,
                 _registered_method=True)
+        self.WatchTranscript = channel.unary_stream(
+                '/amqp_imposter.control.v1.Imposter/WatchTranscript',
+                request_serializer=amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.WatchTranscriptRequest.SerializeToString,
+                response_deserializer=amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.TranscriptLine.FromString,
+                _registered_method=True)
 
 
 class ImposterServicer:
@@ -83,6 +88,12 @@ class ImposterServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def WatchTranscript(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ImposterServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -104,6 +115,11 @@ def add_ImposterServicer_to_server(servicer, server):
             'Transcript': grpc.unary_stream_rpc_method_handler(
                     servicer.Transcript,
                     request_deserializer=amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.TranscriptRequest.FromString,
+                    response_serializer=amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.TranscriptLine.SerializeToString,
+            ),
+            'WatchTranscript': grpc.unary_stream_rpc_method_handler(
+                    servicer.WatchTranscript,
+                    request_deserializer=amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.WatchTranscriptRequest.FromString,
                     response_serializer=amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.TranscriptLine.SerializeToString,
             ),
     }
@@ -214,6 +230,33 @@ class Imposter:
             target,
             '/amqp_imposter.control.v1.Imposter/Transcript',
             amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.TranscriptRequest.SerializeToString,
+            amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.TranscriptLine.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def WatchTranscript(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/amqp_imposter.control.v1.Imposter/WatchTranscript',
+            amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.WatchTranscriptRequest.SerializeToString,
             amqp__imposter_dot_control_dot_v1_dot_imposter__pb2.TranscriptLine.FromString,
             options,
             channel_credentials,

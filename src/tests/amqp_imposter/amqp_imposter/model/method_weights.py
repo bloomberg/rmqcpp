@@ -30,15 +30,15 @@ class BadWeight(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
-class WeightedPattern:
-    pattern: m.Method
+class WeightedSelector:
+    selector: m.Method
     weight: int = BASE_WEIGHT
 
     def __post_init__(self) -> None:
         if self.weight < 0:
             raise BadWeight(f"negative weight: {self.weight}")
 
-        m.validate_pattern(self.pattern)
+        m.validate_selector(self.selector)
 
 
 UNPROMPTED_CONNECTION_CLOSE = m.ConnectionClose(
@@ -51,17 +51,17 @@ UNPROMPTED_CANCEL = m.BasicCancel()
 NOT_FORCED_CONNECTION_CLOSE = m.ConnectionClose(reply_text=mf.NOT_FORCED_REPLY_TEXT)
 NOT_FORCED_CHANNEL_CLOSE = m.ChannelClose(reply_text=mf.NOT_FORCED_REPLY_TEXT)
 
-DEFAULT_WEIGHTS: tuple[WeightedPattern, ...] = ()
+DEFAULT_WEIGHTS: tuple[WeightedSelector, ...] = ()
 
 
-def implicit_weighted_patterns(
+def implicit_weighted_selectors(
     kinds: Iterable[type[m.Method]],
-) -> tuple[WeightedPattern, ...]:
+) -> tuple[WeightedSelector, ...]:
     return (
-        WeightedPattern(UNPROMPTED_CONNECTION_CLOSE, UNPROMPTED_TEARDOWN_WEIGHT),
-        WeightedPattern(UNPROMPTED_CANCEL, UNPROMPTED_TEARDOWN_WEIGHT),
-        WeightedPattern(UNPROMPTED_CHANNEL_CLOSE, UNPROMPTED_TEARDOWN_WEIGHT),
-        WeightedPattern(NOT_FORCED_CONNECTION_CLOSE, NOT_FORCED_WEIGHT),
-        WeightedPattern(NOT_FORCED_CHANNEL_CLOSE, NOT_FORCED_WEIGHT),
-        *(WeightedPattern(kind()) for kind in kinds),
+        WeightedSelector(UNPROMPTED_CONNECTION_CLOSE, UNPROMPTED_TEARDOWN_WEIGHT),
+        WeightedSelector(UNPROMPTED_CANCEL, UNPROMPTED_TEARDOWN_WEIGHT),
+        WeightedSelector(UNPROMPTED_CHANNEL_CLOSE, UNPROMPTED_TEARDOWN_WEIGHT),
+        WeightedSelector(NOT_FORCED_CONNECTION_CLOSE, NOT_FORCED_WEIGHT),
+        WeightedSelector(NOT_FORCED_CHANNEL_CLOSE, NOT_FORCED_WEIGHT),
+        *(WeightedSelector(kind()) for kind in kinds),
     )

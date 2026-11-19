@@ -15,6 +15,7 @@
 
 import textwrap
 from bisect import bisect_left
+from collections.abc import Callable, Iterable
 from typing import cast
 
 from google.protobuf import text_format
@@ -28,6 +29,12 @@ class Transcript(tuple[pb.TranscriptLine, ...]):
 
     def __str__(self) -> str:
         return format_transcript(self)
+
+
+def seek_transcript_line(
+    lines: Iterable[pb.TranscriptLine], predicate: Callable[[pb.TranscriptLine], bool]
+) -> pb.TranscriptLine | None:
+    return next((line for line in lines if predicate(line)), None)
 
 
 def format_direction_arrow(event: pb.TranscriptEvent.ValueType) -> str:

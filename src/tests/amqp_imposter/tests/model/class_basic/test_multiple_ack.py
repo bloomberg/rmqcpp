@@ -15,6 +15,7 @@
 
 import pytest
 
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -39,14 +40,14 @@ def test_consume_multiple_ack() -> None:
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=2, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(2), multiple=True))
 
     deliver(server, 4)
     deliver(server, 5)
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=5, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(5), multiple=True))
 
     assert match_fresh_delivery(server).delivery_tag == 6
 
@@ -54,7 +55,7 @@ def test_consume_multiple_ack() -> None:
 def test_multiple_ack_subrange() -> None:
     server = prefetch_count_filled(PREFETCH_COUNT)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=1, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(1), multiple=True))
 
     deliver(server, 4)
 
@@ -64,7 +65,7 @@ def test_multiple_ack_subrange() -> None:
 def test_multiple_ack_does_not_requeue() -> None:
     server = prefetch_count_filled(PREFETCH_COUNT)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=3, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(3), multiple=True))
 
     assert not subsets_any_sendable(server, m.BasicDeliver, redelivered=True)
 
@@ -72,7 +73,7 @@ def test_multiple_ack_does_not_requeue() -> None:
 def test_zero_multiple_ack_acknowledges_everything() -> None:
     server = prefetch_count_filled(PREFETCH_COUNT)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=0, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(0), multiple=True))
 
     for delivery_tag in range(PREFETCH_COUNT + 1, 2 * PREFETCH_COUNT + 1):
         deliver(server, delivery_tag)
@@ -83,7 +84,7 @@ def test_zero_multiple_ack_acknowledges_everything() -> None:
 def test_zero_multiple_ack_does_not_requeue() -> None:
     server = prefetch_count_filled(PREFETCH_COUNT)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=0, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(0), multiple=True))
 
     assert not subsets_any_sendable(server, m.BasicDeliver, redelivered=True)
 
@@ -91,7 +92,7 @@ def test_zero_multiple_ack_does_not_requeue() -> None:
 def test_zero_multiple_ack_without_deliveries() -> None:
     server = consuming(prefetch_count=PREFETCH_COUNT)
 
-    receive_unwrap(server, m.BasicAck(delivery_tag=0, multiple=True))
+    receive_unwrap(server, m.BasicAck(delivery_tag=d.LongLong(0), multiple=True))
 
     deliver(server, 1)
 
@@ -101,7 +102,9 @@ def test_zero_multiple_nack_requeues_everything() -> None:
 
     delivered = tuple(deliver(server, delivery_tag) for delivery_tag in (1, 2, 3))
 
-    receive_unwrap(server, m.BasicNack(delivery_tag=0, multiple=True, requeue=True))
+    receive_unwrap(
+        server, m.BasicNack(delivery_tag=d.LongLong(0), multiple=True, requeue=True)
+    )
 
     redeliveries = lookup_sendables(server, m.BasicDeliver, redelivered=True)
 
@@ -120,7 +123,7 @@ def test_zero_delivery_tag_alone_closes_channel(
 ) -> None:
     server = prefetch_count_filled(PREFETCH_COUNT)
 
-    receive_unwrap(server, acknowledge(0))
+    receive_unwrap(server, acknowledge(d.LongLong(0)))
 
     assert error_replies_to(server, acknowledge) == channel_errors(
         mf.ReplyCode.PRECONDITION_FAILED
@@ -134,7 +137,9 @@ def test_multiple_nack_requeue() -> None:
     second = deliver(server, 2)
     deliver(server, 3)
 
-    receive_unwrap(server, m.BasicNack(delivery_tag=2, multiple=True, requeue=True))
+    receive_unwrap(
+        server, m.BasicNack(delivery_tag=d.LongLong(2), multiple=True, requeue=True)
+    )
 
     redeliveries = lookup_sendables(server, m.BasicDeliver, redelivered=True)
 
@@ -147,7 +152,9 @@ def test_multiple_nack_requeue() -> None:
 def test_multiple_nack_no_requeue() -> None:
     server = prefetch_count_filled(PREFETCH_COUNT)
 
-    receive_unwrap(server, m.BasicNack(delivery_tag=2, multiple=True, requeue=False))
+    receive_unwrap(
+        server, m.BasicNack(delivery_tag=d.LongLong(2), multiple=True, requeue=False)
+    )
 
     assert not subsets_any_sendable(server, m.BasicDeliver, redelivered=True)
 
@@ -155,7 +162,9 @@ def test_multiple_nack_no_requeue() -> None:
 def test_multiple_nack_destroys_deliveries() -> None:
     server = prefetch_count_filled(PREFETCH_COUNT)
 
-    receive_unwrap(server, m.BasicNack(delivery_tag=2, multiple=True, requeue=False))
+    receive_unwrap(
+        server, m.BasicNack(delivery_tag=d.LongLong(2), multiple=True, requeue=False)
+    )
 
     deliver(server, 4)
     deliver(server, 5)

@@ -16,6 +16,7 @@
 import pytest
 
 from amqp_imposter.model import Gen
+from amqp_imposter.model import domains as d
 from amqp_imposter.model import method_fields as mf
 from amqp_imposter.model import methods as m
 
@@ -41,7 +42,7 @@ def test_consumer_reject_nack() -> None:
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=False))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=False))
 
     assert lookup_unique_sendable(server, m.BasicDeliver).delivery_tag == 2
 
@@ -49,7 +50,7 @@ def test_consumer_reject_nack() -> None:
 
     assert not subsets_any_sendable(server, m.BasicDeliver)
 
-    receive_unwrap(server, m.BasicNack(delivery_tag=2, requeue=False))
+    receive_unwrap(server, m.BasicNack(delivery_tag=d.LongLong(2), requeue=False))
 
     assert lookup_unique_sendable(server, m.BasicDeliver).delivery_tag == 3
 
@@ -58,7 +59,7 @@ def test_requeued_message_comes_back() -> None:
     server = consuming(prefetch_count=1)
 
     first = send_unwrap(server, m.BasicDeliver, delivery_tag=1)
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
 
     again = lookup_unique_sendable(server, m.BasicDeliver, redelivered=True)
 
@@ -73,7 +74,7 @@ def test_fresh_delivery_and_requeue_delivery() -> None:
     server = consuming(prefetch_count=1)
 
     send_unwrap(server, m.BasicDeliver, delivery_tag=1)
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
 
     fresh = match_fresh_delivery(server)
 
@@ -86,7 +87,7 @@ def test_reject_no_requeue() -> None:
     server = consuming(prefetch_count=1)
 
     send_unwrap(server, m.BasicDeliver, delivery_tag=1)
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=False))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=False))
 
     assert not subsets_any_sendable(server, m.BasicDeliver, redelivered=True)
 
@@ -96,8 +97,8 @@ def test_accumulate_requeues() -> None:
 
     first = send_unwrap(server, m.BasicDeliver, delivery_tag=1)
     second = send_unwrap(server, m.BasicDeliver, delivery_tag=2)
-    receive_unwrap(server, m.BasicNack(delivery_tag=1, requeue=True))
-    receive_unwrap(server, m.BasicNack(delivery_tag=2, requeue=True))
+    receive_unwrap(server, m.BasicNack(delivery_tag=d.LongLong(1), requeue=True))
+    receive_unwrap(server, m.BasicNack(delivery_tag=d.LongLong(2), requeue=True))
 
     redeliveries = lookup_sendables(server, m.BasicDeliver, redelivered=True)
 
@@ -112,9 +113,9 @@ def test_redelivery_persists() -> None:
     server = consuming(prefetch_count=1)
 
     send_unwrap(server, m.BasicDeliver, delivery_tag=1)
-    receive_unwrap(server, m.BasicReject(delivery_tag=1, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1), requeue=True))
     send_unwrap(server, m.BasicDeliver, delivery_tag=2, redelivered=True)
-    receive_unwrap(server, m.BasicReject(delivery_tag=2, requeue=True))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(2), requeue=True))
 
     assert subsets_any_sendable(server, m.BasicDeliver, redelivered=True)
 
@@ -123,7 +124,7 @@ def test_tag_not_clobbered_after_reject() -> None:
     server = consuming(prefetch_count=1)
 
     send_unwrap(server, m.BasicDeliver, delivery_tag=1)
-    receive_unwrap(server, m.BasicReject(delivery_tag=1))
+    receive_unwrap(server, m.BasicReject(delivery_tag=d.LongLong(1)))
 
     assert not subsets_any_sendable(server, m.BasicDeliver, delivery_tag=1)
 
@@ -135,7 +136,7 @@ def test_unknown_tag_closes_channel(
     server = consuming(prefetch_count=1)
 
     send_unwrap(server, m.BasicDeliver, delivery_tag=1)
-    receive_unwrap(server, acknowledge(99))
+    receive_unwrap(server, acknowledge(d.LongLong(99)))
 
     assert error_replies_to(server, acknowledge) == channel_errors(
         mf.ReplyCode.PRECONDITION_FAILED
@@ -149,8 +150,8 @@ def test_repeat_acknowledgement_closes_channel(
     server = consuming(prefetch_count=1)
 
     send_unwrap(server, m.BasicDeliver, delivery_tag=1)
-    receive_unwrap(server, acknowledge(1))
-    receive_unwrap(server, acknowledge(1))
+    receive_unwrap(server, acknowledge(d.LongLong(1)))
+    receive_unwrap(server, acknowledge(d.LongLong(1)))
 
     assert error_replies_to(server, acknowledge) == channel_errors(
         mf.ReplyCode.PRECONDITION_FAILED
@@ -163,7 +164,7 @@ def test_undelivered_tag_closes_channel(
 ) -> None:
     server = consuming(prefetch_count=1)
 
-    receive_unwrap(server, acknowledge(1))
+    receive_unwrap(server, acknowledge(d.LongLong(1)))
 
     assert error_replies_to(server, acknowledge) == channel_errors(
         mf.ReplyCode.PRECONDITION_FAILED
@@ -179,7 +180,7 @@ def test_multiple_tag_too_high_closes_channel(
     server = consuming(prefetch_count=3)
 
     send_unwrap(server, m.BasicDeliver, delivery_tag=1)
-    receive_unwrap(server, acknowledge(delivery_tag=5, multiple=True))
+    receive_unwrap(server, acknowledge(delivery_tag=d.LongLong(5), multiple=True))
 
     assert error_replies_to(server, acknowledge) == channel_errors(
         mf.ReplyCode.PRECONDITION_FAILED

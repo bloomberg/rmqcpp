@@ -17,7 +17,7 @@ The types below are inspired by the QuickCheck white paper.
         redelivered:  Arbitrary[bool] # you can get deliveries that look like they were previously delivered to another consumer
         exchange:     Arbitrary[str]  # N.b. should be bound when it's bagged if it's a requeue!
         routing_key:  Arbitrary[str]
-        properties:   Arbitrary[MessageProperties | None]
+        properties:   Arbitrary[MessageProperties]
         body:         Arbitrary[bytes]
 ```
 
