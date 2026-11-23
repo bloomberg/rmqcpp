@@ -5,9 +5,19 @@
     "dependencies": [
       "boost-asio",
       "openssl",
-      "gtest",
       "bde",
       "pcre2",
       "zstd"
+    ],
+    "features": {
+      "tests": {
+        "description": "Build the rmqcpp unit and integration tests",
+        "dependencies": [
+          "gtest"
+        ]
+      }
+    },
+    "default-features": [
+      "tests"
     ]
 }

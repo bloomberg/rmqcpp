@@ -7,7 +7,12 @@ option(ENABLE_COMPRESSION "Enable zstd compression support" ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-option(rmqcpp_ENABLE_TESTING "Enable testing" ON)
+# Derive the default for enabling testing from the selected vcpkg features
+set(rmqcpp_ENABLE_TESTING_DEFAULT ON)
+if(VCPKG_MANIFEST_MODE AND VCPKG_MANIFEST_NO_DEFAULT_FEATURES AND NOT "tests" IN_LIST VCPKG_MANIFEST_FEATURES)
+    set(rmqcpp_ENABLE_TESTING_DEFAULT OFF)
+endif()
+option(rmqcpp_ENABLE_TESTING "Enable testing (requires GTest)" ${rmqcpp_ENABLE_TESTING_DEFAULT})
 if(rmqcpp_ENABLE_TESTING)
     enable_testing()
 endif()
