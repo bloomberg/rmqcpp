@@ -52,11 +52,11 @@ bool ChannelClose::decode(ChannelClose* close,
                           bsl::size_t dataLength)
 {
     rmqamqpt::Buffer buffer(data, dataLength);
-    if (buffer.available() < sizeof(bdlb::BigEndianUint16)) {
+
+    uint16_t replyCode = 0;
+    if (!buffer.copy<bdlb::BigEndianUint16>(&replyCode)) {
         return false;
     }
-
-    const uint16_t replyCode = buffer.copy<bdlb::BigEndianUint16>();
     close->d_replyCode =
         static_cast<rmqamqpt::Constants::AMQPReplyCode>(replyCode);
 
@@ -64,14 +64,14 @@ bool ChannelClose::decode(ChannelClose* close,
         return false;
     }
 
-    if (buffer.available() < 2 * sizeof(bdlb::BigEndianUint16)) {
+    uint16_t classId  = 0;
+    uint16_t methodId = 0;
+    if (!buffer.copy<bdlb::BigEndianUint16>(&classId) ||
+        !buffer.copy<bdlb::BigEndianUint16>(&methodId)) {
         return false;
     }
 
-    const uint16_t classId = buffer.copy<bdlb::BigEndianUint16>();
     close->d_classId = static_cast<rmqamqpt::Constants::AMQPClassId>(classId);
-
-    const uint16_t methodId = buffer.copy<bdlb::BigEndianUint16>();
     close->d_methodId =
         static_cast<rmqamqpt::Constants::AMQPMethodId>(methodId);
 

@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 
 #include <bsl_cstdint.h>
+#include <bsl_sstream.h>
 #include <bsl_string.h>
 
 using namespace BloombergLP;
@@ -56,4 +57,19 @@ TEST(Methods_ConnectionStartOk, StartOkEncodeDecode)
 
     EXPECT_TRUE(cm.is<rmqamqpt::ConnectionStartOk>());
     EXPECT_EQ(startOkMethod, cm.the<rmqamqpt::ConnectionStartOk>());
+}
+
+TEST(Methods_ConnectionStartOk, StartOkStreamRedactsResponse)
+{
+    rmqt::FieldTable ft;
+    bsl::string response("\0secretuser\0secretpass", 22);
+    rmqamqpt::ConnectionStartOk startOkMethod(ft, "PLAIN", response, "en-US");
+
+    bsl::ostringstream oss;
+    oss << startOkMethod;
+    const bsl::string out = oss.str();
+
+    EXPECT_THAT(out, HasSubstr("response:<REDACTED>"));
+    EXPECT_THAT(out, Not(HasSubstr("secretuser")));
+    EXPECT_THAT(out, Not(HasSubstr("secretpass")));
 }

@@ -59,26 +59,26 @@ bool ContentHeader::decode(ContentHeader* contentHeader,
                            bsl::size_t dataLength)
 {
     rmqamqpt::Buffer buffer(data, dataLength);
-    if (sizeof(uint16_t) + sizeof(uint16_t) +
-            sizeof(contentHeader->d_bodySize) >
-        buffer.available()) {
+
+    uint16_t classId = 0;
+    uint16_t weight  = 0;
+    if (!buffer.copy<bdlb::BigEndianUint16>(&classId) ||
+        !buffer.copy<bdlb::BigEndianUint16>(&weight) ||
+        !buffer.copy<bdlb::BigEndianUint64>(&contentHeader->d_bodySize)) {
         BALL_LOG_ERROR << "Not enough data to decode ContentHeader frame. "
                        << "Available buffer bytes: " << buffer.available();
         return false;
     }
 
-    const uint16_t classId = buffer.copy<bdlb::BigEndianUint16>();
     contentHeader->d_classId =
         static_cast<rmqamqpt::Constants::AMQPClassId>(classId);
 
-    const uint16_t weight = buffer.copy<bdlb::BigEndianUint16>();
     // Reserved and should always be zero
     if (weight != 0) {
         BALL_LOG_ERROR
             << "Weight field inside content header frame is non-zero: "
             << weight;
     }
-    contentHeader->d_bodySize = buffer.copy<bdlb::BigEndianUint64>();
 
     return BasicProperties::decode(&contentHeader->d_properties,
                                    static_cast<const uint8_t*>(buffer.ptr()),

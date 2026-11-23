@@ -20,6 +20,10 @@ namespace rmqamqp {
 
 const char* Metrics::VHOST_TAG       = "rmqVhostName";
 const char* Metrics::CHANNELTYPE_TAG = "rmqChannelType";
+const char* Metrics::RESULT_TAG      = "rmqResult";
+
+// Consumer metrics
+const char* Metrics::CONSUMER_MESSAGE_HANDLED = "consumer_message_handled";
 
 // Pause/Resume metrics
 const char* Metrics::CONSUMER_PAUSE_TOTAL  = "consumer_pause_total";

@@ -13,157 +13,185 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import pytest
+from __future__ import annotations
+
+import logging
 import os
-from enum import Enum
+import re
+import socket
+from collections.abc import Generator
+from contextlib import contextmanager, suppress
+from dataclasses import dataclass, fields, replace
+from typing import TYPE_CHECKING, Any
+
+import pytest
 import requests
 from requests.auth import HTTPBasicAuth
-from typing import Any
-try:
-    from telnetlib import Telnet
-except ImportError:
-    from telnetlib3 import Telnet
-from contextlib import contextmanager
-import logging
-import re
-from pathlib import Path
+
+if TYPE_CHECKING:
+    from .platforms import Platform
+
+logger = logging.getLogger(__name__)
 
 
-CERT_PATH = Path(__file__).parent / "certs"
-
-DEFAULT_VHOST = "rmqcpp"
-
-
-class TlsConfig(Enum):
-    NONE = 0
-    VERIFY_SERVER = 1
-    VERIFY_MUTUAL = 2
+class ApiError(Exception):
+    """Raised when a management API request returns an error status."""
 
 
+DEFAULT_HOSTNAME = "rabbit"
+DEFAULT_VHOST = "rmq-vhost"
+
+
+@dataclass
 class TestConfig:
+    __test__ = False
+
     exe: str = ""
-    management: str = ""
+    hostname: str = ""
+    mgmt: str = ""
     user_mgmt: str = ""
     pwd_mgmt: str = ""
-    hostname: str = ""
-    port: str = ""
+    port: str = "30424"
     vhost: str = ""
     user: str = ""
     pwd: str = ""
-    proxy_control_port: str = ""
-    ca_cert: str = ""
-    client_cert: str = ""
-    client_key: str = ""
-    tls_port: str = ""
-    tls: TlsConfig = TlsConfig.NONE
+    proxy_control_port: str = "30454"
+    amqpprox_backend_name: str = "rabbit"
 
 
-@pytest.fixture(scope="class")
-def config(request) -> TestConfig:
-    args = {
-        "exe": None,  # Required
-        "alt_exe": "",
-        "mgmt": "http://localhost:15672",
-        "user_mgmt": os.environ.get("RMQ_VHOST", DEFAULT_VHOST),
-        "pwd_mgmt": os.environ.get("RMQ_VHOST", DEFAULT_VHOST),
-        "hostname": os.environ.get("RMQ_HOSTNAME","localhost"),
-        "port": os.environ.get("RMQ_PORT","5672"),
-        "tls_port": os.environ.get("RMQ_TLS_PORT","5671"),
-        "user": os.environ.get("RMQ_VHOST", DEFAULT_VHOST),
-        "pwd": os.environ.get("RMQ_VHOST", DEFAULT_VHOST),
-        "proxy_control_port": "5700",
-        "ca_cert": str(CERT_PATH / "ca.crt"),
-        "client_cert": str(CERT_PATH / "client.crt"),
-        "client_key": str(CERT_PATH / "client.key"),
+def config_from_env() -> TestConfig:
+    hostname = os.environ.get("RMQ_HOSTNAME", DEFAULT_HOSTNAME)
+    vhost = os.environ.get("RMQ_VHOST", DEFAULT_VHOST)
+    derived = TestConfig(
+        exe=os.environ["RMQ_EXE"],
+        hostname=hostname,
+        mgmt=f"http://{hostname}:30439",
+        user_mgmt=vhost,
+        pwd_mgmt=vhost,
+        vhost=vhost,
+        user=vhost,
+        pwd=vhost,
+    )
+    overrides = {
+        field.name: os.environ[env_name].strip()
+        for field in fields(TestConfig)
+        if (env_name := f"RMQ_{field.name.upper()}") in os.environ
     }
-
-    print(os.getcwd())
-
-    config = TestConfig()
-    for arg, default in args.items():
-        setattr(config, arg, os.environ.get(f"RMQ_{arg.upper()}", default).strip())
-    request.cls.config = config
-    return config
+    return replace(derived, **overrides)
 
 
-@pytest.fixture(scope="class")
-def api(request, config):
-    class Api:
-        def call_api(self, url: str, method, not_found_allowed, *args, **kwargs) -> Any:
-            r = requests.request(
-                method,
-                config.mgmt + url,
-                *args,
-                auth=HTTPBasicAuth(config.user_mgmt, config.pwd_mgmt),
-                **kwargs,
-                timeout=10,
+class Api:
+    def __init__(self, config):
+        self.config = config
+
+    def call_api(self, url: str, method, not_found_allowed, *args, **kwargs) -> Any:
+        url = self.config.mgmt + url
+        r = requests.request(
+            method,
+            url,
+            *args,
+            auth=HTTPBasicAuth(self.config.user_mgmt, self.config.pwd_mgmt),
+            **kwargs,
+            timeout=10,
+        )
+        logger.info(f"{method} {url} {r.status_code}")
+        logger.info(r.text)
+        if not_found_allowed:
+            if r.status_code == 404:
+                return r
+        elif r.status_code >= 400:
+            raise ApiError(
+                f"http request (code: {r.status_code}) failed with body: {r.text}"
             )
-            print(f"{method} {config.mgmt}{url} {r.status_code} {r.text}")
-            if not_found_allowed:
-                if r.status_code == 404:
-                    return r
-            elif r.status_code >= 400:
-                raise Exception(
-                    f"http request (code: {r.status_code}) failed with body: {r.text}"
-                )
-            return r
+        return r
 
-        def get(self, url: str, not_found_allowed=False, **kwargs) -> Any:
-            return self.call_api(
-                url, method="GET", not_found_allowed=not_found_allowed, **kwargs
-            )
+    def get(self, url: str, not_found_allowed=False, **kwargs) -> Any:
+        return self.call_api(
+            url, method="GET", not_found_allowed=not_found_allowed, **kwargs
+        )
 
-        def post(self, url: str, not_found_allowed=False, **kwargs) -> Any:
-            return self.call_api(
-                url, method="POST", not_found_allowed=not_found_allowed, **kwargs
-            )
+    def post(self, url: str, not_found_allowed=False, **kwargs) -> Any:
+        return self.call_api(
+            url, method="POST", not_found_allowed=not_found_allowed, **kwargs
+        )
 
-        def put(self, url: str, not_found_allowed=False, **kwargs) -> Any:
-            return self.call_api(
-                url, method="PUT", not_found_allowed=not_found_allowed, **kwargs
-            )
+    def put(self, url: str, not_found_allowed=False, **kwargs) -> Any:
+        return self.call_api(
+            url, method="PUT", not_found_allowed=not_found_allowed, **kwargs
+        )
 
-        def delete(self, url: str, not_found_allowed=False, **kwargs) -> Any:
-            return self.call_api(
-                url, method="DELETE", not_found_allowed=not_found_allowed, **kwargs
-            )
+    def delete(self, url: str, not_found_allowed=False, **kwargs) -> Any:
+        return self.call_api(
+            url, method="DELETE", not_found_allowed=not_found_allowed, **kwargs
+        )
 
-    api = Api()
-    request.cls.api = api
-    return api
+
+def send_prox_msg(hostname: str, port: int, msg: str) -> str:
+    logger.info(f"sending to proxy: {msg}")
+    with socket.create_connection((hostname, port)) as sock:
+        sock.sendall(msg.encode("ascii"))
+        sock.shutdown(socket.SHUT_WR)
+        data = b""
+        while True:
+            chunk = sock.recv(4096)
+            if not chunk:
+                break
+            data += chunk
+        return data.decode("ascii")
+
+
+@pytest.fixture(scope="session")
+def platform(request: pytest.FixtureRequest) -> Platform:
+    return request.config.hook.pytest_rmqapitests_platform(config=request.config)
+
+
+@pytest.fixture(autouse=True)
+def _bind_platform(request: pytest.FixtureRequest, platform: Platform) -> None:
+    request.cls.platform = platform
+    request.cls.config = platform.config
+    request.cls.api = Api(platform.config)
+
+
+@pytest.fixture(autouse=True)
+def _adapter_log_level(request: pytest.FixtureRequest) -> None:
+    """Put the level where start_perftest_executable can find it.
+
+    Only a level the user asked for arrives as the ``--log-level`` option; the
+    INFO default is an ini value. So ``None`` here means "leave
+    the adapter on its own default".
+
+    Its own fixture rather than a line in ``vhost``, which test classes
+    override.
+    """
+    request.cls.adapter_log_level = request.config.getoption("log_level")
 
 
 @pytest.fixture
-def prox(config, request, vhost):
+def prox(request, vhost, platform):
+    config = platform.config
+
     class ProxControl:
-        def send_prox_msg(self, msg: bytes) -> bytes:
-            logging.info(f"sending to proxy: {msg}")
-            with Telnet(config.hostname, config.proxy_control_port) as tn:
-                tn.write(msg.encode("ascii"))
-                return tn.read_all().decode("ascii")
+        def send_prox_msg(self, msg: str) -> str:
+            return send_prox_msg(config.hostname, int(config.proxy_control_port), msg)
 
         def force_close_connections(self) -> int:
             connections: str = self.send_prox_msg("conn print\n")
             for conn in connections.splitlines():
-                # amqpprox changed its `conn print` session format (bloomberg/
-                # amqpprox#120): the old "<id>: vhost=<vhost>" became
-                # "id=<id> vhost=<vhost> ...". Match both so force-disconnect
-                # keeps working across amqpprox versions.
-                match = re.search(r"(?:id=)?(\d+):?\s+vhost=(\S+)", conn)
+                match = re.search(r"(?:^\s*|id=)(\d+):? vhost=(\S+)", conn)
 
                 if match:
-                    id = match.group(1)
+                    conn_id = match.group(1)
                     connVhost = match.group(2)
                     if connVhost == vhost:
-                        logging.info(f"force closing connection: {conn}")
-                        self.send_prox_msg(f"session {id} force_disconnect\n")
+                        logger.info(f"force closing connection: {conn}")
+                        self.send_prox_msg(f"session {conn_id} force_disconnect\n")
 
         def mapVhost(self):
-            logging.info(f"Mapping in proxy {vhost}")
-            self.send_prox_msg(f"map backend {vhost} rabbit\n")
+            logger.info(f"Mapping in proxy {vhost}")
+            self.send_prox_msg(f"map backend {vhost} {config.amqpprox_backend_name}\n")
 
         def unmapVhost(self):
-            logging.info(f"Removing mapping in proxy {vhost}")
+            logger.info(f"Removing mapping in proxy {vhost}")
             self.send_prox_msg(f"map unmap {vhost}\n")
 
         @contextmanager
@@ -179,28 +207,44 @@ def prox(config, request, vhost):
     return prox
 
 
+def short_test_id(nodeid: str) -> str:
+    """A pytest node id without its file path: ``Class::test[params]``.
+
+    What both the framework's own log lines and the adapter output it forwards
+    are tagged with, so one grep matches both.
+    """
+    return nodeid.split("::", 1)[-1]
+
+
+def capability_of(item: pytest.Item) -> str | None:
+    marker = item.get_closest_marker("capability")
+    return marker.args[0] if marker else None
+
+
+_vhost_counters: dict[str, int] = {}
+
+
 @pytest.fixture(autouse=True)
 def vhost(request):
-    vhost = request.module.__name__ + "::" + request.function.__name__
+    capability = capability_of(request.node)
+    _vhost_counters[capability] = _vhost_counters.get(capability, 0) + 1
+    vhost = f"rmq-conformance-{capability}-{_vhost_counters[capability]}"
+    logger.info(f"vhost mapping: {vhost} -> {request.node.nodeid}")
     request.cls.vhost = vhost
     return vhost
 
 
 @pytest.fixture(autouse=True)
-def vhost_on_broker(api, config, prox, vhost):
+def vhost_on_broker(prox: Any, vhost: str, platform: Platform) -> Generator[str]:
+    api = Api(platform.config)
     rcode = api.put(f"/api/vhosts/{vhost}").status_code
     assert rcode == 201 or rcode == 204
 
-    rcode = api.put(
-        f"/api/permissions/{vhost}/{config.user}",
-        json={"configure": ".*", "write": ".*", "read": ".*"},
-    ).status_code
-    assert rcode == 201 or rcode == 204
+    platform.grant_access(api, vhost)
 
     prox.mapVhost()
     yield vhost
     prox.unmapVhost()
-    try:
+    with suppress(Exception):
+        platform.revoke_access(api, vhost)
         api.delete(f"/api/vhosts/{vhost}")
-    except:
-        pass

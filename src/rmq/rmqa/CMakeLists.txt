@@ -17,7 +17,7 @@ add_library(rmqa OBJECT
     rmqa_topologyupdate.cpp
     rmqa_tracingconsumerimpl.cpp
     rmqa_tracingmessageguard.cpp
-    rmqa_tracingproducerimpl.cpp
+    rmqa_tracingtagger.cpp
     rmqa_vhost.cpp
     rmqa_vhostimpl.cpp
 )

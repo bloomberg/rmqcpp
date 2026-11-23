@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import pytest
-from ..rmqapitests.fixtures import *
-from ..rmqapitests.tests_runner import RmqTest
+from ..rmqapitests.integration_test import RmqTest
+
+pytestmark = pytest.mark.capability("multithread-consumer")
 
 
 # TODO: This test cannot be supported by rmqapitests

@@ -51,3 +51,11 @@ TEST(Methods_ConfirmSelect, QoSEncodeDecode)
     EXPECT_TRUE(bm.is<rmqamqpt::ConfirmSelect>());
     EXPECT_TRUE(bm.the<rmqamqpt::ConfirmSelect>().noWait());
 }
+
+TEST(Methods_ConfirmSelect, EmptyPayloadFailsToDecode)
+{
+    rmqamqpt::ConfirmSelect confirmSelect;
+    const uint8_t data[] = {0x00};
+
+    EXPECT_FALSE(rmqamqpt::ConfirmSelect::decode(&confirmSelect, data, 0));
+}

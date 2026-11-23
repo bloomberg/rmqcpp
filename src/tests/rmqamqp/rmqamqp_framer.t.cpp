@@ -515,3 +515,54 @@ TEST_F(ContentEncodeTests, EncodeContentHeaderBodyFrames)
                 Eq(rmqamqp::Framer::OK));
     EXPECT_EQ(channel, 5);
 }
+
+TEST_F(ContentEncodeTests, UnusableMaxFrameSizeIsIgnored)
+{
+    // Anything at or below the framing overhead would leave no room for a
+    // payload, so the content body split could not make progress
+    const size_t messageBytes = 60;
+    const size_t firstFrame = MAX_FRAME_SIZE - rmqamqpt::Frame::frameOverhead();
+    const size_t secondFrame = messageBytes - firstFrame;
+
+    const rmqamqp::Message theMessage(
+        rmqt::Message(bsl::make_shared<bsl::vector<uint8_t> >(messageBytes)));
+
+    const size_t unusable[] = {0, 1, rmqamqpt::Frame::frameOverhead()};
+
+    for (size_t i = 0; i < sizeof(unusable) / sizeof(unusable[0]); ++i) {
+        frames.clear();
+        EXPECT_FALSE(framer.setMaxFrameSize(unusable[i]))
+            << "size: " << unusable[i];
+        framer.makeFrames(&frames, 2u, theMessage);
+
+        // The previously configured size is retained, so the body is still
+        // split the same way. ASSERT rather than EXPECT: were the guard
+        // missing, a size of exactly frameOverhead() would otherwise reach
+        // a loop that never advances.
+        ASSERT_THAT(frames, SizeIs(3)) << "size: " << unusable[i];
+        EXPECT_THAT(frames[1].payloadLength(), Eq(firstFrame));
+        EXPECT_THAT(frames[2].payloadLength(), Eq(secondFrame));
+    }
+}
+
+TEST_F(ContentEncodeTests, MaxFrameSizeJustAboveTheOverheadIsAccepted)
+{
+    // One octet above the overhead is the first size the guard must take
+    // rather than ignore. It only makes the body split viable; header and
+    // method frames are not bounded by this value.
+    const size_t smallest     = rmqamqpt::Frame::frameOverhead() + 1;
+    const size_t messageBytes = 3;
+
+    EXPECT_TRUE(framer.setMaxFrameSize(smallest));
+    framer.makeFrames(
+        &frames,
+        2u,
+        rmqamqp::Message(rmqt::Message(
+            bsl::make_shared<bsl::vector<uint8_t> >(messageBytes))));
+
+    // one header frame, then one body frame per payload octet
+    ASSERT_THAT(frames, SizeIs(1 + messageBytes));
+    for (size_t i = 1; i < frames.size(); ++i) {
+        EXPECT_THAT(frames[i].payloadLength(), Eq(1u));
+    }
+}

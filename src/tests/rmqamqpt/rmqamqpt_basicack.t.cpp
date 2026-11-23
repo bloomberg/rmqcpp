@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <bsl_cstddef.h>
 #include <bsl_cstdint.h>
 
 using namespace BloombergLP;
@@ -50,4 +51,41 @@ TEST(Methods_BasicAck, AckEncodeDecode)
     EXPECT_TRUE(bm.is<rmqamqpt::BasicAck>());
     EXPECT_EQ(bm.the<rmqamqpt::BasicAck>().deliveryTag(), 1337);
     EXPECT_EQ(bm.the<rmqamqpt::BasicAck>().multiple(), true);
+}
+
+TEST(Methods_BasicAck, TruncatedPayloadFailsToDecode)
+{
+    // A full Basic.Ack payload is an 8 byte delivery tag plus a flag byte
+    const uint8_t full[] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x39, 0x01};
+
+    for (bsl::size_t length = 0; length < sizeof(full); ++length) {
+        rmqamqpt::BasicAck ack;
+
+        EXPECT_FALSE(rmqamqpt::BasicAck::decode(&ack, full, length))
+            << "length: " << length;
+    }
+
+    rmqamqpt::BasicAck ack;
+    EXPECT_TRUE(rmqamqpt::BasicAck::decode(&ack, full, sizeof(full)));
+    EXPECT_EQ(ack.deliveryTag(), 1337);
+    EXPECT_TRUE(ack.multiple());
+}
+
+TEST(Methods_BasicAck, MultipleIsReadFromBitZeroOnly)
+{
+    // multiple is bit 0 of a packed bit octet; the rest are reserved
+    const uint8_t cases[][2] = {
+        {0x00, 0}, {0x01, 1}, {0x02, 0}, {0x03, 1}, {0xFE, 0}, {0xFF, 1}};
+
+    for (bsl::size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        const uint8_t data[] = {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x39, cases[i][0]};
+
+        rmqamqpt::BasicAck ack;
+        EXPECT_TRUE(rmqamqpt::BasicAck::decode(&ack, data, sizeof(data)));
+        EXPECT_EQ(ack.deliveryTag(), 1337);
+        EXPECT_EQ(static_cast<int>(ack.multiple()), cases[i][1])
+            << "octet: " << static_cast<int>(cases[i][0]);
+    }
 }

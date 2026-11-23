@@ -77,13 +77,11 @@ bool ConnectionStart::decode(ConnectionStart* start,
 {
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (buffer.available() < 2) {
+    if (!buffer.copy<bsl::uint8_t>(&start->d_versionMajor) ||
+        !buffer.copy<bsl::uint8_t>(&start->d_versionMinor)) {
         BALL_LOG_ERROR << "Cannot decode ConnectionStart version";
         return false;
     }
-
-    start->d_versionMajor = buffer.copy<bsl::uint8_t>();
-    start->d_versionMinor = buffer.copy<bsl::uint8_t>();
 
     if (!Types::decodeFieldTable(&start->d_properties, &buffer)) {
         BALL_LOG_ERROR << "Cannot decode ConnectionStart properties";

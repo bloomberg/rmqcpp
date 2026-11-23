@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <bsl_cstddef.h>
 #include <bsl_cstdint.h>
 
 using namespace BloombergLP;
@@ -60,4 +61,33 @@ TEST(Methods_BasicDeliver, DeliverEncodeDecode)
               "test-routing-key");
 
     EXPECT_EQ(bm.the<rmqamqpt::BasicDeliver>().redelivered(), true);
+}
+
+TEST(Methods_BasicDeliver, RedeliveredIsReadFromBitZeroOnly)
+{
+    const uint8_t cases[][2] = {{0x00, 0}, {0x01, 1}, {0x02, 0}, {0xFF, 1}};
+
+    for (bsl::size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        // empty consumer tag, delivery tag 1337, the packed bit octet,
+        // then empty exchange and routing key
+        const uint8_t data[] = {0x00,
+                                0x00,
+                                0x00,
+                                0x00,
+                                0x00,
+                                0x00,
+                                0x00,
+                                0x05,
+                                0x39,
+                                cases[i][0],
+                                0x00,
+                                0x00};
+
+        rmqamqpt::BasicDeliver deliver;
+        EXPECT_TRUE(
+            rmqamqpt::BasicDeliver::decode(&deliver, data, sizeof(data)));
+        EXPECT_EQ(deliver.deliveryTag(), 1337);
+        EXPECT_EQ(static_cast<int>(deliver.redelivered()), cases[i][1])
+            << "octet: " << static_cast<int>(cases[i][0]);
+    }
 }

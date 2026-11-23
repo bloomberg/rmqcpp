@@ -15,8 +15,12 @@
 
 #include <rmqa_connectionstring.h>
 
+#include <rmqt_endpoint.h>
+#include <rmqt_securityparameters.h>
+
 #include <rmqtestutil_testsuite.t.h>
 
+#include <bsl_memory.h>
 #include <bsl_string.h>
 
 #include <gmock/gmock.h>
@@ -103,3 +107,47 @@ const ConnectionStringTestCase k_CONN_STRING_TESTS[] = {
 RMQTESTUTIL_TESTSUITE_P(ConnectionStringTests,
                         ConnectionStringPTests,
                         testing::ValuesIn(k_CONN_STRING_TESTS));
+
+TEST(ConnectionStringParse, SecureWithSecurityParameters)
+{
+    const bsl::shared_ptr<rmqt::SecurityParameters> params =
+        bsl::make_shared<rmqt::SecurityParameters>("/path/to/CA.crt");
+
+    const bsl::optional<rmqt::VHostInfo> vhostInfo = ConnectionString::parse(
+        "amqps://adam:password@rabbit1:5671/my-vhost", params);
+
+    ASSERT_TRUE(vhostInfo);
+    EXPECT_THAT(vhostInfo->endpoint()->securityParameters(), Eq(params));
+    EXPECT_THAT(vhostInfo->endpoint()->formatAddress(),
+                Eq("amqps://rabbit1:5671/my-vhost"));
+}
+
+TEST(ConnectionStringParse, SecureWithoutSecurityParameters)
+{
+    EXPECT_FALSE(ConnectionString::parse("amqps://rabbit1:5671/my-vhost"));
+}
+
+TEST(ConnectionStringParse, SimpleWithSecurityParameters)
+{
+    const bsl::shared_ptr<rmqt::SecurityParameters> params =
+        bsl::make_shared<rmqt::SecurityParameters>("/path/to/CA.crt");
+
+    const bsl::optional<rmqt::VHostInfo> vhostInfo =
+        ConnectionString::parse("amqp://adam@rabbit1/my-vhost", params);
+
+    ASSERT_TRUE(vhostInfo);
+    EXPECT_THAT(vhostInfo->endpoint()->securityParameters(), IsNull());
+    EXPECT_THAT(vhostInfo->endpoint()->formatAddress(),
+                Eq("amqp://rabbit1:5672/my-vhost"));
+}
+
+TEST(ConnectionStringParse, SimpleWithoutSecurityParameters)
+{
+    const bsl::optional<rmqt::VHostInfo> vhostInfo =
+        ConnectionString::parse("amqp://adam:password@rabbit1:5672/my-vhost");
+
+    ASSERT_TRUE(vhostInfo);
+    EXPECT_THAT(vhostInfo->endpoint()->securityParameters(), IsNull());
+    EXPECT_THAT(vhostInfo->endpoint()->formatAddress(),
+                Eq("amqp://rabbit1:5672/my-vhost"));
+}

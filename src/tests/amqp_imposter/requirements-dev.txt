@@ -1,0 +1,12 @@
+mypy >= 0.990
+pytest >= 9.0.0
+pytest-cov
+ruff
+tox >= 4.21
+pytest-asyncio
+pytest-timeout
+pytest-xdist
+grpcio-tools == 1.84.0
+mypy-protobuf >= 5.1.0
+grpc-stubs >= 1.53
+types-protobuf >= 7.35

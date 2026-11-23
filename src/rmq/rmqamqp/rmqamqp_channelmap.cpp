@@ -161,7 +161,8 @@ bool ChannelMap::processReceived(uint16_t channelId,
         return false;
     }
 
-    Channel::CleanupIndicator cleanupInd = it->second->processReceived(message);
+    const bsl::shared_ptr<Channel> channel = it->second;
+    Channel::CleanupIndicator cleanupInd   = channel->processReceived(message);
 
     if (cleanupInd == Channel::CLEANUP) {
         // invalidates iterator

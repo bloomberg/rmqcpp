@@ -52,11 +52,10 @@ bool BasicReturn::decode(BasicReturn* basicReturn,
 {
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (buffer.available() < sizeof(basicReturn->d_replyCode)) {
+    uint16_t replyCode = 0;
+    if (!buffer.copy<bdlb::BigEndianUint16>(&replyCode)) {
         return false;
     }
-
-    const uint16_t replyCode = buffer.copy<bdlb::BigEndianUint16>();
     basicReturn->d_replyCode =
         static_cast<rmqamqpt::Constants::AMQPReplyCode>(replyCode);
 

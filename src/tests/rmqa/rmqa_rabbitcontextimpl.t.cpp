@@ -16,23 +16,32 @@
 #include <rmqa_rabbitcontextimpl.h>
 
 #include <rmqa_rabbitcontextoptions.h>
+#include <rmqio_connection.h>
 #include <rmqio_eventloop.h>
+#include <rmqio_resolver.h>
+#include <rmqp_connection.h>
 #include <rmqp_metricpublisher.h>
+#include <rmqt_future.h>
 #include <rmqt_hosthealthconfig.h>
 #include <rmqt_plaincredentials.h>
 #include <rmqt_result.h>
 #include <rmqt_simpleendpoint.h>
 #include <rmqtestutil_mockeventloop.t.h>
 #include <rmqtestutil_mockmetricpublisher.h>
+#include <rmqtestutil_mockresolver.t.h>
 #include <rmqtestutil_mocktimerfactory.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <bdlf_bind.h>
 #include <bdlmt_threadpool.h>
 #include <bsl_memory.h>
+#include <bsl_optional.h>
+#include <bsl_string.h>
 #include <bsl_variant.h>
 #include <bslma_managedptr.h>
+#include <bslmt_threadutil.h>
 
 using namespace BloombergLP;
 using namespace ::testing;
@@ -40,6 +49,15 @@ using namespace bdlf::PlaceHolders;
 
 namespace {
 bool alwaysHealthy() { return true; }
+
+void ignoreError(const bsl::string&, int) {}
+
+ACTION_P2(FailConnectThenCancelConnection, connectError, pendingConnection)
+{
+    (*connectError)(rmqio::Resolver::ERROR_CONNECT);
+    pendingConnection->reset();
+    return true;
+}
 } // namespace
 
 class RabbitContextImplTests : public Test {
@@ -192,4 +210,38 @@ TEST_F(RabbitContextImplTests, ErrorWhenCantStartWorkerThread)
 
     EXPECT_TRUE(!conn);
     EXPECT_EQ("Event loop worker thread not started", conn.error());
+}
+
+TEST_F(RabbitContextImplTests, ConnectionErrorDuringShutdown)
+{
+    d_options.setErrorCallback(&ignoreError);
+    d_options.setConnectionErrorThreshold(bsls::TimeInterval(0));
+
+    bsl::shared_ptr<rmqtestutil::MockResolver> resolver =
+        bsl::make_shared<rmqtestutil::MockResolver>();
+    rmqio::Resolver::ErrorCallback connectError;
+    bsl::optional<rmqt::Future<rmqp::Connection> > pendingConnection;
+
+    ON_CALL(*d_mockEventLoop, isStarted()).WillByDefault(Return(true));
+    EXPECT_CALL(*d_mockEventLoop, resolver(false)).WillOnce(Return(resolver));
+    EXPECT_CALL(*d_mockEventLoop, timerFactory())
+        .WillRepeatedly(Return(d_mockTimerFactory));
+    EXPECT_CALL(*resolver, asyncConnect(_, _, _, _, _, _))
+        .WillOnce(DoAll(SaveArg<5>(&connectError),
+                        Return(bsl::shared_ptr<rmqio::Connection>())));
+    EXPECT_CALL(*d_mockEventLoop, waitForEventLoopExit(_))
+        .WillOnce(
+            FailConnectThenCancelConnection(&connectError, &pendingConnection));
+
+    rmqa::RabbitContextImpl context(getMockEventLoop(), d_options);
+
+    pendingConnection = context.createNewConnection(
+        "name",
+        bsl::make_shared<rmqt::SimpleEndpoint>("localhost", "/", 5672),
+        bsl::make_shared<rmqt::PlainCredentials>("guest", "guest"),
+        "name suffix");
+
+    ASSERT_TRUE(connectError);
+    connectError(rmqio::Resolver::ERROR_CONNECT);
+    bslmt::ThreadUtil::microSleep(1000);
 }

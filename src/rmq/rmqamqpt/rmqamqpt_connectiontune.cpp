@@ -49,18 +49,15 @@ bool ConnectionTune::decode(ConnectionTune* tune,
 {
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (sizeof(tune->d_channelMax) + sizeof(tune->d_frameMax) +
-            sizeof(tune->d_heartbeatInterval) >
-        buffer.available()) {
+    if (!buffer.copy<bdlb::BigEndianUint16>(&tune->d_channelMax) ||
+        !buffer.copy<bdlb::BigEndianUint32>(&tune->d_frameMax) ||
+        !buffer.copy<bdlb::BigEndianUint16>(&tune->d_heartbeatInterval)) {
         BALL_LOG_ERROR
             << "Not enough data to decode ConnectionTune frame: available "
             << buffer.available();
         return false;
     }
 
-    tune->d_channelMax        = buffer.copy<bdlb::BigEndianUint16>();
-    tune->d_frameMax          = buffer.copy<bdlb::BigEndianUint32>();
-    tune->d_heartbeatInterval = buffer.copy<bdlb::BigEndianUint16>();
     return true;
 }
 void ConnectionTune::encode(Writer& output, const ConnectionTune& tune)

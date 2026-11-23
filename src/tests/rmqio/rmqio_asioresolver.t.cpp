@@ -20,6 +20,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+
 #include <bsl_cstdio.h>
 #include <bsl_memory.h>
 #include <bsl_vector.h>
@@ -48,12 +51,205 @@ class ResolverTests : public Test {
     };
 };
 
+class StoreContextGuard {
+  public:
+    StoreContextGuard()
+    : d_ctx(X509_STORE_CTX_new())
+    {
+    }
+
+    ~StoreContextGuard()
+    {
+        if (d_ctx) {
+            X509_STORE_CTX_free(d_ctx);
+        }
+    }
+
+    X509_STORE_CTX* get() { return d_ctx; }
+
+  private:
+    StoreContextGuard(const StoreContextGuard&);
+    StoreContextGuard& operator=(const StoreContextGuard&);
+
+    X509_STORE_CTX* d_ctx;
+};
+
+class CertificateGuard {
+  public:
+    CertificateGuard()
+    : d_cert(X509_new())
+    {
+    }
+
+    ~CertificateGuard()
+    {
+        if (d_cert) {
+            X509_free(d_cert);
+        }
+    }
+
+    X509* get() { return d_cert; }
+
+  private:
+    CertificateGuard(const CertificateGuard&);
+    CertificateGuard& operator=(const CertificateGuard&);
+
+    X509* d_cert;
+};
+
+bool addSubjectAltName(X509* cert, const char* subjectAltName)
+{
+    X509_EXTENSION* ext =
+        X509V3_EXT_conf_nid(0, 0, NID_subject_alt_name, subjectAltName);
+    if (!ext) {
+        return false;
+    }
+
+    const int rc = X509_add_ext(cert, ext, -1);
+    X509_EXTENSION_free(ext);
+
+    return rc == 1;
+}
+
+/// Verifies `host` against a certificate presenting `subjectAltName`, as if
+/// the chain itself had already verified successfully.
+bool verifyHost(const char* subjectAltName, const bsl::string& host)
+{
+    StoreContextGuard storeCtx;
+    EXPECT_THAT(storeCtx.get(), NotNull());
+    EXPECT_THAT(X509_STORE_CTX_init(storeCtx.get(), 0, 0, 0), Eq(1));
+
+    CertificateGuard cert;
+    EXPECT_THAT(cert.get(), NotNull());
+    EXPECT_TRUE(addSubjectAltName(cert.get(), subjectAltName));
+
+    X509_STORE_CTX_set_current_cert(storeCtx.get(), cert.get());
+
+    boost::asio::ssl::verify_context ctx(storeCtx.get());
+
+    return AsioResolver::verifyCertificate(host, true, ctx);
+}
+
 } // namespace
 
 TEST_F(ResolverTests, Breathing)
 {
     AsioEventLoop loop;
     bsl::shared_ptr<AsioResolver> resolver(AsioResolver::create(loop, false));
+}
+
+TEST_F(ResolverTests, LogCertVerificationFailureNullCurrentCert)
+{
+    StoreContextGuard storeCtx;
+    ASSERT_THAT(storeCtx.get(), NotNull());
+    ASSERT_THAT(X509_STORE_CTX_init(storeCtx.get(), 0, 0, 0), Eq(1));
+    ASSERT_THAT(X509_STORE_CTX_get_current_cert(storeCtx.get()), IsNull());
+
+    boost::asio::ssl::verify_context ctx(storeCtx.get());
+
+    EXPECT_FALSE(AsioResolver::logCertVerificationFailure(false, ctx));
+}
+
+TEST_F(ResolverTests, LogCertVerificationFailureNullStoreContext)
+{
+    boost::asio::ssl::verify_context ctx(0);
+
+    EXPECT_FALSE(AsioResolver::logCertVerificationFailure(false, ctx));
+}
+
+TEST_F(ResolverTests, LogCertVerificationFailureWithSubject)
+{
+    StoreContextGuard storeCtx;
+    ASSERT_THAT(storeCtx.get(), NotNull());
+    ASSERT_THAT(X509_STORE_CTX_init(storeCtx.get(), 0, 0, 0), Eq(1));
+
+    CertificateGuard cert;
+    ASSERT_THAT(cert.get(), NotNull());
+    ASSERT_THAT(X509_get_subject_name(cert.get()), NotNull());
+
+    X509_STORE_CTX_set_current_cert(storeCtx.get(), cert.get());
+
+    boost::asio::ssl::verify_context ctx(storeCtx.get());
+
+    EXPECT_FALSE(AsioResolver::logCertVerificationFailure(false, ctx));
+}
+
+TEST_F(ResolverTests, LogCertVerificationPreverifiedPassesThrough)
+{
+    StoreContextGuard storeCtx;
+    ASSERT_THAT(storeCtx.get(), NotNull());
+    ASSERT_THAT(X509_STORE_CTX_init(storeCtx.get(), 0, 0, 0), Eq(1));
+
+    boost::asio::ssl::verify_context ctx(storeCtx.get());
+
+    EXPECT_TRUE(AsioResolver::logCertVerificationFailure(true, ctx));
+}
+
+TEST_F(ResolverTests, VerifyCertificateExactHostName)
+{
+    EXPECT_TRUE(verifyHost("DNS:one.example.com", "one.example.com"));
+    EXPECT_FALSE(verifyHost("DNS:one.example.com", "two.example.com"));
+}
+
+TEST_F(ResolverTests, VerifyCertificateWildcardMatchesAnySingleLabel)
+{
+    EXPECT_TRUE(verifyHost("DNS:*.example.com", "one.example.com"));
+    EXPECT_TRUE(verifyHost("DNS:*.example.com", "two.example.com"));
+}
+
+TEST_F(ResolverTests, VerifyCertificateWildcardIsScopedToItsOwnDomain)
+{
+    EXPECT_FALSE(verifyHost("DNS:*.example.com", "one.not-example.com"));
+
+    EXPECT_TRUE(verifyHost("DNS:*.not-example.com", "one.not-example.com"));
+    EXPECT_FALSE(verifyHost("DNS:*.not-example.com", "one.example.com"));
+}
+
+TEST_F(ResolverTests, VerifyCertificateWildcardMatchesOneLabelOnly)
+{
+    EXPECT_FALSE(verifyHost("DNS:*.example.com", "one.two.example.com"));
+    EXPECT_FALSE(verifyHost("DNS:*.example.com", "example.com"));
+}
+
+TEST_F(ResolverTests, VerifyCertificateMatchesAnySanEntry)
+{
+    const char* san = "DNS:one.example.com,DNS:two.example.com";
+
+    EXPECT_TRUE(verifyHost(san, "one.example.com"));
+    EXPECT_TRUE(verifyHost(san, "two.example.com"));
+    EXPECT_FALSE(verifyHost(san, "one.not-example.com"));
+}
+
+TEST_F(ResolverTests, VerifyCertificateIpHostRequiresIpSan)
+{
+    // Connecting to an IP rather than a name is verified against the
+    // certificate's iPAddress SAN. A DNS SAN does not cover it, so such
+    // connections are intentionally rejected
+    EXPECT_FALSE(verifyHost("DNS:one.example.com", "10.20.30.40"));
+
+    EXPECT_TRUE(
+        verifyHost("DNS:one.example.com,IP:10.20.30.40", "10.20.30.40"));
+    EXPECT_FALSE(
+        verifyHost("DNS:one.example.com,IP:10.20.30.40", "10.20.30.99"));
+}
+
+TEST_F(ResolverTests, VerifyCertificateDoesNotOverrideChainFailure)
+{
+    StoreContextGuard storeCtx;
+    ASSERT_THAT(storeCtx.get(), NotNull());
+    ASSERT_THAT(X509_STORE_CTX_init(storeCtx.get(), 0, 0, 0), Eq(1));
+
+    CertificateGuard cert;
+    ASSERT_THAT(cert.get(), NotNull());
+    ASSERT_TRUE(addSubjectAltName(cert.get(), "DNS:one.example.com"));
+
+    X509_STORE_CTX_set_current_cert(storeCtx.get(), cert.get());
+
+    boost::asio::ssl::verify_context ctx(storeCtx.get());
+
+    // A matching host name must not rescue a chain which failed to verify
+    EXPECT_FALSE(
+        AsioResolver::verifyCertificate("one.example.com", false, ctx));
 }
 
 TEST_F(ResolverTests, badresolve)

@@ -45,58 +45,41 @@ class TopologyTransformerTests : public ::testing::Test {
 
     void assertQueueDeclare(const Message& msg)
     {
-        ASSERT_TRUE(msg.is<rmqamqpt::Method>() &&
-                    msg.the<rmqamqpt::Method>().is<rmqamqpt::QueueMethod>() &&
-                    msg.the<rmqamqpt::Method>()
-                        .the<rmqamqpt::QueueMethod>()
-                        .is<rmqamqpt::QueueDeclare>());
+        ASSERT_TRUE((MessageUtil::isMethod<rmqamqpt::QueueMethod,
+                                           rmqamqpt::QueueDeclare>(msg)));
     }
 
     void assertExchangeDeclare(const Message& msg)
     {
-        ASSERT_TRUE(
-            msg.is<rmqamqpt::Method>() &&
-            msg.the<rmqamqpt::Method>().is<rmqamqpt::ExchangeMethod>() &&
-            msg.the<rmqamqpt::Method>()
-                .the<rmqamqpt::ExchangeMethod>()
-                .is<rmqamqpt::ExchangeDeclare>());
+        ASSERT_TRUE((MessageUtil::isMethod<rmqamqpt::ExchangeMethod,
+                                           rmqamqpt::ExchangeDeclare>(msg)));
     }
 
     void assertQueueBind(const Message& msg)
     {
-        ASSERT_TRUE(msg.is<rmqamqpt::Method>() &&
-                    msg.the<rmqamqpt::Method>().is<rmqamqpt::QueueMethod>() &&
-                    msg.the<rmqamqpt::Method>()
-                        .the<rmqamqpt::QueueMethod>()
-                        .is<rmqamqpt::QueueBind>());
+        ASSERT_TRUE(
+            (MessageUtil::isMethod<rmqamqpt::QueueMethod, rmqamqpt::QueueBind>(
+                msg)));
     }
 
     void assertQueueUnbind(const Message& msg)
     {
-        ASSERT_TRUE(msg.is<rmqamqpt::Method>() &&
-                    msg.the<rmqamqpt::Method>().is<rmqamqpt::QueueMethod>() &&
-                    msg.the<rmqamqpt::Method>()
-                        .the<rmqamqpt::QueueMethod>()
-                        .is<rmqamqpt::QueueUnbind>());
+        ASSERT_TRUE((
+            MessageUtil::isMethod<rmqamqpt::QueueMethod, rmqamqpt::QueueUnbind>(
+                msg)));
     }
 
     void assertQueueDelete(const Message& msg)
     {
-        ASSERT_TRUE(msg.is<rmqamqpt::Method>() &&
-                    msg.the<rmqamqpt::Method>().is<rmqamqpt::QueueMethod>() &&
-                    msg.the<rmqamqpt::Method>()
-                        .the<rmqamqpt::QueueMethod>()
-                        .is<rmqamqpt::QueueDelete>());
+        ASSERT_TRUE((
+            MessageUtil::isMethod<rmqamqpt::QueueMethod, rmqamqpt::QueueDelete>(
+                msg)));
     }
 
     void assertExchangeBind(const Message& msg)
     {
-        ASSERT_TRUE(
-            msg.is<rmqamqpt::Method>() &&
-            msg.the<rmqamqpt::Method>().is<rmqamqpt::ExchangeMethod>() &&
-            msg.the<rmqamqpt::Method>()
-                .the<rmqamqpt::ExchangeMethod>()
-                .is<rmqamqpt::ExchangeBind>());
+        ASSERT_TRUE((MessageUtil::isMethod<rmqamqpt::ExchangeMethod,
+                                           rmqamqpt::ExchangeBind>(msg)));
     }
 };
 

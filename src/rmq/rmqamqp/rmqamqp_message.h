@@ -38,6 +38,23 @@ namespace rmqamqp {
 typedef bdlb::Variant<rmqamqpt::Heartbeat, rmqt::Message, rmqamqpt::Method>
     Message;
 
+struct MessageUtil {
+    template <typename MethodClassT, typename MethodTypeT>
+    static bool isMethod(const Message& message);
+};
+
+template <typename MethodClassT, typename MethodTypeT>
+bool MessageUtil::isMethod(const Message& message)
+{
+    if (!message.is<rmqamqpt::Method>()) {
+        return false;
+    }
+
+    const rmqamqpt::Method& method = message.the<rmqamqpt::Method>();
+    return method.is<MethodClassT>() &&
+           method.the<MethodClassT>().template is<MethodTypeT>();
+}
+
 } // namespace rmqamqp
 } // namespace BloombergLP
 

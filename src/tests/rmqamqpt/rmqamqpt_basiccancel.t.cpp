@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <bsl_cstddef.h>
 #include <bsl_cstdint.h>
 
 using namespace BloombergLP;
@@ -51,4 +52,19 @@ TEST(Methods_BasicCancel, CancelEncodeDecode)
     EXPECT_EQ(bm.the<rmqamqpt::BasicCancel>().consumerTag(),
               "test-consumer-tag");
     EXPECT_EQ(bm.the<rmqamqpt::BasicCancel>().noWait(), false);
+}
+
+TEST(Methods_BasicCancel, NoWaitIsReadFromBitZeroOnly)
+{
+    const uint8_t cases[][2] = {{0x00, 0}, {0x01, 1}, {0x02, 0}, {0xFF, 1}};
+
+    for (bsl::size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        // empty consumer tag, then the packed bit octet
+        const uint8_t data[] = {0x00, cases[i][0]};
+
+        rmqamqpt::BasicCancel cancel;
+        EXPECT_TRUE(rmqamqpt::BasicCancel::decode(&cancel, data, sizeof(data)));
+        EXPECT_EQ(static_cast<int>(cancel.noWait()), cases[i][1])
+            << "octet: " << static_cast<int>(cases[i][0]);
+    }
 }

@@ -20,7 +20,7 @@
 #include <rmqa_noopmetricpublisher.h>
 #include <rmqa_producerimpl.h>
 #include <rmqa_tracingconsumerimpl.h>
-#include <rmqa_tracingproducerimpl.h>
+#include <rmqa_tracingtagger.h>
 #include <rmqa_vhost.h>
 #include <rmqa_vhostimpl.h>
 
@@ -67,8 +67,14 @@ void handleErrorCbOnEventLoop(bdlmt::ThreadPool* threadPool,
                               int errorCode)
 {
     if (errorCb) {
-        threadPool->enqueueJob(
+        const int rc = threadPool->enqueueJob(
             bdlf::BindUtil::bind(errorCb, errorText, errorCode));
+
+        if (rc != 0) {
+            BALL_LOG_ERROR << "Couldn't enqueue thread pool job for error "
+                              "callback (return code "
+                           << rc << "). Error was: " << errorText;
+        }
     }
 }
 
@@ -221,7 +227,8 @@ RabbitContextImpl::RabbitContextImpl(
             options.clientProperties(),
             options.connectionErrorThreshold(),
             options.connectionEstablishmentTimeout(),
-            isHostHealthMonitoringEnabled);
+            isHostHealthMonitoringEnabled,
+            d_tunables);
 
     if (!d_threadPool) {
         bslmt::ThreadAttributes attributes;
@@ -256,7 +263,9 @@ RabbitContextImpl::~RabbitContextImpl()
 
     d_hostHealthMonitor.reset();
 
-    d_hostedThreadPool.reset();
+    if (d_hostedThreadPool) {
+        d_hostedThreadPool->shutdown();
+    }
 
     d_connectionWatchDog.reset();
 
@@ -319,6 +328,8 @@ RabbitContextImpl::~RabbitContextImpl()
     }
 
     d_eventLoop.reset();
+
+    d_hostedThreadPool.reset();
 }
 
 bsl::shared_ptr<rmqp::Connection> RabbitContextImpl::createVHostConnection(
@@ -404,8 +415,9 @@ rmqt::Future<rmqp::Connection> RabbitContextImpl::createNewConnection(
 
     bsl::shared_ptr<ProducerImpl::Factory> producerFactory(
         d_producerTracing
-            ? bsl::shared_ptr<ProducerImpl::Factory>(
-                  new TracingProducerImpl::Factory(endpoint, d_producerTracing))
+            ? bsl::make_shared<ProducerImpl::Factory>(
+                  bsl::shared_ptr<rmqp::ProducerTagger>(
+                      new TracingTagger(endpoint, d_producerTracing)))
             : bsl::make_shared<ProducerImpl::Factory>());
 
     rmqamqp::Connection::ConnectedCallback cb =

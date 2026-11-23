@@ -16,6 +16,8 @@
 #ifndef INCLUDED_RMQA_PRODUCERIMPL
 #define INCLUDED_RMQA_PRODUCERIMPL
 
+#include <rmqp_producertagger.h>
+
 #include <rmqp_messagetransformer.h>
 #include <rmqp_producer.h>
 #include <rmqt_endpoint.h>
@@ -55,6 +57,13 @@ class ProducerImpl : public rmqp::Producer {
   public:
     class Factory {
       public:
+        /// Create producers with no tagging hook.
+        Factory();
+
+        /// Create producers which invoke `tagger` on each outgoing message.
+        /// The tagger is shared by every producer this factory creates.
+        explicit Factory(const bsl::shared_ptr<rmqp::ProducerTagger>& tagger);
+
         virtual ~Factory();
         virtual bsl::shared_ptr<ProducerImpl>
         create(uint16_t maxOutstandingConfirms,
@@ -62,13 +71,19 @@ class ProducerImpl : public rmqp::Producer {
                const bsl::shared_ptr<rmqamqp::SendChannel>& channel,
                bdlmt::ThreadPool& threadPool,
                rmqio::EventLoop& eventLoop) const;
+
+      private:
+        bsl::shared_ptr<rmqp::ProducerTagger> d_tagger;
     };
 
     // CREATORS
     ProducerImpl(uint16_t maxOutstandingConfirms,
                  const bsl::shared_ptr<rmqamqp::SendChannel>& channel,
                  bdlmt::ThreadPool& threadPool,
-                 rmqio::EventLoop& eventLoop);
+                 rmqio::EventLoop& eventLoop,
+                 const bsl::string& exchangeName = bsl::string(),
+                 const bsl::shared_ptr<rmqp::ProducerTagger>& tagger =
+                     bsl::shared_ptr<rmqp::ProducerTagger>());
 
     ~ProducerImpl() BSLS_KEYWORD_OVERRIDE;
 
@@ -135,6 +150,17 @@ class ProducerImpl : public rmqp::Producer {
         const bdlb::Guid& guid,
         const rmqp::Producer::ConfirmationCallback& confirmCallback);
 
+    /// Return a copy of `message` which owns its header table, having offered
+    /// it to the tagger. On return `*callback` is the callback to publish
+    /// with, wrapped by the tagger if it asked to be.
+    ///
+    /// Must be called on the sending thread and before any wait on the
+    /// outstanding confirm limit, as `rmqp::ProducerTagger` requires.
+    rmqt::Message
+    prepareMessageForSending(rmqp::Producer::ConfirmationCallback* callback,
+                             const rmqt::Message& message,
+                             const bsl::string& routingKey);
+
     rmqp::Producer::SendStatus
     doSend(const rmqt::Message& message,
            const bsl::string& routingKey,
@@ -158,6 +184,11 @@ class ProducerImpl : public rmqp::Producer {
     bsl::shared_ptr<SharedState> d_sharedState;
 
     bsl::vector<bsl::shared_ptr<rmqp::MessageTransformer> > d_transformers;
+
+    bsl::string d_exchangeName;
+
+    /// Null when nothing is configured to tag outgoing messages.
+    bsl::shared_ptr<rmqp::ProducerTagger> d_tagger;
 
 }; // class Producer
 

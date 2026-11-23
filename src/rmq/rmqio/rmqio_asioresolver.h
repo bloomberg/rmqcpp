@@ -107,6 +107,14 @@ class AsioResolver : public Resolver,
                                        const bsl::string& host,
                                        const bsl::string& port);
 
+    static bool
+    logCertVerificationFailure(bool preverified,
+                               boost::asio::ssl::verify_context& ctx);
+
+    static bool verifyCertificate(const bsl::string& host,
+                                  bool preverified,
+                                  boost::asio::ssl::verify_context& ctx);
+
   private:
     explicit AsioResolver(AsioEventLoop& eventloop,
                           bool shuffleConnectionEndpoints);

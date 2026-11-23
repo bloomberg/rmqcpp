@@ -15,6 +15,7 @@
 
 #include <rmqamqpt_types.h>
 
+#include <rmqamqpt_constants.h>
 #include <rmqamqpt_fieldvalue.h>
 
 #include <rmqt_fieldvalue.h>
@@ -44,13 +45,12 @@ bool decodeString(bsl::string* string, rmqamqpt::Buffer* buffer)
     BSLMF_ASSERT(sizeof(T) == sizeof(bsl::uint8_t) ||
                  sizeof(T) == sizeof(bsl::uint32_t));
 
-    if (sizeof(T) > buffer->available()) {
+    T stringLength = T();
+    if (!buffer->copy<T>(&stringLength)) {
         BALL_LOG_ERROR << "Not enough data to read string length";
 
         return false;
     }
-
-    const T stringLength = buffer->copy<T>();
 
     if (stringLength > buffer->available()) {
 
@@ -129,7 +129,6 @@ bool Types::decodeFieldValue(rmqt::FieldValue* outValue,
 {
     BSLS_ASSERT(outValue);
 
-    BSLMF_ASSERT(sizeof(bool) == 1);
     BSLMF_ASSERT(sizeof(bsl::int8_t) == 1);
     BSLMF_ASSERT(sizeof(bsl::uint8_t) == 1);
 
@@ -154,66 +153,70 @@ bool Types::decodeFieldValue(rmqt::FieldValue* outValue,
     BSLMF_ASSERT(sizeof(float) == sizeof(bdlb::BigEndianUint32));
     BSLMF_ASSERT(sizeof(double) == sizeof(bdlb::BigEndianUint64));
 
-    if (buffer->available() < sizeof(bsl::uint8_t)) {
+    bsl::uint8_t typeByte = 0;
+    if (!buffer->copy<bsl::uint8_t>(&typeByte)) {
         return false;
     }
 
     const rmqamqpt::FieldValue::Type type =
-        static_cast<rmqamqpt::FieldValue::Type>(buffer->copy<bsl::uint8_t>());
+        static_cast<rmqamqpt::FieldValue::Type>(typeByte);
 
     switch (type) {
         case rmqamqpt::FieldValue::BOOLEAN: {
-            if (buffer->available() < sizeof(bool)) {
+            bsl::uint8_t val = 0;
+            if (!buffer->copy<bsl::uint8_t>(&val)) {
                 return false;
             }
-            *outValue = rmqt::FieldValue(buffer->copy<bool>() != 0);
+            *outValue = rmqt::FieldValue(val != 0);
         } break;
         case rmqamqpt::FieldValue::SHORT_SHORT_INT: {
-            if (buffer->available() < sizeof(bsl::int8_t)) {
+            bsl::int8_t val = 0;
+            if (!buffer->copy<bsl::int8_t>(&val)) {
                 return false;
             }
-            *outValue = static_cast<bsl::int8_t>(buffer->copy<bsl::int8_t>());
+            *outValue = val;
         } break;
         case rmqamqpt::FieldValue::SHORT_SHORT_UINT: {
-            if (buffer->available() < sizeof(bsl::uint8_t)) {
+            bsl::uint8_t val = 0;
+            if (!buffer->copy<bsl::uint8_t>(&val)) {
                 return false;
             }
-            *outValue = static_cast<bsl::uint8_t>(buffer->copy<bsl::uint8_t>());
+            *outValue = val;
         } break;
         case rmqamqpt::FieldValue::SHORT_INT: {
-            if (buffer->available() < sizeof(bdlb::BigEndianInt16)) {
+            bsl::int16_t val = 0;
+            if (!buffer->copy<bdlb::BigEndianInt16>(&val)) {
                 return false;
             }
-            *outValue =
-                static_cast<bsl::int16_t>(buffer->copy<bdlb::BigEndianInt16>());
+            *outValue = val;
         } break;
         case rmqamqpt::FieldValue::SHORT_UINT: {
-            if (buffer->available() < sizeof(bdlb::BigEndianUint16)) {
+            bsl::uint16_t val = 0;
+            if (!buffer->copy<bdlb::BigEndianUint16>(&val)) {
                 return false;
             }
-            *outValue = static_cast<bsl::uint16_t>(
-                buffer->copy<bdlb::BigEndianUint16>());
+            *outValue = val;
         } break;
         case rmqamqpt::FieldValue::LONG_INT: {
-            if (buffer->available() < sizeof(bdlb::BigEndianInt32)) {
+            bsl::int32_t val = 0;
+            if (!buffer->copy<bdlb::BigEndianInt32>(&val)) {
                 return false;
             }
-            *outValue =
-                static_cast<bsl::int32_t>(buffer->copy<bdlb::BigEndianInt32>());
+            *outValue = val;
         } break;
         case rmqamqpt::FieldValue::LONG_UINT: {
-            if (buffer->available() < sizeof(bdlb::BigEndianUint32)) {
+            bsl::uint32_t val = 0;
+            if (!buffer->copy<bdlb::BigEndianUint32>(&val)) {
                 return false;
             }
-            *outValue = static_cast<bsl::uint32_t>(
-                buffer->copy<bdlb::BigEndianUint32>());
+            *outValue = val;
         } break;
         case rmqamqpt::FieldValue::AMQP_SPEC_LONG_LONG_INT: {
-            if (buffer->available() < sizeof(bdlb::BigEndianInt64)) {
+            bsl::int64_t val = 0;
+            if (!buffer->copy<bdlb::BigEndianInt64>(&val)) {
                 return false;
             }
-            *outValue =
-                static_cast<bsl::int64_t>(buffer->copy<bdlb::BigEndianInt64>());
+            *outValue = val;
         } break;
         case rmqamqpt::FieldValue::RABBIT_SPEC_LONG_LONG_INT: {
             // https://www.rabbitmq.com/amqp-0-9-1-errata.html
@@ -223,35 +226,43 @@ bool Types::decodeFieldValue(rmqt::FieldValue* outValue,
             // support unsigned 64bit integers, like RabbitMQ. But we decode
             // both 'L' and 'l' to signed 64bit integers for internal backwards
             // compatibility reasons.
-            if (buffer->available() < sizeof(bdlb::BigEndianInt64)) {
+            bsl::int64_t val = 0;
+            if (!buffer->copy<bdlb::BigEndianInt64>(&val)) {
                 return false;
             }
-            *outValue =
-                static_cast<bsl::int64_t>(buffer->copy<bdlb::BigEndianInt64>());
+            *outValue = val;
         } break;
         case rmqamqpt::FieldValue::FLOAT: {
-            if (buffer->available() < sizeof(bdlb::BigEndianUint32)) {
+            bsl::uint32_t temp = 0;
+            if (!buffer->copy<bdlb::BigEndianUint32>(&temp)) {
                 return false;
             }
-            const bsl::uint32_t temp = static_cast<bsl::uint32_t>(
-                buffer->copy<bdlb::BigEndianUint32>());
             float floatValue;
             bsl::memcpy(&floatValue, &temp, sizeof(floatValue));
             *outValue = floatValue;
         } break;
         case rmqamqpt::FieldValue::DOUBLE: {
-            if (buffer->available() < sizeof(bdlb::BigEndianUint64)) {
+            bsl::uint64_t temp = 0;
+            if (!buffer->copy<bdlb::BigEndianUint64>(&temp)) {
                 return false;
             }
-            const bsl::uint64_t temp = static_cast<bsl::uint64_t>(
-                buffer->copy<bdlb::BigEndianUint64>());
             double doubleValue;
             bsl::memcpy(&doubleValue, &temp, sizeof(doubleValue));
             *outValue = doubleValue;
         } break;
         case rmqamqpt::FieldValue::DECIMAL: {
+            // TODO Handle Decimal. Consume the field so that whatever
+            // follows it in the table still decodes. The value is left
+            // unset, which is indistinguishable from a NO_FIELD ('V')
+            // value, so re-encoding these headers writes the field back
+            // out as 'V' and the decimal is lost.
+            if (buffer->available() < Constants::DECIMAL_OCTETS) {
+                return false;
+            }
+            buffer->skip(Constants::DECIMAL_OCTETS);
+
             BALL_LOG_ERROR << "Received unsupported decimal type";
-            // TODO Handle Decimal
+            outValue->reset();
         } break;
         case rmqamqpt::FieldValue::LONG_STRING: {
             bsl::string val;
@@ -261,11 +272,10 @@ bool Types::decodeFieldValue(rmqt::FieldValue* outValue,
             *outValue = val;
         } break;
         case rmqamqpt::FieldValue::BYTE_ARRAY: {
-            if (buffer->available() < sizeof(bdlb::BigEndianUint32)) {
+            bsl::uint32_t arraySize = 0;
+            if (!buffer->copy<bdlb::BigEndianUint32>(&arraySize)) {
                 return false;
             }
-            const bsl::uint32_t arraySize = static_cast<bsl::uint32_t>(
-                buffer->copy<bdlb::BigEndianUint32>());
             bsl::vector<bsl::uint8_t> val;
             if (!decodeByteVector(&val, buffer, arraySize)) {
                 return false;
@@ -282,7 +292,9 @@ bool Types::decodeFieldValue(rmqt::FieldValue* outValue,
         } break;
         case rmqamqpt::FieldValue::TIMESTAMP: {
             bdlt::Datetime timestamp;
-            decodeTimestamp(&timestamp, buffer);
+            if (!decodeTimestamp(&timestamp, buffer)) {
+                return false;
+            }
             *outValue = timestamp;
         } break;
         case rmqamqpt::FieldValue::FIELD_TABLE: {
@@ -432,9 +444,17 @@ bool Types::decodeFieldArray(rmqt::FieldArray* fieldArray,
 {
     BSLS_ASSERT(fieldArray);
 
-    const bdlb::BigEndianUint32 arrayLength =
-        buffer->copy<bdlb::BigEndianUint32>();
+    bsl::uint32_t arrayLength = 0;
+    if (!buffer->copy<bdlb::BigEndianUint32>(&arrayLength)) {
+        BALL_LOG_ERROR << "Not enough data to read field array size field, "
+                          "available: "
+                       << buffer->available();
+        return false;
+    }
+
     if (arrayLength > buffer->available()) {
+        BALL_LOG_ERROR << "Not enough data to read field array of size: "
+                       << arrayLength << " available: " << buffer->available();
         return false;
     }
 
@@ -466,8 +486,16 @@ void Types::encodeFieldArray(Writer& output, const rmqt::FieldArray& v)
 
 bool Types::decodeFieldTable(rmqt::FieldTable* table, rmqamqpt::Buffer* buffer)
 {
-    const bdlb::BigEndianUint32 fieldTableLength =
-        buffer->copy<bdlb::BigEndianUint32>();
+    BSLS_ASSERT(table);
+
+    bsl::uint32_t fieldTableLength = 0;
+    if (!buffer->copy<bdlb::BigEndianUint32>(&fieldTableLength)) {
+        BALL_LOG_ERROR << "Not enough data to read table size field, "
+                          "available: "
+                       << buffer->available();
+        return false;
+    }
+
     if (fieldTableLength > buffer->available()) {
         BALL_LOG_ERROR << "Not enough data to read table size: "
                        << fieldTableLength
@@ -522,10 +550,24 @@ void Types::encodeTimestamp(Writer& output, const bdlt::Datetime& timestamp)
                      bdlt::EpochUtil::convertToTimeT64(timestamp)));
 }
 
-void Types::decodeTimestamp(bdlt::Datetime* timestamp, rmqamqpt::Buffer* buffer)
+bool Types::decodeTimestamp(bdlt::Datetime* timestamp, rmqamqpt::Buffer* buffer)
 {
-    *timestamp = bdlt::EpochUtil::convertFromTimeT64(
-        buffer->copy<bdlb::BigEndianInt64>());
+    BSLS_ASSERT(timestamp);
+
+    bdlt::EpochUtil::TimeT64 seconds = 0;
+    if (!buffer->copy<bdlb::BigEndianInt64>(&seconds)) {
+        BALL_LOG_ERROR << "Not enough data to read timestamp, available: "
+                       << buffer->available();
+        return false;
+    }
+
+    if (0 != bdlt::EpochUtil::convertFromTimeT64(timestamp, seconds)) {
+        BALL_LOG_ERROR << "Timestamp not representable as a datetime: "
+                       << seconds;
+        return false;
+    }
+
+    return true;
 }
 
 } // namespace rmqamqpt

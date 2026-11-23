@@ -92,7 +92,9 @@ class ReceiveChannel : public Channel {
                                    const MessageCallback& onNewMessage,
                                    const bsl::string& consumerTag = "");
 
-    /// Resumes the paused consumer on the channel
+    /// Resumes the paused consumer on the channel at the next opportunity:
+    /// immediately if the channel is ready, otherwise once it reopens or a
+    /// pause in flight completes.
     /// returns Future that will resolve when ConsumeOk received from server
     virtual rmqt::Future<> resume();
 
@@ -111,7 +113,9 @@ class ReceiveChannel : public Channel {
     virtual rmqt::Future<> cancel();
 
     /// Pauses the active consumer on the channel
-    /// returns Future that will resolve when CancelOk received from server
+    /// returns Future that will resolve when CancelOk received from server,
+    /// or immediately if the consumer is not consuming on the server (e.g.
+    /// whilst the channel is reopening)
     virtual rmqt::Future<> pause();
 
     /// If the channel is in a cancelled state, waits for number of the
@@ -147,6 +151,7 @@ class ReceiveChannel : public Channel {
     void onReset() BSLS_KEYWORD_OVERRIDE;
     void processFailures() BSLS_KEYWORD_OVERRIDE;
     void restartConsumers();
+    void failPendingResume(const bsl::string& reason);
     void invalidConsumerError(const bsl::string& consumerTag);
     void removeSingleMessageFromStore(uint64_t deliveryTag);
     void removeMultipleMessagesFromStore(uint64_t deliveryTag);
@@ -154,6 +159,9 @@ class ReceiveChannel : public Channel {
     void sendAck(uint64_t deliveryTag, bool multiple = false);
     void
     sendNack(uint64_t deliveryTag, bool requeue = true, bool multiple = false);
+    /// basic.reject has no `multiple` field, so this always resolves a single
+    /// delivery
+    void sendReject(uint64_t deliveryTag, bool requeue = true);
     void sendAckOrNack(const rmqamqpt::BasicMethod& basicMethod,
                        uint64_t deliveryTag,
                        bool multiple);
@@ -179,6 +187,18 @@ class ReceiveChannel : public Channel {
     bool d_channelPausedOnOpen;
     bsls::TimeInterval d_pauseStartTime;
     bsls::TimeInterval d_resumeStartTime;
+
+    /// Metric tags for Metrics::CONSUMER_MESSAGE_HANDLED, indexed by
+    /// rmqt::ConsumerAck::Type. Built once in the constructor so that
+    /// resolving a delivery, which happens per message on the event loop
+    /// thread, allocates nothing.
+    bsl::vector<bsl::vector<bsl::pair<bsl::string, bsl::string> > >
+        d_messageHandledTags;
+
+    /// Held rather than converted from Metrics::CONSUMER_MESSAGE_HANDLED on
+    /// every publish: it is too long for the short-string optimisation, so
+    /// each conversion would allocate
+    bsl::string d_messageHandledMetricName;
 };
 
 } // namespace rmqamqp

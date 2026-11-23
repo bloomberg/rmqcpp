@@ -52,7 +52,8 @@ class ConsumerCallback {
                      const bsl::shared_ptr<bsls::AtomicBool>& finished)
     : d_args(args)
     , d_finished(finished)
-    , d_remainingCount(bsl::make_shared<bsls::AtomicUint64>())
+    , d_remainingCount(bsl::make_shared<bsls::AtomicInt64>())
+    , d_ackedCount(bsl::make_shared<bsls::AtomicInt64>())
     , d_limitCount()
     {
         if (d_args.consumerMessageCount > 0) {
@@ -63,22 +64,26 @@ class ConsumerCallback {
 
     void operator()(rmqp::MessageGuard& guard)
     {
-        if (d_limitCount) {
-            if (*d_remainingCount <= 0) {
-                *d_finished = true;
-                return;
-            }
-            else {
-                *d_remainingCount -= 1;
-            }
+        if (!d_limitCount) {
+            guard.ack();
+            return;
         }
+
+        if (--*d_remainingCount < 0) {
+            return;
+        }
+
         guard.ack();
+        if (++*d_ackedCount == d_args.consumerMessageCount) {
+            *d_finished = true;
+        }
     }
 
   private:
     ConsumerArgs d_args;
     bsl::shared_ptr<bsls::AtomicBool> d_finished;
-    bsl::shared_ptr<bsls::AtomicUint64> d_remainingCount;
+    bsl::shared_ptr<bsls::AtomicInt64> d_remainingCount;
+    bsl::shared_ptr<bsls::AtomicInt64> d_ackedCount;
     bool d_limitCount;
 };
 
@@ -156,6 +161,9 @@ int Runner::run(const PerfTestArgs& args)
 {
     rmqa::RabbitContextOptions options;
     options.setShuffleConnectionEndpoints(args.shuffleConnectionEndpoints);
+    if (args.immediateRetry) {
+        options.setTunable("IIR");
+    }
     rmqa::RabbitContext rabbit(options);
 
     bsl::optional<rmqt::VHostInfo> vhostInfo =

@@ -24,6 +24,9 @@
 
 namespace BloombergLP {
 namespace rmqamqpt {
+namespace {
+const uint8_t BITMASK_BIT_NOWAIT = (1 << 0);
+} // namespace
 
 QueueBind::QueueBind()
 : d_queue()
@@ -72,11 +75,11 @@ bool QueueBind::decode(QueueBind* bind,
         return false;
     }
 
-    if (buffer.available() < sizeof(bind->d_noWait)) {
+    uint8_t bitmask = 0;
+    if (!buffer.copy<uint8_t>(&bitmask)) {
         return false;
     }
-
-    bind->d_noWait = buffer.copy<uint8_t>();
+    bind->d_noWait = bitmask & BITMASK_BIT_NOWAIT;
 
     return Types::decodeFieldTable(&bind->d_arguments, &buffer);
 }

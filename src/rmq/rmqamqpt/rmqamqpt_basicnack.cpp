@@ -48,17 +48,12 @@ bool BasicNack::decode(BasicNack* nack,
 {
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (buffer.available() < sizeof(bdlb::BigEndianUint64)) {
+    uint8_t bitmask = 0;
+    if (!buffer.copy<bdlb::BigEndianUint64>(&nack->d_deliveryTag) ||
+        !buffer.copy<uint8_t>(&bitmask)) {
         return false;
     }
 
-    nack->d_deliveryTag = buffer.copy<bdlb::BigEndianUint64>();
-
-    if (buffer.available() < sizeof(uint8_t)) {
-        return false;
-    }
-
-    uint8_t bitmask  = buffer.copy<uint8_t>();
     nack->d_multiple = bitmask & BITMASK_BIT_0;
     nack->d_requeue  = bitmask & BITMASK_BIT_1;
 

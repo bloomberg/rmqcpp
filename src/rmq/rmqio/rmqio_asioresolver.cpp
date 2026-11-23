@@ -101,23 +101,6 @@ void logTlsConnectionAlert(const SSL* s, int where, int ret)
     }
 }
 
-bool logCertVerificationFailure(bool preverified,
-                                boost::asio::ssl::verify_context& ctx)
-{
-    if (!preverified) {
-        char subject_name[256];
-        X509* cert = X509_STORE_CTX_get_current_cert(ctx.native_handle());
-        X509_NAME_oneline(X509_get_subject_name(cert),
-                          subject_name,
-                          sizeof(subject_name) - 1);
-
-        BALL_LOG_ERROR << "Certificate verification failed: [" << subject_name
-                       << "]: ";
-    }
-
-    return preverified;
-}
-
 bsl::string augmentTlsError(const boost::system::error_code& ec)
 {
     bsl::string err = ec.message();
@@ -151,6 +134,23 @@ void handleTLSHandshake(boost::system::error_code error,
     }
 }
 
+class CertificateVerifier {
+  public:
+    explicit CertificateVerifier(const bsl::string& host)
+    : d_host(host)
+    {
+    }
+
+    bool operator()(bool preverified,
+                    boost::asio::ssl::verify_context& ctx) const
+    {
+        return AsioResolver::verifyCertificate(d_host, preverified, ctx);
+    }
+
+  private:
+    bsl::string d_host;
+};
+
 void startTLSHandshake(
     const bsl::string& host,
     boost::system::error_code error,
@@ -164,6 +164,33 @@ void startTLSHandshake(
                       << endpoint->endpoint().address() << ":"
                       << endpoint->endpoint().port()
                       << ", starting TLS Handshake";
+
+        boost::system::error_code verifyError;
+        socketWrapper->socket().set_verify_callback(CertificateVerifier(host),
+                                                    verifyError);
+        if (verifyError) {
+            BALL_LOG_ERROR << "Error setting host name verification for ["
+                           << host << "]: " << augmentTlsError(verifyError);
+            onFail(Resolver::ERROR_HANDSHAKE);
+            return; // RETURN
+        }
+
+        // The host resolved to reach this point, so anything which doesn't
+        // parse as an IP address is a DNS name
+        boost::system::error_code parseError;
+        boost::asio::ip::make_address(host.c_str(), parseError);
+        const bool hostIsDnsName = static_cast<bool>(parseError);
+
+        // Only DNS names are sent as SNI, so the broker can select the
+        // matching certificate. RFC 6066 forbids IP literals here
+        if (hostIsDnsName &&
+            !SSL_set_tlsext_host_name(socketWrapper->socket().native_handle(),
+                                      host.c_str())) {
+            BALL_LOG_ERROR << "Error setting TLS SNI host name for [" << host
+                           << "]";
+            onFail(Resolver::ERROR_HANDSHAKE);
+            return; // RETURN
+        }
 
         socketWrapper->socket().async_handshake(
             boost::asio::ssl::stream_base::client,
@@ -263,7 +290,7 @@ createSecureContext(const bsl::shared_ptr<rmqt::SecurityParameters>& params)
     }
     SSL_CTX_set_info_callback(result->native_handle(), &logTlsConnectionAlert);
 
-    result->set_verify_callback(&logCertVerificationFailure);
+    result->set_verify_callback(&AsioResolver::logCertVerificationFailure);
 
     if (fail) {
         result.reset();
@@ -483,6 +510,64 @@ void AsioResolver::handleConnect(
                        << " " << error.message();
         onFail(Resolver::ERROR_CONNECT);
     }
+}
+
+bool AsioResolver::logCertVerificationFailure(
+    bool preverified,
+    boost::asio::ssl::verify_context& ctx)
+{
+    if (preverified) {
+        return preverified;
+    }
+
+    X509_STORE_CTX* storeCtx = ctx.native_handle();
+
+    if (!storeCtx) {
+        BALL_LOG_ERROR << "Certificate verification failed: no verification "
+                          "context available";
+        return preverified;
+    }
+
+    const int errorCode  = X509_STORE_CTX_get_error(storeCtx);
+    const int errorDepth = X509_STORE_CTX_get_error_depth(storeCtx);
+
+    X509* cert         = X509_STORE_CTX_get_current_cert(storeCtx);
+    X509_NAME* subject = cert ? X509_get_subject_name(cert) : 0;
+
+    char subjectName[256] = "unavailable";
+
+    if (subject) {
+        X509_NAME_oneline(subject, subjectName, sizeof(subjectName));
+    }
+
+    BALL_LOG_ERROR << "Certificate verification failed: subjectName="
+                   << subjectName << " errorCode=" << errorCode
+                   << " errorString="
+                   << X509_verify_cert_error_string(errorCode)
+                   << " depth=" << errorDepth;
+
+    return preverified;
+}
+
+bool AsioResolver::verifyCertificate(const bsl::string& host,
+                                     bool preverified,
+                                     boost::asio::ssl::verify_context& ctx)
+{
+    if (!logCertVerificationFailure(preverified, ctx)) {
+        return false;
+    }
+
+    const boost::asio::ssl::host_name_verification hostNameVerifier(
+        host.c_str());
+
+    if (!hostNameVerifier(preverified, ctx)) {
+        BALL_LOG_ERROR << "Certificate verification failed: certificate "
+                          "identity does not match host name: "
+                       << host;
+        return false;
+    }
+
+    return true;
 }
 
 void AsioResolver::shuffleResolverResults(

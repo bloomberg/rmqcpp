@@ -25,7 +25,8 @@ namespace rmqamqpt {
 
 namespace {
 BALL_LOG_SET_NAMESPACE_CATEGORY("RMQAMQPT.CHANNELFLOWOK")
-}
+const uint8_t BITMASK_BIT_ACTIVE = (1 << 0);
+} // namespace
 
 ChannelFlowOk::ChannelFlowOk()
 : d_activeFlow(0)
@@ -41,13 +42,15 @@ bool ChannelFlowOk::decode(ChannelFlowOk* flowOk,
                            const uint8_t* data,
                            bsl::size_t dataLength)
 {
-    if (dataLength < sizeof(uint8_t)) {
+    rmqamqpt::Buffer buffer(data, dataLength);
+
+    uint8_t bitmask = 0;
+    if (!buffer.copy<uint8_t>(&bitmask)) {
         BALL_LOG_ERROR << "Not enough data to decode ChannelFlowOk method";
         return false;
     }
 
-    rmqamqpt::Buffer buffer(data, dataLength);
-    flowOk->d_activeFlow = buffer.copy<uint8_t>();
+    flowOk->d_activeFlow = bitmask & BITMASK_BIT_ACTIVE;
     return true;
 }
 

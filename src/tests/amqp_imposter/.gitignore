@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# *egg* files, which can be generated with pip install -e .
+eggs/
+.eggs/
+*.egg
+*.egg-info/
+
+
+# Unit test / coverage reports
+.coverage
+coverage.xml
+coverage-*.xml
+junit-*.xml
+tests.xml
+unit-test.xml
+integration-test.xml
+system-test.xml
+
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+*.lock

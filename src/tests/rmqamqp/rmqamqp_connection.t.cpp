@@ -38,11 +38,14 @@
 #include <rmqt_simpleendpoint.h>
 
 #include <ball_log.h>
+#include <ball_loggermanager.h>
+#include <ball_streamobserver.h>
 #include <bdlf_bind.h>
 #include <bsl_functional.h>
 #include <bsl_iostream.h>
 #include <bsl_limits.h>
 #include <bsl_memory.h>
+#include <bsl_sstream.h>
 #include <bsl_stdexcept.h>
 #include <bsl_utility.h>
 #include <bsl_vector.h>
@@ -64,6 +67,15 @@ BALL_LOG_SET_NAMESPACE_CATEGORY("RMQAMQP.CONNECTION.TESTS")
 const char* TEST_VHOST = "vhostname";
 
 void noOpOnError(const bsl::string&, int) {}
+
+void recordError(bsl::string* outText,
+                 int* outCode,
+                 const bsl::string& text,
+                 int code)
+{
+    *outText = text;
+    *outCode = code;
+}
 
 void noopCloseHandler() {}
 
@@ -113,7 +125,7 @@ class MockConnection : public rmqio::Connection {
     {
     }
 
-    rmqamqpt::Method examineFrameMethod(const SerializedFrame& frame)
+    rmqamqp::Message decodeMessage(const SerializedFrame& frame)
     {
         rmqamqpt::Frame decoded;
         size_t unused1 = 0, unused2 = 0;
@@ -123,17 +135,16 @@ class MockConnection : public rmqio::Connection {
                                                    frame.serialized(),
                                                    frame.frameLength());
         if (rc != Frame::OK) {
-            return rmqamqpt::Method();
+            return rmqamqp::Message();
         }
         rmqamqp::Framer framer;
         uint16_t channel;
         rmqamqp::Message msg;
-        if (framer.appendFrame(&channel, &msg, decoded) ==
-                rmqamqp::Framer::OK &&
-            msg.is<rmqamqpt::Method>()) {
-            return msg.the<rmqamqpt::Method>();
+        if (framer.appendFrame(&channel, &msg, decoded) !=
+            rmqamqp::Framer::OK) {
+            return rmqamqp::Message();
         }
-        return rmqamqpt::Method();
+        return msg;
     }
 
     void feedNextFrame()
@@ -176,10 +187,10 @@ class MockConnection : public rmqio::Connection {
              ++it) {
             BSLS_ASSERT_OPT(*(d_replayFrame.writeFrame()) == **it);
         }
-        bool closeOk = rmqamqpt::Method::Util::typeMatch(
-            examineFrameMethod(*frames[0]),
-            rmqamqpt::Method(
-                rmqamqpt::ConnectionMethod(rmqamqpt::ConnectionCloseOk())));
+        bool closeOk =
+            rmqamqp::MessageUtil::isMethod<rmqamqpt::ConnectionMethod,
+                                           rmqamqpt::ConnectionCloseOk>(
+                decodeMessage(*frames[0]));
 
         boost::asio::post(d_eventLoop, callback);
 
@@ -204,15 +215,21 @@ class MockConnection : public rmqio::Connection {
 
 class MockHeartbeatManager : public rmqamqp::HeartbeatManager {
   public:
-    MockHeartbeatManager() {}
+    MockHeartbeatManager()
+    : d_startCount(0)
+    {
+    }
 
     void start(uint32_t,
                const HeartbeatCallback& sendHeartbeat,
                const ConnectionDeathCallback& onConnectionDeath)
     {
+        ++d_startCount;
         d_sendHeartbeat  = sendHeartbeat;
         d_killConnection = onConnectionDeath;
     }
+
+    int d_startCount;
 
     MOCK_METHOD0(stop, void());
     MOCK_METHOD0(notifyMessageSent, void());
@@ -696,6 +713,31 @@ TEST_F(ConnectionTests, Handshake)
     expectShutdownCalls();
 }
 
+TEST_F(ConnectionTests, HandshakeDoesNotLogCredentials)
+{
+    bsl::ostringstream logStream;
+    bsl::shared_ptr<ball::StreamObserver> observer =
+        bsl::make_shared<ball::StreamObserver>(&logStream);
+    ball::LoggerManager::singleton().registerObserver(observer,
+                                                      "credentialcapture");
+
+    expectFirstHandshakeFrames();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    // 1. Handshake
+    d_eventLoop.run();
+
+    ball::LoggerManager::singleton().deregisterObserver("credentialcapture");
+
+    const bsl::string logged = logStream.str();
+    EXPECT_THAT(logged, HasSubstr("response:<REDACTED>"));
+    EXPECT_THAT(logged, Not(HasSubstr(bsl::string("\0guest\0guest", 12))));
+
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+    expectShutdownCalls();
+}
+
 TEST_F(ConnectionTests, ClientProperties)
 {
     rmqt::FieldTable inputClientProperties;
@@ -891,19 +933,6 @@ TEST_F(ConnectionTests, GetFrameIncorrectOrder)
         d_replayFrame.pushInbound(bsl::make_shared<SerializedFrame>(tuneFrame));
     }
 
-    {
-        ConnectionClose closeMethod(Constants::UNEXPECTED_FRAME,
-                                    "Unexpected frame",
-                                    Constants::CONNECTION,
-                                    Constants::CONNECTION_TUNE);
-        Frame closeFrame;
-        Framer::makeMethodFrame(
-            &closeFrame, 0, Method(ConnectionMethod(closeMethod)));
-        d_replayFrame.pushOutbound(
-            bsl::make_shared<SerializedFrame>(closeFrame));
-
-        expectCloseOkFrame(false); // from the server
-    }
     resetExpectations();
 
     expectFirstHandshakeFrames();
@@ -947,6 +976,110 @@ TEST_F(ConnectionTests, GracefulClose)
 
     EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
 
+    EXPECT_TRUE(invoked);
+}
+
+TEST_F(ConnectionTests, NoReconnectWhenServerClosesDuringGracefulClose)
+{
+    expectFirstHandshakeFrames();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    d_eventLoop.run();
+    d_eventLoop.restart();
+
+    expectCloseFrame(false);
+    expectCloseFrame();
+    expectCloseOkFrame();
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).Times(0);
+
+    bool invoked = false;
+    conn->close(bdlf::BindUtil::bind(&gracefulCloseHandler, bsl::ref(invoked)));
+
+    d_eventLoop.run();
+
+    EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::DISCONNECTED));
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+    EXPECT_TRUE(invoked);
+}
+
+TEST_F(ConnectionTests, NoCloseWhenServerAlreadyClosed)
+{
+    expectFirstHandshakeFrames();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    d_eventLoop.run();
+    d_eventLoop.restart();
+
+    expectCloseFrame();
+    expectCloseOkFrame();
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).Times(0);
+
+    feedNextFrame();
+    d_eventLoop.run_one();
+
+    bool invoked = false;
+    conn->close(bdlf::BindUtil::bind(&gracefulCloseHandler, bsl::ref(invoked)));
+
+    d_eventLoop.run();
+
+    EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::DISCONNECTED));
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+    EXPECT_TRUE(invoked);
+}
+
+TEST_F(ConnectionTests, CloseBeforeOpenSendsNoConnectionClose)
+{
+    expectHeaderAndStartFrames();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    d_eventLoop.run();
+    d_eventLoop.restart();
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).Times(0);
+    EXPECT_CALL(d_callbacks, onConnect(false));
+
+    bool invoked = false;
+    conn->close(bdlf::BindUtil::bind(&gracefulCloseHandler, bsl::ref(invoked)));
+
+    d_eventLoop.run();
+
+    EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::DISCONNECTED));
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+    EXPECT_TRUE(invoked);
+}
+
+TEST_F(ConnectionTests, CloseAfterOpenWaitsForOpenOk)
+{
+    expectHeaderAndStartFrames();
+    expectTuneFrames();
+    expectOpenFrame();
+
+    bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+    d_eventLoop.run();
+    d_eventLoop.restart();
+
+    expectOpenOkFrame();
+    expectCloseFrame(false);
+    expectCloseOkFrame(false);
+
+    EXPECT_CALL(*d_retryHandler, retry(_)).Times(0);
+    EXPECT_CALL(d_callbacks, onConnect(true)).Times(0);
+    EXPECT_CALL(d_callbacks, onConnect(false));
+
+    bool invoked = false;
+    conn->close(bdlf::BindUtil::bind(&gracefulCloseHandler, bsl::ref(invoked)));
+    feedNextFrame();
+
+    d_eventLoop.run();
+
+    EXPECT_THAT(conn->state(), Eq(rmqamqp::Connection::DISCONNECTED));
+    EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
     EXPECT_TRUE(invoked);
 }
 
@@ -1551,6 +1684,60 @@ TEST_F(TuneParamNegotiationTests, ServerSendsHighValueNegotiateToOurValue)
 
     // 2. Process shutdown
     d_eventLoop.run();
+}
+
+TEST_F(TuneParamNegotiationTests,
+       ServerSendsFrameMaxBelowMinimumFailsConnection)
+{
+    // AMQP 0-9-1 does not permit a frame-max below FRAME_MIN_SIZE. 4095 is
+    // the largest value that must still be rejected.
+    const uint32_t rejected = 4095;
+
+    expectHeaderAndStartFrames();
+
+    {
+        ConnectionTune tuneMethod(2048, rejected, 5);
+        Frame tuneFrame;
+        Framer::makeMethodFrame(
+            &tuneFrame, 0, Method(ConnectionMethod(tuneMethod)));
+        d_replayFrame.pushInbound(bsl::make_shared<SerializedFrame>(tuneFrame));
+    }
+
+    // capture what the application is told, rather than only that it is told
+    bsl::string errorText;
+    int errorCode = 0;
+    const rmqt::ErrorCallback recorder =
+        bdlf::BindUtil::bind(&recordError, &errorText, &errorCode, _1, _2);
+
+    EXPECT_CALL(*d_retryHandler, errorCallback())
+        .Times(1)
+        .WillOnce(ReturnRef(recorder));
+
+    resetExpectations();
+    expectFirstHandshakeFrames();
+
+    {
+        bsl::shared_ptr<rmqamqp::Connection> conn = createAndStartConnection();
+
+        // 1. Reject the tune, disconnect, reconnect successfully
+        d_eventLoop.run();
+        d_eventLoop.restart();
+
+        EXPECT_THAT(d_replayFrame.getLength(), Eq(0));
+        expectShutdownCalls();
+    }
+
+    // 2. Process shutdown
+    d_eventLoop.run();
+
+    // The rejected tune was not applied before it was rejected: the only
+    // heartbeat start belongs to the reconnect that followed.
+    EXPECT_THAT(d_heartbeat->d_startCount, Eq(1));
+
+    // The application is told why, rather than only seeing a silent retry
+    EXPECT_THAT(errorCode, Eq(Constants::NOT_ALLOWED));
+    EXPECT_THAT(errorText, HasSubstr("frame-max 4095"));
+    EXPECT_THAT(errorText, HasSubstr("minimum of 4096"));
 }
 
 TEST_F(TuneParamNegotiationTests, ServerSendsLowValueNegotiateToTheirValue)

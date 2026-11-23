@@ -17,6 +17,8 @@
 
 #include <bsls_assert.h>
 
+#include <bsl_algorithm.h>
+
 namespace BloombergLP {
 namespace rmqamqpt {
 
@@ -30,8 +32,9 @@ Buffer::Buffer(const_pointer start, size_type length)
 
 Buffer Buffer::consume(size_type size)
 {
-    Buffer b(ptr(), size);
-    skip(size);
+    const size_type consumed = bsl::min(size, available());
+    Buffer b(ptr(), consumed);
+    skip(consumed);
     return b;
 }
 

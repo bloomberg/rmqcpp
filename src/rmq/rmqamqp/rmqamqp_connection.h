@@ -34,6 +34,7 @@
 #include <rmqt_credentials.h>
 #include <rmqt_endpoint.h>
 #include <rmqt_message.h>
+#include <rmqt_properties.h>
 
 #include <ball_log.h>
 #include <bslmt_mutex.h>
@@ -208,6 +209,7 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
 
     ConnectedCallback d_firstConnectCb;
     CloseFinishCallback d_closeCb;
+    bool d_closeRequested;
 
     bsls::TimeInterval d_connectStartTime;
     bool d_hasBeenConnected; // For metrics purposes -- indicates whether this
@@ -222,7 +224,11 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
 
     // ConnectionMethods
     void sendConnectionStartOk();
-    void sendConnectionTuneOk(const rmqamqpt::ConnectionTune& tuneMethod);
+    /// Negotiate the tune parameters and reply with Connection.Tune-ok.
+    /// \return false if the negotiated frame-max is unusable, in which case
+    ///         no Tune-ok was sent and a Connection.Close has been issued
+    ///         instead.
+    bool sendConnectionTuneOk(const rmqamqpt::ConnectionTune& tuneMethod);
     void sendConnectionOpen();
     void sendConnectionCloseOk();
 
@@ -240,12 +246,9 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
                              rmqamqpt::Constants::AMQPMethodId failingMethodId =
                                  rmqamqpt::Constants::NO_METHOD);
 
-    // Callback for writes
-    void onWriteComplete(State newState);
+    void updateState(State state);
 
-    // Callback for writes
-    static void onWriteCompleteCb(bsl::weak_ptr<Connection> weakSelf,
-                                  State newState);
+    void onCloseOkWritten();
 
     // Connection Method Router
     void processConnectionMethod(const rmqamqpt::ConnectionMethod& method);
@@ -295,9 +298,17 @@ class Connection : public bsl::enable_shared_from_this<Connection>,
 
     void sendHeartbeat(const rmqamqpt::Frame&);
 
+    static void sendHeartbeatCb(const bsl::weak_ptr<Connection>& weakSelf,
+                                const rmqamqpt::Frame& heartbeat);
+
     void killConnection();
 
+    static void killConnectionCb(const bsl::weak_ptr<Connection>& weakSelf);
+
     void connectionHung(rmqio::Timer::InterruptReason reason);
+
+    static void connectionHungCb(const bsl::weak_ptr<Connection>& weakSelf,
+                                 rmqio::Timer::InterruptReason reason);
 
     static void channelHung(const bsl::weak_ptr<Connection>& self);
 
@@ -330,7 +341,8 @@ class Connection::Factory {
         const rmqt::FieldTable& clientProperties,
         const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold,
         const bsl::optional<bsls::TimeInterval>& connectionEstablishmentTimeout,
-        const bool isHostHealthMonitoringEnabled);
+        const bool isHostHealthMonitoringEnabled,
+        const rmqt::Tunables& tunables = rmqt::Tunables());
 
     virtual ~Factory() {}
 
@@ -357,6 +369,7 @@ class Connection::Factory {
     const bsl::optional<bsls::TimeInterval> d_connectionErrorThreshold;
     const bsl::optional<bsls::TimeInterval> d_connectionEstablishmentTimeout;
     const bool d_isHostHealthMonitoringEnabled;
+    const rmqt::Tunables d_tunables;
 }; // class Connection::Factory
 } // namespace rmqamqp
 } // namespace BloombergLP

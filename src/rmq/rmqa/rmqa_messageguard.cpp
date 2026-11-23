@@ -76,12 +76,13 @@ MessageGuard& MessageGuard::operator=(const MessageGuard& other)
 MessageGuard::~MessageGuard()
 {
     if (d_state == READY) {
-        BALL_LOG_ERROR << "Unacked message, explicitly nacking. Message guid: "
+        BALL_LOG_ERROR << "Unresolved message, explicitly rejecting with "
+                          "requeue. Message guid: "
                        << d_message.guid()
                        << ", payload size: " << d_message.payloadSize();
         try {
-            d_ackCallback(
-                rmqt::ConsumerAck(d_envelope, rmqt::ConsumerAck::REQUEUE));
+            d_ackCallback(rmqt::ConsumerAck(
+                d_envelope, rmqt::ConsumerAck::REJECT_REQUEUE_TRUE));
         }
         catch (bsl::exception& e) {
             BALL_LOG_ERROR
@@ -107,7 +108,14 @@ void MessageGuard::ack() { resolve(rmqt::ConsumerAck::ACK); }
 
 void MessageGuard::nack(bool requeue)
 {
-    resolve(requeue ? rmqt::ConsumerAck::REQUEUE : rmqt::ConsumerAck::REJECT);
+    resolve(requeue ? rmqt::ConsumerAck::NACK_REQUEUE_TRUE
+                    : rmqt::ConsumerAck::NACK_REQUEUE_FALSE);
+}
+
+void MessageGuard::reject(bool requeue)
+{
+    resolve(requeue ? rmqt::ConsumerAck::REJECT_REQUEUE_TRUE
+                    : rmqt::ConsumerAck::REJECT_REQUEUE_FALSE);
 }
 
 void MessageGuard::resolve(rmqt::ConsumerAck::Type ackOption)

@@ -55,10 +55,13 @@
 #include <bsl_string.h>
 #include <bsl_utility.h>
 #include <bsl_vector.h>
+#include <bsls_assert.h>
 
 namespace BloombergLP {
 namespace rmqamqp {
 namespace {
+
+void noopWriteHandler() {}
 
 template <typename A, typename B>
 rmqt::Result<A> passOnSuccessImpl(const bsl::shared_ptr<A>& item,
@@ -241,6 +244,7 @@ Connection::Connection(
 , d_timerFactory(timerFactory)
 , d_firstConnectCb()
 , d_closeCb()
+, d_closeRequested(false)
 , d_connectStartTime()
 , d_hasBeenConnected(false)
 , d_vhostTags()
@@ -254,15 +258,33 @@ void Connection::close(const CloseFinishCallback& closeCallback)
 {
     BALL_LOG_INFO << "Closing connection: " << connectionDebugName();
 
-    d_closeCb = closeCallback;
+    d_closeCb        = closeCallback;
+    d_closeRequested = true;
 
-    if (d_state == DISCONNECTED) {
-        socketShutdown(Connection::FATAL,
-                       rmqio::Connection::GRACEFUL_DISCONNECT);
-    }
-    else {
-        sendConnectionClose(rmqamqpt::Constants::REPLY_SUCCESS,
-                            "Closing Connection");
+    switch (d_state) {
+        case DISCONNECTED:
+            socketShutdown(Connection::FATAL,
+                           rmqio::Connection::GRACEFUL_DISCONNECT);
+            break;
+        case PROTOCOL_HEADER_SENT:
+        case CONNECTION_START_RECEIVED:
+        case CONNECTION_STARTOK_SENT:
+        case CONNECTION_TUNE_RECEIVED:
+        case CONNECTION_TUNEOK_SENT:
+            closeSocket(FATAL);
+            break;
+        case CONNECTION_OPEN_SENT:
+            break;
+        case CONNECTION_CLOSE_SENT_EXIT:
+        case CONNECTION_CLOSE_SENT_RECONNECT:
+        case CONNECTION_CLOSE_RECEIVED:
+        case CONNECTION_CLOSEOK_SENT:
+        case CONNECTION_CLOSED:
+            break;
+        default:
+            sendConnectionClose(rmqamqpt::Constants::REPLY_SUCCESS,
+                                "Closing Connection");
+            break;
     }
 }
 
@@ -287,8 +309,8 @@ void Connection::initiateConnect()
     callbacks.onError =
         bdlf::BindUtil::bind(&Connection::socketError, weak_from_this(), _1);
 
-    d_hungTimer->start(
-        bdlf::BindUtil::bind(&Connection::connectionHung, this, _1));
+    d_hungTimer->start(bdlf::BindUtil::bind(
+        &Connection::connectionHungCb, weak_from_this(), _1));
 
     if (d_endpoint->securityParameters()) {
         d_socketConnection = d_resolver->asyncSecureConnect(
@@ -323,13 +345,13 @@ void Connection::startFirstConnection(
 
 void Connection::connect()
 {
+    updateState(PROTOCOL_HEADER_SENT);
+
     asyncWriteSingleFrame(
         bsl::make_shared<rmqio::SerializedFrame>(
             static_cast<const uint8_t*>(rmqamqpt::Constants::PROTOCOL_HEADER),
             rmqamqpt::Constants::PROTOCOL_HEADER_LENGTH),
-        bdlf::BindUtil::bind(&Connection::onWriteCompleteCb,
-                             weak_from_this(),
-                             PROTOCOL_HEADER_SENT));
+        &noopWriteHandler);
 }
 
 void Connection::connectError(const rmqio::Resolver::Error&)
@@ -382,28 +404,13 @@ void Connection::socketError(const bsl::weak_ptr<Connection>& weakConn,
     conn->socketShutdown(WILL_RETRY, rc);
 }
 
-void Connection::onWriteComplete(State state)
+void Connection::updateState(State state)
 {
     d_state = state;
     BALL_LOG_TRACE << "State now set to: " << d_state;
-
-    // close socket if the server closed us
-    if (d_state == CONNECTION_CLOSEOK_SENT) {
-        closeSocket(WILL_RETRY);
-    }
 }
 
-void Connection::onWriteCompleteCb(bsl::weak_ptr<Connection> weakSelf,
-                                   State newState)
-{
-    bsl::shared_ptr<Connection> self = weakSelf.lock();
-    if (!self) {
-        BALL_LOG_TRACE << "Write completion handler called during shutdown";
-        return;
-    }
-
-    self->onWriteComplete(newState);
-}
+void Connection::onCloseOkWritten() { closeSocket(WILL_RETRY); }
 
 void Connection::sendConnectionStartOk()
 {
@@ -418,15 +425,14 @@ void Connection::sendConnectionStartOk()
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(startOkMethod));
 
-    asyncWriteSingleFrame(serializeFrame(frame),
-                          bdlf::BindUtil::bind(&Connection::onWriteCompleteCb,
-                                               weak_from_this(),
-                                               CONNECTION_STARTOK_SENT));
+    updateState(CONNECTION_STARTOK_SENT);
+
+    asyncWriteSingleFrame(serializeFrame(frame), &noopWriteHandler);
     BALL_LOG_TRACE << "Connection Start-ok method sent to server: "
                    << startOkMethod;
 }
 
-void Connection::sendConnectionTuneOk(
+bool Connection::sendConnectionTuneOk(
     const rmqamqpt::ConnectionTune& tuneMethod)
 {
     bsl::uint16_t negotiatedChannelMax;
@@ -442,8 +448,36 @@ void Connection::sendConnectionTuneOk(
         static_cast<uint32_t>(rmqamqpt::Frame::getMaxFrameSize()),
         k_MAX_HEARTBEAT_TIMEOUT_SEC);
 
+    if (negotiatedMaxFrameSize < rmqamqpt::Constants::FRAME_MIN_SIZE) {
+        const bsl::string error =
+            "Negotiated frame-max " + bsl::to_string(negotiatedMaxFrameSize) +
+            " is below the minimum of " +
+            bsl::to_string(rmqamqpt::Constants::FRAME_MIN_SIZE);
+
+        BALL_LOG_ERROR << error << ": " << connectionDebugName();
+
+        connectionException(rmqamqpt::Constants::NOT_ALLOWED,
+                            error,
+                            rmqamqpt::ConnectionMethod::CLASS_ID,
+                            rmqamqpt::ConnectionTune::METHOD_ID);
+
+        // Retrying cannot succeed while the broker proposes the same value,
+        // so tell the application rather than only looping. Reported after
+        // the close so a throwing callback cannot stop it being sent.
+        d_retryHandler->errorCallback()("Connection=" + d_connectionName + " " +
+                                            error,
+                                        rmqamqpt::Constants::NOT_ALLOWED);
+
+        return false;
+    }
+
     startHeartbeatManager(negotiatedHeartbeatTimeout);
-    d_framer.setMaxFrameSize(negotiatedMaxFrameSize);
+    // Guaranteed by the FRAME_MIN_SIZE check above, which is stricter than
+    // the framer's own minimum.
+    const bool frameSizeAccepted =
+        d_framer.setMaxFrameSize(negotiatedMaxFrameSize);
+    (void)frameSizeAccepted;
+    BSLS_ASSERT(frameSizeAccepted);
 
     rmqamqpt::ConnectionTuneOk tuneOkMethod(negotiatedChannelMax,
                                             negotiatedMaxFrameSize,
@@ -452,12 +486,13 @@ void Connection::sendConnectionTuneOk(
     rmqamqpt::Frame frame;
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(tuneOkMethod));
-    asyncWriteSingleFrame(serializeFrame(frame),
-                          bdlf::BindUtil::bind(&Connection::onWriteCompleteCb,
-                                               weak_from_this(),
-                                               CONNECTION_TUNEOK_SENT));
+
+    updateState(CONNECTION_TUNEOK_SENT);
+
+    asyncWriteSingleFrame(serializeFrame(frame), &noopWriteHandler);
     BALL_LOG_TRACE << "Connection Tune-ok method sent to server: "
                    << tuneOkMethod;
+    return true;
 }
 
 void Connection::sendConnectionOpen()
@@ -467,10 +502,10 @@ void Connection::sendConnectionOpen()
     rmqamqpt::Frame frame;
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(openMethod));
-    asyncWriteSingleFrame(serializeFrame(frame),
-                          bdlf::BindUtil::bind(&Connection::onWriteCompleteCb,
-                                               weak_from_this(),
-                                               CONNECTION_OPEN_SENT));
+
+    updateState(CONNECTION_OPEN_SENT);
+
+    asyncWriteSingleFrame(serializeFrame(frame), &noopWriteHandler);
     BALL_LOG_TRACE << "Connection Open method sent to server: " << openMethod;
 }
 
@@ -481,10 +516,12 @@ void Connection::sendConnectionCloseOk()
     rmqamqpt::Frame frame;
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(closeOkMethod));
+
+    updateState(CONNECTION_CLOSEOK_SENT);
+
     asyncWriteSingleFrame(serializeFrame(frame),
-                          bdlf::BindUtil::bind(&Connection::onWriteComplete,
-                                               shared_from_this(),
-                                               CONNECTION_CLOSEOK_SENT));
+                          bdlf::BindUtil::bind(&Connection::onCloseOkWritten,
+                                               shared_from_this()));
     BALL_LOG_TRACE << "Connection Close-ok method sent to server: "
                    << closeOkMethod;
 }
@@ -501,19 +538,12 @@ void Connection::sendConnectionClose(
     rmqamqpt::Frame frame;
     Framer::makeMethodFrame(
         &frame, channel, rmqamqpt::ConnectionMethod(closeMethod));
-    if (replyCode != rmqamqpt::Constants::REPLY_SUCCESS) {
-        asyncWriteSingleFrame(
-            serializeFrame(frame),
-            bdlf::BindUtil::bind(&Connection::onWriteComplete,
-                                 shared_from_this(),
-                                 CONNECTION_CLOSE_SENT_RECONNECT));
-    }
-    else {
-        asyncWriteSingleFrame(serializeFrame(frame),
-                              bdlf::BindUtil::bind(&Connection::onWriteComplete,
-                                                   shared_from_this(),
-                                                   CONNECTION_CLOSE_SENT_EXIT));
-    }
+
+    updateState(replyCode == rmqamqpt::Constants::REPLY_SUCCESS
+                    ? CONNECTION_CLOSE_SENT_EXIT
+                    : CONNECTION_CLOSE_SENT_RECONNECT);
+
+    asyncWriteSingleFrame(serializeFrame(frame), &noopWriteHandler);
 
     BALL_LOG_TRACE << "Connection Close method sent to server: " << closeMethod;
 }
@@ -529,13 +559,8 @@ void Connection::connectionException(
             closeSocket(FATAL);
             break;
 
-        case CONNECTED:
-        case PROTOCOL_HEADER_SENT:
-        case CONNECTION_START_RECEIVED:
-        case CONNECTION_STARTOK_SENT:
-        case CONNECTION_TUNE_RECEIVED:
-        case CONNECTION_TUNEOK_SENT:
         case CONNECTION_OPEN_SENT:
+        case CONNECTED:
         case CONNECTION_OPENOK_RECEIVED:
             sendConnectionClose(
                 replyCode, replyText, failingClassId, failingMethodId);
@@ -549,7 +574,7 @@ void Connection::connectionException(
 void Connection::retry(const bsl::weak_ptr<Connection>& weakSelf)
 {
     bsl::shared_ptr<Connection> self = weakSelf.lock();
-    if (!self) {
+    if (!self || self->d_closeRequested) {
         BALL_LOG_TRACE << "Retry handler called during shutdown";
         return;
     }
@@ -560,8 +585,7 @@ void Connection::closeSocket(DisconnectType disconnectType)
 {
     BALL_LOG_TRACE << "closeSocket: " << disconnectType;
 
-    d_state = CONNECTION_CLOSED;
-    BALL_LOG_TRACE << "State now set to: " << d_state;
+    updateState(CONNECTION_CLOSED);
     using bdlf::PlaceHolders::_1;
     if (d_socketConnection && d_socketConnection->isConnected()) {
         BALL_LOG_TRACE << "Closing Socket Gracefully";
@@ -579,11 +603,11 @@ void Connection::closeSocket(DisconnectType disconnectType)
 void Connection::socketShutdown(DisconnectType dcType,
                                 rmqio::Connection::ReturnCode code)
 {
+    const bool willRetry = dcType == WILL_RETRY && !d_closeRequested;
+
     if (code != rmqio::Connection::CONNECT_ERROR) {
         BALL_LOG_INFO << "Disconnected from Broker: " << connectionDebugName()
-                      << (dcType == rmqamqp::Connection::WILL_RETRY
-                              ? " Retrying"
-                              : " Connection closed")
+                      << (willRetry ? " Retrying" : " Connection closed")
                       << ". Error code " << code;
     }
 
@@ -601,9 +625,8 @@ void Connection::socketShutdown(DisconnectType dcType,
 
     d_metricPublisher->publishCounter("disconnect_events", 1, d_vhostTags);
 
-    d_state = Connection::DISCONNECTED;
-    BALL_LOG_TRACE << "State now set to: " << d_state;
-    if (dcType == WILL_RETRY) {
+    updateState(DISCONNECTED);
+    if (willRetry) {
         // The connection is down and will be retried: either an establishment
         // attempt failed or an established connection was lost. Schedule the
         // retry before invoking the observational hook: the hook is a
@@ -656,8 +679,7 @@ class Connection::ConnectionMethodProcessor {
     void operator()(const rmqamqpt::ConnectionStart& start) const
     {
         if (expectedState(start, Connection::PROTOCOL_HEADER_SENT)) {
-            conn.d_state = CONNECTION_START_RECEIVED;
-            BALL_LOG_TRACE << "State now set to: " << conn.d_state;
+            conn.updateState(CONNECTION_START_RECEIVED);
             conn.sendConnectionStartOk();
         }
     }
@@ -665,20 +687,25 @@ class Connection::ConnectionMethodProcessor {
     void operator()(const rmqamqpt::ConnectionTune& tune) const
     {
         if (expectedState(tune, Connection::CONNECTION_STARTOK_SENT)) {
-            conn.d_state = CONNECTION_TUNE_RECEIVED;
-            BALL_LOG_TRACE << "State now set to: " << conn.d_state;
-            conn.sendConnectionTuneOk(tune);
-            conn.sendConnectionOpen();
+            conn.updateState(CONNECTION_TUNE_RECEIVED);
+            if (conn.sendConnectionTuneOk(tune)) {
+                conn.sendConnectionOpen();
+            }
         }
     }
 
     void operator()(const rmqamqpt::ConnectionOpenOk& openok) const
     {
         if (expectedState(openok, Connection::CONNECTION_OPEN_SENT)) {
+            if (conn.d_closeRequested) {
+                conn.sendConnectionClose(rmqamqpt::Constants::REPLY_SUCCESS,
+                                         "Closing Connection");
+                return;
+            }
+
             BALL_LOG_INFO << "Connected " << conn.connectionDebugName();
 
-            conn.d_state = CONNECTED;
-            BALL_LOG_TRACE << "State now set to: " << conn.d_state;
+            conn.updateState(CONNECTED);
             conn.d_hungTimer->cancel();
             conn.d_retryHandler->success();
 
@@ -726,8 +753,7 @@ class Connection::ConnectionMethodProcessor {
         // https://www.rabbitmq.com/resources/specs/amqp0-9-1.extended.xml
         BALL_LOG_INFO << "Received Connection.Close method from server. "
                       << closeMethod;
-        conn.d_state = CONNECTION_CLOSE_RECEIVED;
-        BALL_LOG_TRACE << "State now set to: " << conn.d_state;
+        conn.updateState(CONNECTION_CLOSE_RECEIVED);
         conn.sendConnectionCloseOk();
 
         if (closeMethod.classId() || closeMethod.methodId()) {
@@ -874,13 +900,27 @@ void Connection::startHeartbeatManager(uint32_t timeout)
     using bdlf::PlaceHolders::_1;
     d_heartbeatManager->start(
         timeout,
-        bdlf::BindUtil::bind(&Connection::sendHeartbeat, this, _1),
-        bdlf::BindUtil::bind(&Connection::killConnection, this));
+        bdlf::BindUtil::bind(
+            &Connection::sendHeartbeatCb, weak_from_this(), _1),
+        bdlf::BindUtil::bind(&Connection::killConnectionCb, weak_from_this()));
 }
 
 void Connection::sendHeartbeat(const rmqamqpt::Frame& heartbeat)
 {
     asyncWriteSingleFrame(serializeFrame(heartbeat), &noopWriteComplete);
+}
+
+void Connection::sendHeartbeatCb(const bsl::weak_ptr<Connection>& weakSelf,
+                                 const rmqamqpt::Frame& heartbeat)
+{
+    bsl::shared_ptr<Connection> self = weakSelf.lock();
+
+    if (!self) {
+        BALL_LOG_DEBUG << "Heartbeat after connection destruction";
+        return;
+    }
+
+    self->sendHeartbeat(heartbeat);
 }
 
 void Connection::killConnection()
@@ -890,6 +930,18 @@ void Connection::killConnection()
 
     d_metricPublisher->publishCounter("heartbeat_timeouts", 1, d_vhostTags);
     closeSocket(WILL_RETRY);
+}
+
+void Connection::killConnectionCb(const bsl::weak_ptr<Connection>& weakSelf)
+{
+    bsl::shared_ptr<Connection> self = weakSelf.lock();
+
+    if (!self) {
+        BALL_LOG_DEBUG << "Heartbeat timeout after connection destruction";
+        return;
+    }
+
+    self->killConnection();
 }
 
 void Connection::asyncWriteSingleFrame(
@@ -1064,6 +1116,19 @@ void Connection::connectionHung(rmqio::Timer::InterruptReason reason)
     }
 }
 
+void Connection::connectionHungCb(const bsl::weak_ptr<Connection>& weakSelf,
+                                  rmqio::Timer::InterruptReason reason)
+{
+    bsl::shared_ptr<Connection> self = weakSelf.lock();
+
+    if (!self) {
+        BALL_LOG_DEBUG << "Connection hung timer after connection destruction";
+        return;
+    }
+
+    self->connectionHung(reason);
+}
+
 void Connection::channelHung(const bsl::weak_ptr<Connection>& self)
 {
     bsl::shared_ptr<Connection> lockedSelf = self.lock();
@@ -1104,7 +1169,8 @@ Connection::Factory::Factory(
     const rmqt::FieldTable& clientProperties,
     const bsl::optional<bsls::TimeInterval>& connectionErrorThreshold,
     const bsl::optional<bsls::TimeInterval>& connectionEstablishmentTimeout,
-    const bool isHostHealthMonitoringEnabled)
+    const bool isHostHealthMonitoringEnabled,
+    const rmqt::Tunables& tunables)
 : d_errorCb(errorCb)
 , d_clientProperties(clientProperties)
 , d_metricPublisher(metricPublisher)
@@ -1114,6 +1180,7 @@ Connection::Factory::Factory(
 , d_connectionErrorThreshold(connectionErrorThreshold)
 , d_connectionEstablishmentTimeout(connectionEstablishmentTimeout)
 , d_isHostHealthMonitoringEnabled(isHostHealthMonitoringEnabled)
+, d_tunables(tunables)
 {
 }
 
@@ -1142,17 +1209,21 @@ bsl::shared_ptr<Connection> Connection::Factory::create(
 
 bsl::shared_ptr<rmqio::RetryHandler> Connection::Factory::newRetryHandler()
 {
+    const bsl::shared_ptr<rmqio::RetryStrategy> retryStrategy =
+        d_tunables.find("IIR") != d_tunables.end()
+            ? bsl::make_shared<rmqio::BackoffLevelRetryStrategy>(
+                  bsl::numeric_limits<unsigned int>::max())
+            : bsl::make_shared<rmqio::BackoffLevelRetryStrategy>();
+
     return d_connectionErrorThreshold
                ? bsl::shared_ptr<rmqio::RetryHandler>(
                      bsl::make_shared<rmqio::ConnectionRetryHandler>(
                          d_timerFactory,
                          d_errorCb,
-                         bsl::make_shared<rmqio::BackoffLevelRetryStrategy>(),
+                         retryStrategy,
                          *d_connectionErrorThreshold))
                : bsl::make_shared<rmqio::RetryHandler>(
-                     d_timerFactory,
-                     d_errorCb,
-                     bsl::make_shared<rmqio::BackoffLevelRetryStrategy>());
+                     d_timerFactory, d_errorCb, retryStrategy);
 }
 
 bsl::shared_ptr<rmqamqp::HeartbeatManager>

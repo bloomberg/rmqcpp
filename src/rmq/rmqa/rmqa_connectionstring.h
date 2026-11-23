@@ -18,10 +18,15 @@
 
 #include <rmqt_vhostinfo.h>
 
+#include <bsl_memory.h>
 #include <bsl_optional.h>
 #include <bsl_string.h>
 
 namespace BloombergLP {
+namespace rmqt {
+class SecurityParameters;
+}
+
 namespace rmqa {
 
 /// \class ConnectionString
@@ -33,7 +38,10 @@ namespace rmqa {
 /// implement proper escape patterns etc.
 class ConnectionString {
   public:
-    static bsl::optional<rmqt::VHostInfo> parse(bsl::string_view uri);
+    static bsl::optional<rmqt::VHostInfo>
+    parse(bsl::string_view uri,
+          const bsl::shared_ptr<rmqt::SecurityParameters>& securityParameters =
+              bsl::shared_ptr<rmqt::SecurityParameters>());
 
     static bool parseParts(bsl::string_view* scheme,
                            bsl::string_view* username,

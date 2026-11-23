@@ -16,16 +16,13 @@ if (NOT DEFINED ENV{PYTHON_BINARY})
     execute_process (COMMAND "${Python3_EXECUTABLE}" -m venv ${CMAKE_CURRENT_BINARY_DIR}/.venv)
     set (ENV{VIRTUAL_ENV} ${CMAKE_CURRENT_BINARY_DIR}/.venv)
     execute_process(COMMAND ${CMAKE_CURRENT_BINARY_DIR}/.venv/bin/pip install  -r ${CMAKE_CURRENT_LIST_DIR}/requirements.txt)
-    if(NOT CMAKE_SYSTEM_NAME STREQUAL "SunOS")
-        execute_process(COMMAND ${CMAKE_CURRENT_BINARY_DIR}/.venv/bin/pip install telnetlib3)
-    endif()
     set(PYTHON_BINARY ${CMAKE_CURRENT_BINARY_DIR}/.venv/bin/python)
 else()
     set(PYTHON_BINARY $ENV{PYTHON_BINARY})
 endif()
 
-set(PYTEST ${PYTHON_BINARY} -mpytest)
-set( PYTEST_ARGS "-q" "-rap" "--maxfail=2" "--tb=short" "--durations=1" "--log-level=error" "-s")
+set(PYTEST PYTHONPATH=${CMAKE_CURRENT_LIST_DIR}/.. ${PYTHON_BINARY} -mpytest)
+set( PYTEST_ARGS "-q" "-rap" "--maxfail=2" "--tb=short" "--durations=1" "-s" "-p" "integration.rmqapitests.plugin")
 
 
 add_subdirectory(rmqperftest)

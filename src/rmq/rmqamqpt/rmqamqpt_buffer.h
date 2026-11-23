@@ -19,7 +19,7 @@
 #include <bslmf_assert.h>
 #include <bslmf_isbitwisemoveable.h>
 #include <bslmf_istriviallycopyable.h>
-#include <bsls_assert.h>
+#include <bsls_compilerfeatures.h>
 
 #include <bsl_cstddef.h>
 #include <bsl_cstdint.h>
@@ -48,9 +48,19 @@ class Buffer {
     ~Buffer()             = default;
 #endif
 
-    template <typename TYPE>
-    TYPE copy();
+    /// Read a `TYPE` out of the buffer, assign it to `value` and advance
+    /// past it.
+    ///
+    /// Return false, leaving `value` and the read position untouched, when
+    /// fewer than `sizeof(TYPE)` bytes remain. `TYPE` is the type as it
+    /// appears on the wire and must be given explicitly; `VALUE` is
+    /// deduced, so a big-endian field can be read straight into the
+    /// host-order member it belongs to.
+    template <typename TYPE, typename VALUE>
+    bool copy(VALUE* value);
 
+    /// Return a `Buffer` over the next `size` bytes and advance past them,
+    /// truncating `size` to `available()`.
     Buffer consume(size_type size);
     void skip(size_type size);
     const_pointer ptr() const { return d_data + d_offset; }
@@ -64,16 +74,25 @@ class Buffer {
     offset_type d_offset;
 };
 
-template <typename TYPE>
-TYPE Buffer::copy()
+template <typename TYPE, typename VALUE>
+bool Buffer::copy(VALUE* value)
 {
     BSLMF_ASSERT(bsl::is_trivially_copyable<TYPE>::value);
     BSLMF_ASSERT(bslmf::IsBitwiseMoveable<TYPE>::value);
-    BSLS_ASSERT(available() >= sizeof(TYPE));
+    BSLMF_ASSERT(sizeof(VALUE) == sizeof(TYPE));
+    // AMQP `bit` fields share an octet: read a uint8_t and mask it instead
+    BSLMF_ASSERT((!bsl::is_same<TYPE, bool>::value));
+
+    if (available() < sizeof(TYPE)) {
+        return false;
+    }
+
     TYPE val;
     bsl::memcpy(&val, ptr(), sizeof(TYPE));
     skip(sizeof(TYPE));
-    return val;
+
+    *value = val;
+    return true;
 }
 
 } // namespace rmqamqpt

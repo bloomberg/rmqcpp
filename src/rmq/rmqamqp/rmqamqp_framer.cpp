@@ -23,6 +23,7 @@
 
 #include <ball_log.h>
 #include <bdlb_bigendian.h>
+#include <bsls_assert.h>
 
 #include <bsl_algorithm.h>
 #include <bsl_cstdint.h>
@@ -49,6 +50,10 @@ class MessageSerializer {
 
     void operator()(const rmqt::Message& message) const
     {
+        // Guaranteed by Framer::setMaxFrameSize. Checked before anything is
+        // appended, so a failure does not leave a header without its bodies.
+        BSLS_ASSERT(d_maxFrameSize > rmqamqpt::Frame::frameOverhead());
+
         d_frames->push_back(
             rmqamqp::Framer::makeContentHeaderFrame(message, d_channel));
 
@@ -93,7 +98,18 @@ Framer::Framer()
 {
 }
 
-void Framer::setMaxFrameSize(bsl::size_t maxSize) { d_maxFrameSize = maxSize; }
+bool Framer::setMaxFrameSize(bsl::size_t maxSize)
+{
+    if (maxSize <= rmqamqpt::Frame::frameOverhead()) {
+        BALL_LOG_ERROR << "Ignoring max frame size which leaves no room for a "
+                          "payload: "
+                       << maxSize;
+        return false;
+    }
+
+    d_maxFrameSize = maxSize;
+    return true;
+}
 
 Framer::ReturnCode Framer::appendFrame(uint16_t* receiveChannel,
                                        rmqamqp::Message* receiveMessage,

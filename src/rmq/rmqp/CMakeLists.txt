@@ -6,6 +6,7 @@ add_library(rmqp OBJECT
     rmqp_messagetransformer.cpp
     rmqp_metricpublisher.cpp
     rmqp_producer.cpp
+    rmqp_producertagger.cpp
     rmqp_producertracing.cpp
     rmqp_rabbitcontext.cpp
     rmqp_topology.cpp

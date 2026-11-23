@@ -8,6 +8,7 @@
 #include <rmqt_exchange.h>
 #include <rmqt_message.h>
 #include <rmqt_result.h>
+#include <rmqt_securityparameters.h>
 #include <rmqt_vhostinfo.h>
 
 #include <bsl_memory.h>
@@ -21,13 +22,21 @@ using namespace BloombergLP;
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        std::cerr << "USAGE: " << argv[0] << " <amqp uri>\n";
+        std::cerr << "USAGE: " << argv[0] << " <amqp[s] uri> [ca-cert-path]\n";
         return 1;
     }
     rmqa::RabbitContext rabbit;
 
+    // An amqps:// uri needs a certificate authority to verify the broker's
+    // certificate against
+    bsl::shared_ptr<rmqt::SecurityParameters> securityParameters;
+    if (argc > 2) {
+        securityParameters =
+            bsl::make_shared<rmqt::SecurityParameters>(argv[2]);
+    }
+
     bsl::optional<rmqt::VHostInfo> vhostInfo =
-        rmqa::ConnectionString::parse(argv[1]);
+        rmqa::ConnectionString::parse(argv[1], securityParameters);
 
     if (!vhostInfo) {
         std::cerr << "Failed to parse connection string: " << argv[1] << "\n";
@@ -80,7 +89,7 @@ int main(int argc, char** argv)
                 // triggered this publish
             }
             else {
-                // Send error response, rollback transaction, nack message
+                // Send error response, rollback transaction, reject message
                 // and/or raise an alarm for investigation - your message is not
                 // delivered to all (or perhaps any) of the queues it was
                 // intended for.

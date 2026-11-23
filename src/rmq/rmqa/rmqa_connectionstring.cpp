@@ -16,6 +16,8 @@
 #include <rmqa_connectionstring.h>
 
 #include <rmqt_plaincredentials.h>
+#include <rmqt_secureendpoint.h>
+#include <rmqt_securityparameters.h>
 #include <rmqt_simpleendpoint.h>
 #include <rmqt_vhostinfo.h>
 
@@ -29,7 +31,9 @@
 namespace BloombergLP {
 namespace rmqa {
 
-bsl::optional<rmqt::VHostInfo> ConnectionString::parse(bsl::string_view uri)
+bsl::optional<rmqt::VHostInfo> ConnectionString::parse(
+    bsl::string_view uri,
+    const bsl::shared_ptr<rmqt::SecurityParameters>& securityParameters)
 {
     bsl::string_view scheme   = "";
     bsl::string_view username = "guest";
@@ -68,8 +72,22 @@ bsl::optional<rmqt::VHostInfo> ConnectionString::parse(bsl::string_view uri)
         return bsl::optional<rmqt::VHostInfo>();
     }
 
-    bsl::shared_ptr<rmqt::Endpoint> endpoint =
-        bsl::make_shared<rmqt::SimpleEndpoint>(hostname, vhost, portNum16);
+    bsl::shared_ptr<rmqt::Endpoint> endpoint;
+
+    if (scheme == "amqp") {
+        endpoint =
+            bsl::make_shared<rmqt::SimpleEndpoint>(hostname, vhost, portNum16);
+    }
+    else {
+        if (!securityParameters) {
+            return bsl::optional<rmqt::VHostInfo>();
+        }
+
+        endpoint = bsl::make_shared<rmqt::SecureEndpoint>(bsl::string(hostname),
+                                                          bsl::string(vhost),
+                                                          portNum16,
+                                                          securityParameters);
+    }
 
     bsl::shared_ptr<rmqt::Credentials> credentials =
         bsl::make_shared<rmqt::PlainCredentials>(username, password);

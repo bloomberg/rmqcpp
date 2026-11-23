@@ -50,8 +50,8 @@ class Consumer {
     explicit Consumer(bslma::ManagedPtr<rmqp::Consumer>& impl);
 
     /// \brief Tells the broker to stop delivering messages to this consumer.
-    /// it's still possible to nack/ack messages from callbacks after cancel is
-    /// called
+    /// it's still possible to ack/reject/nack messages from callbacks after
+    /// cancel is called
     void cancel();
 
     /// \brief Tells the broker to stop delivering messages to this consumer.

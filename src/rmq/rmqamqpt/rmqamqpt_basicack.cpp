@@ -25,6 +25,9 @@
 
 namespace BloombergLP {
 namespace rmqamqpt {
+namespace {
+const uint8_t BITMASK_BIT_MULTIPLE = (1 << 0);
+} // namespace
 
 BasicAck::BasicAck(bsl::uint64_t dt, bool multiple)
 : d_deliveryTag(dt)
@@ -44,19 +47,13 @@ bool BasicAck::decode(BasicAck* ack,
 {
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (buffer.available() < sizeof(bdlb::BigEndianUint64)) {
-
+    uint8_t bitmask = 0;
+    if (!buffer.copy<bdlb::BigEndianUint64>(&ack->d_deliveryTag) ||
+        !buffer.copy<uint8_t>(&bitmask)) {
         return false;
     }
 
-    ack->d_deliveryTag = buffer.copy<bdlb::BigEndianUint64>();
-
-    if (buffer.available() < sizeof(bool)) {
-        return false;
-    }
-
-    ack->d_multiple = buffer.copy<bool>();
-
+    ack->d_multiple = bitmask & BITMASK_BIT_MULTIPLE;
     return true;
 }
 

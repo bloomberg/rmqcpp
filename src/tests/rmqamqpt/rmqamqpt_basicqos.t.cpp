@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <bsl_cstddef.h>
 #include <bsl_cstdint.h>
 
 using namespace BloombergLP;
@@ -51,4 +52,32 @@ TEST(Methods_BasicQoS, QoSEncodeDecode)
     EXPECT_EQ(bm.the<rmqamqpt::BasicQoS>().prefetchCount(), 1337);
     EXPECT_EQ(bm.the<rmqamqpt::BasicQoS>().prefetchSize(), 0xb19);
     EXPECT_EQ(bm.the<rmqamqpt::BasicQoS>().global(), true);
+}
+
+TEST(Methods_BasicQoS, GlobalIsReadFromBitZeroOnly)
+{
+    const uint8_t cases[][2] = {{0x00, 0}, {0x01, 1}, {0x02, 0}, {0xFF, 1}};
+
+    for (bsl::size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
+        const uint8_t data[] = {
+            0x00, 0x00, 0x00, 0x0A, 0x00, 0x14, cases[i][0]};
+
+        rmqamqpt::BasicQoS qos;
+        EXPECT_TRUE(rmqamqpt::BasicQoS::decode(&qos, data, sizeof(data)));
+        EXPECT_EQ(qos.prefetchSize(), 10);
+        EXPECT_EQ(qos.prefetchCount(), 20);
+        EXPECT_EQ(static_cast<int>(qos.global()), cases[i][1])
+            << "octet: " << static_cast<int>(cases[i][0]);
+    }
+}
+
+TEST(Methods_BasicQoS, TruncatedPayloadFailsToDecode)
+{
+    const uint8_t full[] = {0x00, 0x00, 0x00, 0x0A, 0x00, 0x14, 0x01};
+
+    for (bsl::size_t length = 0; length < sizeof(full); ++length) {
+        rmqamqpt::BasicQoS qos;
+        EXPECT_FALSE(rmqamqpt::BasicQoS::decode(&qos, full, length))
+            << "length: " << length;
+    }
 }

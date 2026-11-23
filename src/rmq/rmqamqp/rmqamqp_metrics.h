@@ -30,6 +30,11 @@ class Metrics {
     static const char* NAMESPACE;
     static const char* VHOST_TAG;
     static const char* CHANNELTYPE_TAG;
+    static const char* RESULT_TAG;
+
+    // Consumer metrics
+    /// How the application resolved a delivery, tagged by RESULT_TAG
+    static const char* CONSUMER_MESSAGE_HANDLED;
 
     // Pause/Resume metrics
     static const char* CONSUMER_PAUSE_TOTAL;

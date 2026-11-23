@@ -13,8 +13,9 @@ limitations under the License.
 import pytest
 from time import sleep
 
-from ..rmqapitests.fixtures import *
-from ..rmqapitests.tests_runner import RmqTest
+from ..rmqapitests.integration_test import RmqTest
+
+pytestmark = pytest.mark.capability("exit-both")
 
 
 class TestExitUnavailableVhost(RmqTest):

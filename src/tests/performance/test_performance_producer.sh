@@ -9,9 +9,9 @@
 : "${RABBITMQ_QOS:=100}"
 : "${RABBITMQ_MESSAGE_SIZE:=1000}"
 : "${ENABLE_PERF:=false}"
-: "${TRACING:-without}"
-: "${RMQ_TRACING:=}"
+: "${TRACING:=without}"
 
+RMQ_TRACING=""
 if [ "$TRACING" == "with" ]; then
     RMQ_TRACING="-d"
 fi
@@ -23,7 +23,7 @@ uri=amqp://${RMQ_VHOST}:${RMQ_VHOST}@${RMQ_HOSTNAME}:${RMQ_PORT}/${RMQ_VHOST}
 if $ENABLE_PERF
 then
     echo "Running the producer (with perf record)..."
-    "${RMQ_PRODUCER}" "${RMQ_TRACING}" --uri "${uri}" -q "test_producer_performance_${id}" -o ERROR -n "${TEST_N}" -w 0 -l "${RABBITMQ_QOS}" --messageSize "${RABBITMQ_MESSAGE_SIZE}" &
+    "${RMQ_PRODUCER}" ${RMQ_TRACING} --uri "${uri}" -q "test_producer_performance_${id}" -o ERROR -n "${TEST_N}" -w 0 -l "${RABBITMQ_QOS}" --messageSize "${RABBITMQ_MESSAGE_SIZE}" &
     TASK_PID=$!
     echo -e "\nEstablishing connection..."
     sleep 3
@@ -33,7 +33,7 @@ then
     wait $TASK_PID
 else
     echo "Running the producer with args: ${RMQ_PRODUCER} ${RMQ_TRACING} --uri ${uri} -q \"test_producer_performance_${id}\" -o ERROR -n ${TEST_N} -w 0 -l ${RABBITMQ_QOS} --messageSize ${RABBITMQ_MESSAGE_SIZE} --expires 60000 --messageTTL 5"
-    "${RMQ_PRODUCER}" "${RMQ_TRACING}" --uri "${uri}" -q "test_producer_performance_${id}" -o ERROR -n "${TEST_N}" -w 0 -l "${RABBITMQ_QOS}" --messageSize "${RABBITMQ_MESSAGE_SIZE}" --expires 60000 --messageTTL 5
+    "${RMQ_PRODUCER}" ${RMQ_TRACING} --uri "${uri}" -q "test_producer_performance_${id}" -o ERROR -n "${TEST_N}" -w 0 -l "${RABBITMQ_QOS}" --messageSize "${RABBITMQ_MESSAGE_SIZE}" --expires 60000 --messageTTL 5
 fi
 
 exit 0

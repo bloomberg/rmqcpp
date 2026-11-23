@@ -26,6 +26,9 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip3 install --break-system-packages --no-cache-dir "cmake>=4.3,<5"
 
+RUN pip3 install --break-system-packages --no-cache-dir "uv>=0.12,<0.14" && \
+    uv python install 3.15
+
 ENV VCPKG_FORCE_SYSTEM_BINARIES=1
 
 # clone and install vcpkg

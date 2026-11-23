@@ -252,11 +252,12 @@ bool BasicProperties::decode(BasicProperties* props,
 {
     rmqamqpt::Buffer buffer(data, dataLength);
 
-    if (sizeof(uint16_t) > buffer.available()) {
+    uint16_t flags = 0;
+    if (!buffer.copy<bdlb::BigEndianUint16>(&flags)) {
         return false;
     }
-    bool success         = true;
-    const uint16_t flags = buffer.copy<bdlb::BigEndianUint16>();
+
+    bool success = true;
 
     rmqt::Properties properties;
 
@@ -288,10 +289,20 @@ bool BasicProperties::decode(BasicProperties* props,
         }
     }
     if (flags & maskForProperty(DELIVERY_MODE)) {
-        properties.deliveryMode = buffer.copy<uint8_t>();
+        properties.deliveryMode = uint8_t();
+        if (!buffer.copy<uint8_t>(&*properties.deliveryMode)) {
+            BALL_LOG_ERROR << "Decoding fail for basic property: "
+                           << PROPERTY_NAMES[DELIVERY_MODE];
+            success = false;
+        }
     }
     if (flags & maskForProperty(PRIORITY)) {
-        properties.priority = buffer.copy<uint8_t>();
+        properties.priority = uint8_t();
+        if (!buffer.copy<uint8_t>(&*properties.priority)) {
+            BALL_LOG_ERROR << "Decoding fail for basic property: "
+                           << PROPERTY_NAMES[PRIORITY];
+            success = false;
+        }
     }
     if (flags & maskForProperty(CORRELATION_ID)) {
         properties.correlationId = "";
@@ -331,7 +342,12 @@ bool BasicProperties::decode(BasicProperties* props,
     }
     if (flags & maskForProperty(TIMESTAMP)) {
         properties.timestamp = bdlt::Datetime();
-        rmqamqpt::Types::decodeTimestamp(&*properties.timestamp, &buffer);
+        if (!rmqamqpt::Types::decodeTimestamp(&*properties.timestamp,
+                                              &buffer)) {
+            BALL_LOG_ERROR << "Decoding fail for basic property: "
+                           << PROPERTY_NAMES[TIMESTAMP];
+            success = false;
+        }
     }
     if (flags & maskForProperty(TYPE)) {
         properties.type = "";
