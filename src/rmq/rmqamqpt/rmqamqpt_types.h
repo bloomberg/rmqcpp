@@ -23,11 +23,13 @@
 #include <rmqt_fieldvalue.h>
 
 #include <bsl_cstdint.h>
+#include <bsl_optional.h>
 #include <bsl_sstream.h>
 #include <bsl_string.h>
 #include <bsl_vector.h>
 
 #include <bdlb_bigendian.h>
+#include <bdlt_datetime.h>
 #include <bsl_cstddef.h>
 #include <bsl_type_traits.h>
 
@@ -57,6 +59,12 @@ class Types {
     static void encodeByteVector(Writer& output,
                                  const bsl::vector<bsl::uint8_t>& data);
 
+    /// Read a field value out of `buffer` and advance past it.
+    ///
+    /// A value this library cannot represent is still consumed, so that
+    /// whatever follows it decodes, and `value` is left unset. An unset
+    /// value cannot be told apart from the `NO_FIELD` ('V') type, so
+    /// re-encoding writes it back out as 'V' and the original is lost.
     static bool decodeFieldValue(rmqt::FieldValue* value,
                                  rmqamqpt::Buffer* buffer);
 
@@ -75,7 +83,15 @@ class Types {
     static void encodeTimestamp(Writer& output,
                                 const bdlt::Datetime& timestamp);
 
-    static bool decodeTimestamp(bdlt::Datetime* timestamp,
+    /// Read an AMQP `timestamp` out of `buffer` and advance past it.
+    ///
+    /// Return false when there is not enough data for the field, leaving
+    /// `buffer` untouched. Nothing further can be decoded from it.
+    ///
+    /// Return true when the field was read, leaving `buffer` positioned at
+    /// whatever follows it. A value outside the range a `bdlt::Datetime`
+    /// can hold is not a decode failure: `timestamp` is left unset.
+    static bool decodeTimestamp(bsl::optional<bdlt::Datetime>* timestamp,
                                 rmqamqpt::Buffer* buffer);
 
     template <typename T>

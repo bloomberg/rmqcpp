@@ -565,6 +565,34 @@ TEST(Methods_BasicProperties, TruncatedScalarPropertiesFailToDecode)
     }
 }
 
+TEST(Methods_BasicProperties, OutOfRangeTimestampKeepsOtherProperties)
+{
+    // A timestamp in milliseconds is out of range read as seconds. The
+    // properties either side of it must survive. The encoder cannot
+    // express this, so the property block is written by hand.
+    const uint16_t flags = 0x0080 | 0x0040 | 0x0008;
+
+    bsl::vector<uint8_t> data;
+    rmqamqpt::Writer writer(&data);
+    rmqamqpt::Types::write(writer, bdlb::BigEndianUint16::make(flags));
+    rmqamqpt::Types::encodeShortString(writer, "mid");
+    rmqamqpt::Types::write(writer, bdlb::BigEndianInt64::make(1795442484034LL));
+    rmqamqpt::Types::encodeShortString(writer, "app");
+
+    rmqamqpt::BasicProperties basicProps;
+    EXPECT_THAT(rmqamqpt::BasicProperties::decode(
+                    &basicProps, data.data(), data.size()),
+                Eq(true));
+
+    EXPECT_FALSE(basicProps.timestamp());
+
+    ASSERT_TRUE(basicProps.messageId());
+    EXPECT_THAT(basicProps.messageId().value(), Eq("mid"));
+
+    ASSERT_TRUE(basicProps.appId());
+    EXPECT_THAT(basicProps.appId().value(), Eq("app"));
+}
+
 TEST(Methods_BasicProperties, TruncatedHeaderTableLengthFailsToDecode)
 {
     // headers flag, with a partial field table length prefix
