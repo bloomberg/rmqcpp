@@ -341,9 +341,7 @@ bool BasicProperties::decode(BasicProperties* props,
         }
     }
     if (flags & maskForProperty(TIMESTAMP)) {
-        properties.timestamp = bdlt::Datetime();
-        if (!rmqamqpt::Types::decodeTimestamp(&*properties.timestamp,
-                                              &buffer)) {
+        if (!rmqamqpt::Types::decodeTimestamp(&properties.timestamp, &buffer)) {
             BALL_LOG_ERROR << "Decoding fail for basic property: "
                            << PROPERTY_NAMES[TIMESTAMP];
             success = false;

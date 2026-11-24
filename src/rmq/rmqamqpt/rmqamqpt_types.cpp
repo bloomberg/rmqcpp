@@ -24,6 +24,7 @@
 #include <bdlb_bigendian.h>
 #include <bdlt_epochutil.h>
 #include <bsls_assert.h>
+#include <bsls_review.h>
 
 #include <bsl_algorithm.h>
 #include <bsl_cstddef.h>
@@ -291,11 +292,16 @@ bool Types::decodeFieldValue(rmqt::FieldValue* outValue,
             *outValue = val;
         } break;
         case rmqamqpt::FieldValue::TIMESTAMP: {
-            bdlt::Datetime timestamp;
+            bsl::optional<bdlt::Datetime> timestamp;
             if (!decodeTimestamp(&timestamp, buffer)) {
                 return false;
             }
-            *outValue = timestamp;
+            if (timestamp.has_value()) {
+                *outValue = timestamp.value();
+            }
+            else {
+                outValue->reset();
+            }
         } break;
         case rmqamqpt::FieldValue::FIELD_TABLE: {
             bsl::shared_ptr<rmqt::FieldTable> table =
@@ -550,7 +556,8 @@ void Types::encodeTimestamp(Writer& output, const bdlt::Datetime& timestamp)
                      bdlt::EpochUtil::convertToTimeT64(timestamp)));
 }
 
-bool Types::decodeTimestamp(bdlt::Datetime* timestamp, rmqamqpt::Buffer* buffer)
+bool Types::decodeTimestamp(bsl::optional<bdlt::Datetime>* timestamp,
+                            rmqamqpt::Buffer* buffer)
 {
     BSLS_ASSERT(timestamp);
 
@@ -561,11 +568,22 @@ bool Types::decodeTimestamp(bdlt::Datetime* timestamp, rmqamqpt::Buffer* buffer)
         return false;
     }
 
-    if (0 != bdlt::EpochUtil::convertFromTimeT64(timestamp, seconds)) {
-        BALL_LOG_ERROR << "Timestamp not representable as a datetime: "
+    bdlt::Datetime value;
+    const bool representable =
+        0 == bdlt::EpochUtil::convertFromTimeT64(&value, seconds);
+
+    BSLS_REVIEW_OPT(representable &&
+                    "AMQP timestamp outside the bdlt::Datetime range");
+
+    if (!representable) {
+        BALL_LOG_ERROR << "Timestamp not representable as a datetime, "
+                          "decoding as unset: "
                        << seconds;
-        return false;
+        timestamp->reset();
+        return true;
     }
+
+    *timestamp = value;
 
     return true;
 }

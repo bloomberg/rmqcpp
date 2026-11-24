@@ -76,6 +76,32 @@ class ContentDecodeTests : public ::testing::Test {
 
         return rmqamqpt::Frame(frameType, channel, data);
     }
+    /// Build a content header frame around an already encoded payload.
+    rmqamqpt::Frame makeRawHeaderFrame(uint16_t channel,
+                                       const uint8_t* payload,
+                                       bsl::size_t payloadSize)
+    {
+        bsl::shared_ptr<bsl::vector<uint8_t> > data =
+            bsl::make_shared<bsl::vector<uint8_t> >();
+
+        rmqamqpt::Writer writer(data.get());
+        rmqamqpt::Types::write(
+            writer, static_cast<uint8_t>(rmqamqpt::Constants::HEADER));
+        rmqamqpt::Types::write(writer, bdlb::BigEndianUint16::make(channel));
+        rmqamqpt::Types::write(writer,
+                               bdlb::BigEndianUint32::make(payloadSize));
+
+        for (bsl::size_t i = 0; i < payloadSize; ++i) {
+            rmqamqpt::Types::write(writer, payload[i]);
+        }
+        rmqamqpt::Types::write(writer, rmqamqpt::Constants::FRAME_END);
+
+        assert(data->size() ==
+               rmqamqpt::Frame::calculateFrameSize(payloadSize));
+
+        return rmqamqpt::Frame(rmqamqpt::Constants::HEADER, channel, data);
+    }
+
     rmqamqpt::Frame makeBodyFrame(rmqamqpt::Constants::AMQPFrameType frameType,
                                   uint16_t channel,
                                   const rmqamqpt::ContentBody& contentBody)
@@ -346,6 +372,50 @@ TEST_F(ContentDecodeTests, ContentHeaderBodyEncodeDecode)
     rmqt::Message message = received.the<rmqt::Message>();
     EXPECT_EQ(message.payloadSize(), 5);
     EXPECT_EQ(memcmp(message.payload(), data, 5), 0);
+}
+
+TEST_F(ContentDecodeTests,
+       ContentHeaderUnrepresentableTimestampIsNotAnException)
+{
+    // A timestamp the decoder cannot represent is a limit of the type
+    // decoded into, not a protocol error, so it must not fail the channel.
+    // The encoder cannot express this header, so it is written by hand.
+    bsl::vector<uint8_t> payload;
+    rmqamqpt::Writer payloadWriter(&payload);
+    rmqamqpt::Types::write(payloadWriter,
+                           bdlb::BigEndianUint16::make(static_cast<uint16_t>(
+                               rmqamqpt::Constants::BASIC)));
+    rmqamqpt::Types::write(payloadWriter, bdlb::BigEndianUint16::make(0));
+    rmqamqpt::Types::write(payloadWriter, bdlb::BigEndianUint64::make(5));
+    rmqamqpt::Types::write(payloadWriter,
+                           bdlb::BigEndianUint16::make(0x0040)); // timestamp
+    rmqamqpt::Types::write(payloadWriter,
+                           bdlb::BigEndianInt64::make(1795442484034LL));
+
+    uint16_t channel;
+    rmqamqp::Framer framer;
+    rmqamqp::Message received;
+
+    rmqamqpt::Frame frame =
+        makeRawHeaderFrame(2, payload.data(), payload.size());
+
+    EXPECT_THAT(framer.appendFrame(&channel, &received, frame),
+                Eq(rmqamqp::Framer::PARTIAL));
+    EXPECT_EQ(channel, 2);
+
+    const uint8_t* body = reinterpret_cast<const uint8_t*>("hello");
+    rmqamqpt::ContentBody contentBody(body, 5);
+    frame = makeBodyFrame(rmqamqpt::Constants::BODY, 2, contentBody);
+
+    EXPECT_THAT(framer.appendFrame(&channel, &received, frame),
+                Eq(rmqamqp::Framer::OK));
+    EXPECT_EQ(channel, 2);
+
+    ASSERT_TRUE(received.is<rmqt::Message>());
+    rmqt::Message message = received.the<rmqt::Message>();
+    EXPECT_EQ(message.payloadSize(), 5);
+    EXPECT_EQ(memcmp(message.payload(), body, 5), 0);
+    EXPECT_TRUE(message.properties().timestamp.isNull());
 }
 
 TEST_F(ContentDecodeTests, ContentBodyWithoutHeader)

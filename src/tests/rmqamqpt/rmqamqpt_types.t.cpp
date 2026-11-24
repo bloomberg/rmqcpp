@@ -22,10 +22,13 @@
 #include <bdlb_bigendian.h>
 #include <bdlt_datetime.h>
 
+#include <bsls_types.h>
+
 #include <bsl_cstddef.h>
 #include <bsl_cstring.h>
 #include <bsl_iostream.h>
 #include <bsl_limits.h>
+#include <bsl_optional.h>
 #include <bsl_vector.h>
 
 #include <bsl_iosfwd.h>
@@ -609,11 +612,12 @@ TEST(TypesEncoding, Timestamp)
         EXPECT_THAT(storage[i], Eq(inspect[i]));
     }
 
-    bdlt::Datetime decoded;
+    bsl::optional<bdlt::Datetime> decoded;
     rmqamqpt::Buffer buf(storage.data(), storage.size());
     EXPECT_THAT(rmqamqpt::Types::decodeTimestamp(&decoded, &buf), Eq(true));
 
-    EXPECT_THAT(decoded, Eq(millennium));
+    ASSERT_TRUE(decoded.has_value());
+    EXPECT_THAT(decoded.value(), Eq(millennium));
 }
 
 TEST(TypesTruncatedDecode, TruncatedTimestampFails)
@@ -621,7 +625,7 @@ TEST(TypesTruncatedDecode, TruncatedTimestampFails)
     const uint8_t truncated[] = {0x00, 0x00, 0x00, 0x00, 0x38, 0x6D, 0x43};
 
     for (bsl::size_t length = 0; length < sizeof(truncated); ++length) {
-        bdlt::Datetime decoded;
+        bsl::optional<bdlt::Datetime> decoded;
         rmqamqpt::Buffer buffer(truncated, length);
 
         EXPECT_THAT(rmqamqpt::Types::decodeTimestamp(&decoded, &buffer),
@@ -631,32 +635,83 @@ TEST(TypesTruncatedDecode, TruncatedTimestampFails)
     }
 }
 
-TEST(TypesTruncatedDecode, OutOfRangeTimestampFails)
+// A timestamp in milliseconds rather than the seconds the protocol
+// specifies. Any millisecond stamp after 1978-01-11 is out of range.
+const bsls::Types::Int64 MILLISECOND_TIMESTAMP = 1795442484034LL;
+
+TEST(TypesTruncatedDecode, OutOfRangeTimestampDecodesAsUnset)
 {
-    // Seconds since the epoch that no bdlt::Datetime can represent
-    const uint8_t cases[][8] = {
-        {0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-        {0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+    const bsls::Types::Int64 cases[] = {
+        bsl::numeric_limits<bsls::Types::Int64>::max(),
+        bsl::numeric_limits<bsls::Types::Int64>::min(),
+        MILLISECOND_TIMESTAMP};
 
     for (bsl::size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
-        bdlt::Datetime decoded;
-        rmqamqpt::Buffer buffer(cases[i], sizeof(cases[i]));
+        BufferType storage;
+        rmqamqpt::Writer writer(&storage);
+        rmqamqpt::Types::write(writer, bdlb::BigEndianInt64::make(cases[i]));
+
+        // Starts set, to show it is cleared
+        bsl::optional<bdlt::Datetime> decoded = bdlt::Datetime(2000, 1, 1);
+        rmqamqpt::Buffer buffer(storage.data(), storage.size());
 
         EXPECT_THAT(rmqamqpt::Types::decodeTimestamp(&decoded, &buffer),
-                    Eq(false))
+                    Eq(true))
             << "case: " << i;
+        EXPECT_FALSE(decoded.has_value()) << "case: " << i;
+        EXPECT_THAT(buffer.available(), Eq(0u)) << "case: " << i;
     }
 }
 
-TEST(TypesTruncatedDecode, OutOfRangeTimestampFieldValueFails)
+TEST(TypesTruncatedDecode, OutOfRangeTimestampFieldValueDecodesAsUnset)
 {
-    const uint8_t data[] = {
-        'T', 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    BufferType storage;
+    rmqamqpt::Writer writer(&storage);
+    rmqamqpt::Types::write(writer, rmqamqpt::FieldValue::TIMESTAMP);
+    rmqamqpt::Types::write(writer,
+                           bdlb::BigEndianInt64::make(MILLISECOND_TIMESTAMP));
 
     rmqt::FieldValue value;
-    rmqamqpt::Buffer buffer(data, sizeof(data));
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
 
-    EXPECT_THAT(rmqamqpt::Types::decodeFieldValue(&value, &buffer), Eq(false));
+    EXPECT_THAT(rmqamqpt::Types::decodeFieldValue(&value, &buffer), Eq(true));
+    EXPECT_TRUE(value.isUnset());
+    EXPECT_THAT(buffer.available(), Eq(0u));
+}
+
+TEST(TypesFieldTableDecode, OutOfRangeTimestampAndLaterFieldsStillDecode)
+{
+    // The 8 octets must still be consumed so that whatever follows the
+    // timestamp in the table is read from the right place.
+    BufferType fields;
+    rmqamqpt::Writer fieldWriter(&fields);
+    rmqamqpt::Types::encodeShortString(fieldWriter, "at");
+    rmqamqpt::Types::write(fieldWriter, rmqamqpt::FieldValue::TIMESTAMP);
+    rmqamqpt::Types::write(fieldWriter,
+                           bdlb::BigEndianInt64::make(MILLISECOND_TIMESTAMP));
+    rmqamqpt::Types::encodeShortString(fieldWriter, "x");
+    rmqamqpt::Types::write(fieldWriter, rmqamqpt::FieldValue::SHORT_SHORT_INT);
+    rmqamqpt::Types::write(fieldWriter, static_cast<signed char>(7));
+
+    BufferType storage;
+    rmqamqpt::Writer writer(&storage);
+    rmqamqpt::Types::write(
+        writer,
+        bdlb::BigEndianUint32::make(static_cast<bsl::uint32_t>(fields.size())));
+    for (bsl::size_t i = 0; i < fields.size(); ++i) {
+        rmqamqpt::Types::write(writer, fields[i]);
+    }
+
+    rmqamqpt::Buffer buffer(storage.data(), storage.size());
+    rmqt::FieldTable ft;
+
+    EXPECT_THAT(rmqamqpt::Types::decodeFieldTable(&ft, &buffer), Eq(true));
+    EXPECT_THAT(ft.size(), Eq(2u));
+
+    EXPECT_TRUE(ft["at"].isUnset());
+
+    EXPECT_TRUE(ft["x"].is<bsl::int8_t>());
+    EXPECT_THAT(ft["x"].the<bsl::int8_t>(), Eq(7));
 }
 
 TEST(TypesFieldTableDecode, DecimalIsSkippedAndLaterFieldsStillDecode)
